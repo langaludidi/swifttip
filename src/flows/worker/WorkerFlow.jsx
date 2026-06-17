@@ -4,6 +4,7 @@ import { I, Header, Avatar, Stars, BottomNav, QRCode } from '../../components/ui
 import { SAMPLE } from '../../lib/data.js';
 import { useWorkerData } from '../../lib/hooks.js';
 import { useSession } from '../../App.jsx';
+import { requestPayout } from '../../services/payouts.js';
 
 const TABS = [
   { id: 'dash', label: 'Home', icon: I.home },
@@ -161,9 +162,22 @@ function HistoryScreen({ data }) {
 
 function PayoutScreen({ data, nav }) {
   const s = data.self;
+  const { session } = useSession();
   const [amount, setAmount] = useState('');
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState('');
   const amt = Number(amount || 0);
+
+  const submit = async () => {
+    setSubmitting(true); setErr('');
+    const workerId = session?.user?.id;
+    const { error } = await requestPayout({ workerId, amountCents: Math.round(amt * 100) });
+    setSubmitting(false);
+    if (error) { setErr(error.message || 'Payout failed'); return; }
+    setDone(true);
+  };
+
   if (done) return (
     <div className="overlay screen-anim" style={{ position: 'static', flex: 1 }}>
       <div className="success-ring"><I.check size={42} color="var(--success)" /></div>
@@ -199,9 +213,10 @@ function PayoutScreen({ data, nav }) {
             <div className="between" style={{ marginTop: 8 }}><span className="muted" style={{ fontSize: 13 }}>Arrives within</span><span style={{ fontWeight: 700 }}>24 hours</span></div>
             <div className="between" style={{ marginTop: 8 }}><span className="muted" style={{ fontSize: 13 }}>Fee</span><span style={{ fontWeight: 700, color: 'var(--success)' }}>R0.00 Free</span></div>
           </div>
-          <button className={'btn ' + (amt > 0 && amt <= s.balance ? 'btn-primary' : 'btn-disabled')}
-            disabled={amt <= 0 || amt > s.balance} onClick={() => setDone(true)}>
-            Withdraw R{amt > 0 ? amt.toFixed(2) : '0.00'}
+          {err && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{err}</div>}
+          <button className={'btn ' + (amt > 0 && amt <= s.balance && !submitting ? 'btn-primary' : 'btn-disabled')}
+            disabled={amt <= 0 || amt > s.balance || submitting} onClick={submit}>
+            {submitting ? 'Processing…' : `Withdraw R${amt > 0 ? amt.toFixed(2) : '0.00'}`}
           </button>
         </div>
       </div>
