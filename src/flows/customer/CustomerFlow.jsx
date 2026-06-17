@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { I, Header, Avatar, Stars } from '../../components/ui.jsx';
 import { invokeTip } from '../../services/tips.js';
 import { leaveCompliment } from '../../services/compliments.js';
+import { ScanScene, BuzzPhone, CustConfetti } from './CustomerArt.jsx';
 
 function toast(msg) { console.log('[toast]', msg); }
 
@@ -65,47 +66,30 @@ export default function CustomerFlow({ screen, nav, data }) {
     setSent(true);
   };
 
-  if (screen === 'scan') return (
-    <>
-      <Header title="Tip a Worker" sub="Great service deserves recognition" onBack={() => nav('__home')} />
-      <div className="screen-body screen-anim">
-        <div className="pad stack gap16">
-          <div style={{ background: 'linear-gradient(165deg,#0a2b35,#06181e)', borderRadius: 22, padding: '38px 22px', textAlign: 'center', color: '#fff', border: '1.5px dashed rgba(18,196,178,0.4)' }}>
-            <I.camera size={42} color="var(--accent)" />
-            <div style={{ fontWeight: 700, fontSize: 16, marginTop: 14 }}>Point camera at worker's SwiftTip badge</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 6 }}>Camera access · or pick below</div>
-          </div>
-          <button className="btn btn-ghost" onClick={() => toast('Select a QR image')}><I.download size={18} color="var(--accent-600)" /> Upload a QR image</button>
-          <div>
-            <div className="rail-section-label" style={{ margin: '6px 2px 10px' }}>Quick select</div>
-            <div className="row gap16">
-              {workers.map((x, i) => (
-                <button key={i} onClick={() => { setWid(i); go('profile'); }} style={{ background: 0, border: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7 }}>
-                  <Avatar name={x.name} color={x.color} size={56} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{x.name.split(' ')[0]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="rail-section-label" style={{ margin: '6px 2px 10px' }}>All workers · {data.employer}</div>
-            <div className="stack gap12">
-              {workers.map((x, i) => (
-                <div key={i} className="list-card" style={{ cursor: 'pointer' }} onClick={() => { setWid(i); go('profile'); }}>
-                  <Avatar name={x.name} color={x.color} size={44} />
-                  <div className="lc-main">
-                    <div className="row gap8"><span className="lc-title">{x.name}</span><span className="badge"><I.check size={11} stroke={3} /> Verified</span></div>
-                    <div className="lc-sub">{x.role} · <I.star size={12} color="#F2A71B" /> {x.rating}</div>
-                  </div>
-                  <I.chevR size={20} color="var(--muted-2)" />
+  if (screen === 'scan') {
+    const scanWorker = workers[wid] || workers[0];
+    return (
+      <div className="onb-screen cam-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <ScanScene locked={false} worker={scanWorker} />
+        <div style={{ padding: '0 22px 24px', position: 'relative', zIndex: 3 }}>
+          <div className="rail-section-label" style={{ color: 'rgba(255,255,255,0.45)', margin: '0 2px 10px' }}>Or tip someone directly</div>
+          <div className="row gap10">
+            {workers.map((x, i) => (
+              <button key={i} onClick={() => { setWid(i); go('profile'); }}
+                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '10px 12px', borderRadius: 14, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontFamily: 'var(--font)' }}>
+                <Avatar name={x.name} color={x.color} size={34} />
+                <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{x.name.split(' ')[0]}</div>
+                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.55)' }}>{x.role}</div>
                 </div>
-              ))}
-            </div>
+              </button>
+            ))}
           </div>
         </div>
       </div>
-    </>
-  );
+    );
+  }
 
   if (screen === 'profile') return (
     <>
@@ -285,24 +269,34 @@ export default function CustomerFlow({ screen, nav, data }) {
   if (screen === 'success') {
     const rcpt = 'ST-' + (10000 + Math.floor((amt || 20) * 137) % 89999);
     return (
-      <div className="overlay dark screen-anim" style={{ position: 'static', flex: 1, justifyContent: 'flex-start', paddingTop: 70 }}>
-        <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.check size={46} stroke={3} /></div>
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#fff' }}>Tip sent!</div>
-        <div style={{ color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>to {w.name}</div>
-        <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: '-1.5px', margin: '20px 0 4px', color: '#fff' }}>R{(amt || 20).toFixed(2)}</div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>Receipt {rcpt}</div>
-        <div className="row gap10" style={{ marginTop: 26 }}>
-          {[['SMS', I.sms], ['Email', I.mail], ['Share', I.share]].map(([l, Ic]) => (
-            <button key={l} onClick={() => toast(l + ' receipt sent')} className="btn btn-sm"
-              style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', flexDirection: 'column', gap: 6, padding: '14px 20px' }}>
-              <Ic size={20} color="var(--accent)" />{l}
-            </button>
-          ))}
+      <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <CustConfetti n={26} />
+        <div className="screen-body" style={{ position: 'relative', zIndex: 2, flex: 1, overflowY: 'auto' }}>
+          <div className="pad stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 24, gap: 5 }}>
+            <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)', marginBottom: 14 }}><I.check size={44} stroke={3} /></div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>Tip sent!</div>
+            <div style={{ fontSize: 50, fontWeight: 800, letterSpacing: '-1.6px', color: '#fff', margin: '6px 0 0' }}>R{(amt || 20).toFixed(2)}</div>
+            <div style={{ color: 'rgba(255,255,255,0.62)', fontSize: 14, marginTop: 2 }}>to {w.name} · Receipt {rcpt}</div>
+            <div className="glass-card" style={{ marginTop: 20, padding: '16px 18px', width: '100%', maxWidth: 320 }}>
+              <BuzzPhone amount={amt || 20} worker={w} />
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14.5, marginTop: 22 }}>{w.name.split(' ')[0]} just felt the buzz</div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12.5, marginTop: 3 }}>Your tip landed in their wallet instantly.</div>
+            </div>
+            <div className="row gap10" style={{ marginTop: 18 }}>
+              {[['SMS', I.sms], ['Email', I.mail], ['Share', I.share]].map(([l, Ic]) => (
+                <button key={l} onClick={() => toast(l + ' receipt sent')}
+                  style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 13, padding: '11px 18px', cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600 }}>
+                  <Ic size={19} color="var(--accent)" /> {l}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <button className="btn btn-primary" style={{ marginTop: 'auto', maxWidth: 320 }}
-          onClick={() => { setRating(5); setCompliment(''); setSent(false); go('compliment'); }}>
-          Leave a compliment
-        </button>
+        <div className="onb-foot" style={{ position: 'relative', zIndex: 2 }}>
+          <button className="btn btn-primary" onClick={() => { setRating(5); setCompliment(''); setSent(false); go('compliment'); }}>
+            Leave a compliment <I.heart size={17} color="#fff" />
+          </button>
+        </div>
       </div>
     );
   }

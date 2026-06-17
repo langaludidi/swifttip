@@ -1,325 +1,371 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { I, Avatar } from '../../../components/ui.jsx';
+import { I, Avatar, QRCode } from '../../../components/ui.jsx';
+import {
+  EmpWelcomeScene, TourArtDash, TourArtTeam, TourArtMorale, EmpConfetti,
+} from './EmployerArt.jsx';
 
 const ARC = ['welcome', 'tour', 'account', 'verify', 'business', 'venue', 'team', 'plan', 'success'];
-const SETUP_STEPS = ['account', 'verify', 'business', 'venue', 'team', 'plan'];
+const SETUP = ['account', 'verify', 'business', 'venue', 'team', 'plan'];
 const TOUR_SLIDES = [
-  { icon: I.trend, title: 'Real-time tip dashboard', body: 'See every tip your team receives the moment it happens.' },
-  { icon: I.users, title: 'Manage your whole team', body: 'Add workers, set up stations, and track who earns what.' },
-  { icon: I.star, title: 'Team morale insights', body: 'Ratings and compliments give you a picture of team performance.' },
+  { art: 'dash',   title: 'Every tip, in one view',       sub: 'Track tips by worker, station and hour — live, across your whole venue.' },
+  { art: 'team',   title: 'Onboard your team fast',       sub: 'Invite staff with a single link. They verify and start earning the same day.' },
+  { art: 'morale', title: 'Reward your top performers',   sub: 'Spot star earners and lift morale with recognition that actually lands.' },
+];
+const PLANS = [
+  { id: 'Free',       price: 'R0',    per: 'forever',  feats: ['1 station', 'Live dashboard', 'Up to 5 workers'] },
+  { id: 'Business',   price: 'R299',  per: '/month',   feats: ['Unlimited stations', 'Analytics & heatmaps', 'Payout controls'], rec: true },
+  { id: 'Enterprise', price: 'Custom', per: 'pricing', feats: ['SSO & custom reports', 'Dedicated support', 'SLAs'] },
 ];
 
-function ProgressBar({ screen }) {
-  const idx = SETUP_STEPS.indexOf(screen);
-  if (idx < 0) return null;
+function ProgressHeader({ step, onBack }) {
+  const idx = SETUP.indexOf(step);
+  const pct = ((idx + 1) / SETUP.length) * 100;
   return (
-    <div style={{ padding: '16px 22px 0' }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {SETUP_STEPS.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 3, background: i <= idx ? '#2f63e0' : 'var(--line)', transition: 'background .3s' }} />
-        ))}
-      </div>
-      <div style={{ marginTop: 6, fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Step {idx + 1} of {SETUP_STEPS.length}</div>
+    <div className="onb-prog-head">
+      <button className="onb-iconbtn-light" onClick={onBack} aria-label="Back"><I.back size={20} /></button>
+      <div className="onb-prog-bar"><i style={{ width: pct + '%', background: 'linear-gradient(90deg,#5f93f2,#2f63e0)' }} /></div>
+      <div className="onb-prog-step">Step {idx + 1} of {SETUP.length}</div>
     </div>
   );
 }
 
+function Foot({ children }) {
+  return <div className="onb-foot" style={{ marginTop: 'auto' }}>{children}</div>;
+}
+
+/* ── Welcome ─────────────────────────────────────────── */
 function WelcomeScreen({ next }) {
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', background: 'linear-gradient(170deg,#0d1f4c,#1a3a8a)', color: '#fff', padding: '60px 28px 36px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 20 }}>
-        <div style={{ width: 90, height: 90, borderRadius: 28, background: 'rgba(95,147,242,0.2)', border: '2px solid rgba(95,147,242,0.35)', display: 'grid', placeItems: 'center' }}>
-          <I.users size={44} color="#7aaaff" />
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh' }}>
+      <EmpWelcomeScene />
+      <div className="onb-sheet">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.4px', color: 'var(--accent)' }}>SwiftTip</span>
+          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.3px', color: '#2f63e0' }}>Business</span>
+          <span className="badge" style={{ marginLeft: 'auto' }}>For employers</span>
         </div>
-        <div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.6px' }}>SwiftTip for Employers</div>
-          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.55 }}>
-            Manage cashless tipping across your entire team — transparent, fair, instant.
-          </div>
-        </div>
-        {['Unified team tip dashboard', 'Automated fair distribution', 'Staff motivation analytics'].map((t, i) => (
-          <div key={i} className="row gap10" style={{ width: '100%' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 9, background: 'rgba(95,147,242,0.18)', display: 'grid', placeItems: 'center', flex: '0 0 28px' }}>
-              <I.check size={15} color="#7aaaff" stroke={3} />
-            </div>
-            <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{t}</span>
-          </div>
-        ))}
+        <h2>Turn cashless into better tips for your team.</h2>
+        <p>Give every worker a QR badge, see tips roll in live, and onboard your whole venue in minutes.</p>
+        <button className="btn btn-primary" style={{ marginTop: 18, background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>
+          Set up my business <I.chevR size={18} color="#fff" />
+        </button>
+        <button className="btn-link" onClick={() => {}}>I already have an account</button>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>POPIA compliant · CIPC-verified businesses</div>
       </div>
-      <button className="btn" onClick={next} style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff', boxShadow: '0 14px 26px -14px #2f63e0', marginTop: 20 }}>Get started</button>
     </div>
   );
 }
 
-function TourScreen({ next, back }) {
-  const [slide, setSlide] = useState(0);
-  const s = TOUR_SLIDES[slide];
-  const Ic = s.icon;
+/* ── Tour ────────────────────────────────────────────── */
+function TourScreen({ slide, setSlide, next, back }) {
+  const total = TOUR_SLIDES.length;
+  const data = TOUR_SLIDES[Math.min(slide, total - 1)];
+  const Art = data.art === 'dash' ? TourArtDash : data.art === 'team' ? TourArtTeam : TourArtMorale;
+  const last = slide >= total - 1;
+  const advance = () => { if (last) next(); else setSlide(slide + 1); };
+  const goBack = () => { if (slide === 0) back(); else setSlide(slide - 1); };
+
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', background: 'linear-gradient(170deg,#0d1f4c,#1a3a8a)', color: '#fff', padding: '50px 28px 36px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 24 }}>
-        <div style={{ width: 100, height: 100, borderRadius: 30, background: 'rgba(95,147,242,0.15)', border: '2px solid rgba(95,147,242,0.25)', display: 'grid', placeItems: 'center' }}>
-          <Ic size={48} color="#7aaaff" />
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px 0' }}>
+        <button className="onb-iconbtn-light" onClick={goBack} aria-label="Back"
+          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.14)', color: '#fff' }}>
+          <I.back size={20} />
+        </button>
+        <button className="btn-link" style={{ width: 'auto', padding: '8px 6px', color: 'rgba(255,255,255,0.7)' }} onClick={next}>Skip</button>
+      </div>
+      <div key={slide} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Art />
+        <div className="intro-copy">
+          <h2 style={{ color: '#fff' }}>{data.title}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.68)' }}>{data.sub}</p>
         </div>
-        <div>
-          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>{s.title}</div>
-          <div style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.6, maxWidth: 280 }}>{s.body}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {TOUR_SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setSlide(i)} style={{ width: i === slide ? 22 : 8, height: 8, borderRadius: 4, background: i === slide ? '#7aaaff' : 'rgba(255,255,255,0.2)', border: 0, cursor: 'pointer', transition: 'all .25s', padding: 0 }} />
+      </div>
+      <div style={{ padding: '14px 24px 24px' }}>
+        <div className="onb-dots" style={{ marginBottom: 18 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <span key={i} className={'onb-dot dark' + (i === slide ? ' on' : '')} />
           ))}
         </div>
-      </div>
-      <div className="row gap10">
-        <button className="btn" style={{ flex: '0 0 auto', width: 'auto', padding: '16px 20px', background: 'rgba(255,255,255,0.1)', color: '#fff' }} onClick={back}>
-          <I.back size={18} color="#fff" />
+        <button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={advance}>
+          {last ? 'Create business account' : 'Next'} <I.chevR size={18} color="#fff" />
         </button>
-        {slide < TOUR_SLIDES.length - 1
-          ? <button className="btn" style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff' }} onClick={() => setSlide(s => s + 1)}>Next</button>
-          : <button className="btn" onClick={next} style={{ flex: 1, background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff' }}>Set up your account</button>
-        }
       </div>
     </div>
   );
 }
 
+/* ── Account ─────────────────────────────────────────── */
 function AccountScreen({ next, back }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
+  const [show, setShow] = useState(false);
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Create your account</div>
-      <div style={{ marginTop: 24, flex: 1 }}>
-        <div className="field"><label>Work email</label><input className="input" type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} autoFocus /></div>
-        <div className="field">
-          <label>Password</label>
-          <div style={{ position: 'relative' }}>
-            <input className="input" type={showPw ? 'text' : 'password'} placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)} style={{ paddingRight: 44 }} />
-            <button onClick={() => setShowPw(v => !v)} style={{ position: 'absolute', right: 12, top: 12, background: 0, border: 0, cursor: 'pointer' }}>
-              <I.eye size={20} color="var(--muted-2)" />
-            </button>
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="account" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Create your admin account</h2><p>You'll be the account owner. Add more managers later.</p></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>Your name</label><input className="input" defaultValue="Naledi Khumalo" /></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>Work email</label><input className="input" inputMode="email" defaultValue="manager@thegrand.co.za" /></div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Create password</label>
+            <div style={{ position: 'relative' }}>
+              <input className="input" type={show ? 'text' : 'password'} defaultValue="grandhotel" style={{ paddingRight: 44 }} />
+              <button onClick={() => setShow(s => !s)} aria-label="Toggle password" style={{ position: 'absolute', right: 8, top: 7, width: 34, height: 34, border: 0, background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                <I.eye size={18} color="var(--muted-2)" />
+              </button>
+            </div>
+          </div>
+          <div className="trust-note teal">
+            <span className="ic"><I.shield size={18} /></span>
+            <div><div className="tt">Owner access</div><div className="ts">Full control of workers, payouts and billing. Invite teammates anytime.</div></div>
           </div>
         </div>
       </div>
-      <button className={'btn ' + (email.includes('@') && password.length >= 8 ? 'btn-primary' : 'btn-disabled')}
-        style={{ background: email.includes('@') && password.length >= 8 ? 'linear-gradient(150deg,#5f93f2,#2f63e0)' : undefined, boxShadow: email.includes('@') && password.length >= 8 ? '0 14px 26px -14px #2f63e0' : 'none' }}
-        disabled={!email.includes('@') || password.length < 8} onClick={next}>
-        Continue
-      </button>
+      <Foot>
+        <button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>Continue</button>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 10 }}>By continuing you agree to the Business Terms</div>
+      </Foot>
     </div>
   );
 }
 
+/* ── Verify ──────────────────────────────────────────── */
 function VerifyScreen({ next, back }) {
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [error, setError] = useState(false);
-  const refs = [useRef(), useRef(), useRef(), useRef()];
-  const code = otp.join('');
+  const [code, setCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const fired = useRef(false);
+  const filled = code.length;
 
   useEffect(() => {
-    setTimeout(() => setOtp(['8', '2', '4', '0']), 1200);
+    let i = 0; const target = '8240';
+    const id = setInterval(() => { i++; setCode(target.slice(0, i)); if (i >= 4) clearInterval(id); }, 230);
+    return () => clearInterval(id);
   }, []);
 
-  const change = (i, v) => {
-    const d = v.replace(/\D/g,'').slice(-1);
-    const next_ = [...otp]; next_[i] = d; setOtp(next_); setError(false);
-    if (d && i < 3) refs[i+1].current?.focus();
-  };
+  useEffect(() => {
+    if (filled === 4 && !fired.current) { fired.current = true; setVerifying(true); const id = setTimeout(next, 850); return () => clearTimeout(id); }
+  }, [filled]);
 
-  const verify = () => {
-    if (code === '8240') { next(); return; }
-    setError(true); setOtp(['','','','']); refs[0].current?.focus();
-  };
+  const press = (k) => { if (fired.current) return; if (k === 'del') setCode(c => c.slice(0, -1)); else setCode(c => (c + k).slice(0, 4)); };
 
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Verify your email</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>We emailed a 4-digit code. <span style={{ color: 'var(--muted-2)', fontSize: 12 }}>(demo: 8240)</span></div>
-      <div className={'otp-row' + (error ? ' shake' : '')} style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '36px 0' }}>
-        {otp.map((v, i) => (
-          <input key={i} ref={refs[i]} className="otp-box input" value={v} maxLength={1} inputMode="numeric"
-            onChange={e => change(i, e.target.value)}
-            onKeyDown={e => { if (e.key === 'Backspace' && !v && i > 0) refs[i-1].current?.focus(); }}
-            style={{ width: 60, height: 68, textAlign: 'center', fontSize: 28, fontWeight: 800, borderColor: error ? 'var(--danger)' : v ? '#5f93f2' : undefined }} />
-        ))}
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="verify" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap16" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Verify your email</h2><p>We sent a code to <b style={{ color: 'var(--text)' }}>manager@thegrand.co.za</b>. <span className="link" style={{ cursor: 'pointer', color: '#5f93f2' }} onClick={back}>Change</span></p></div>
+          <div className="otp-row" style={{ marginTop: 6 }}>
+            {[0, 1, 2, 3].map(i => {
+              const isCursor = i === filled && !verifying;
+              return (
+                <div key={i} className={'otp-box' + (code[i] ? ' filled' : '') + (isCursor ? ' cursor' : '')}
+                  style={code[i] ? { borderColor: '#5f93f2' } : undefined}>
+                  {code[i] ? <span className="otp-d">{code[i]}</span> : (isCursor ? <span className="otp-caret" style={{ background: '#5f93f2' }} /> : '')}
+                </div>
+              );
+            })}
+          </div>
+          <div className="center" style={{ marginTop: 2 }}>
+            {verifying
+              ? <span className="badge live"><span className="dot" /> Verifying…</span>
+              : <span className="muted" style={{ fontSize: 13 }}>Didn't get it? <span className="link" style={{ cursor: 'pointer', color: '#5f93f2' }}>Resend email</span></span>}
+          </div>
+          <div className="kpad" style={{ marginTop: 8 }}>
+            {['1','2','3','4','5','6','7','8','9','','0','del'].map((k, i) => (
+              k === '' ? <span key={i} className="kkey blank" /> :
+              <button key={i} className="kkey" onClick={() => press(k)}>
+                {k === 'del' ? <I.del size={22} color="var(--muted)" /> : k}
+              </button>
+            ))}
+          </div>
+          <div className="center muted" style={{ fontSize: 11.5 }}>Demo: <b style={{ color: 'var(--text)' }}>8240</b> verifies</div>
+        </div>
       </div>
-      {error && <div style={{ color: 'var(--danger)', fontSize: 13.5, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>Wrong code — try again</div>}
-      <div style={{ flex: 1 }} />
-      <button className={'btn ' + (code.length === 4 ? '' : 'btn-disabled')}
-        style={{ background: code.length === 4 ? 'linear-gradient(150deg,#5f93f2,#2f63e0)' : undefined, color: '#fff', boxShadow: code.length === 4 ? '0 14px 26px -14px #2f63e0' : 'none' }}
-        disabled={code.length < 4} onClick={verify}>Verify</button>
     </div>
   );
 }
 
+/* ── Business ────────────────────────────────────────── */
 function BusinessScreen({ next, back }) {
-  const [industry, setIndustry] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const industries = ['Hotel & Hospitality', 'Restaurant & Bar', 'Spa & Wellness', 'Events & Entertainment', 'Transport', 'Other'];
+  const [industry, setIndustry] = useState('Hospitality');
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>About your business</div>
-      <div style={{ marginTop: 24, flex: 1 }}>
-        <div className="field"><label>Company name</label><input className="input" placeholder="e.g. The Grand Group (Pty) Ltd" value={companyName} onChange={e => setCompanyName(e.target.value)} /></div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label>Industry</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-            {industries.map(ind => (
-              <button key={ind} onClick={() => setIndustry(ind)}
-                style={{ padding: '11px 10px', borderRadius: 11, border: `1.5px solid ${industry === ind ? '#5f93f2' : 'var(--line)'}`, background: industry === ind ? 'rgba(95,147,242,0.1)' : '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13, color: industry === ind ? '#2f63e0' : 'var(--text)', cursor: 'pointer', textAlign: 'center' }}>
-                {ind}
-              </button>
-            ))}
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="business" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>About your business</h2><p>We confirm your details to keep the SwiftTip network trusted.</p></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>Trading name</label><input className="input" defaultValue="The Grand Hotel" /></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>Registered company name</label><input className="input" defaultValue="The Grand Group (Pty) Ltd" /></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>CIPC registration no.</label><input className="input" placeholder="2019 / 123456 / 07" /></div>
+          <div>
+            <label className="field" style={{ display: 'block', marginBottom: 8 }}>Industry</label>
+            <div className="seg-choice">
+              {['Hospitality', 'Fuel', 'Retail', 'Other'].map(o => (
+                <button key={o} className={'seg-opt' + (industry === o ? ' on' : '')}
+                  style={industry === o ? { borderColor: '#5f93f2', color: '#2f63e0' } : undefined}
+                  onClick={() => setIndustry(o)}>{o}</button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-      <button className={'btn ' + (companyName && industry ? '' : 'btn-disabled')}
-        style={{ marginTop: 20, background: companyName && industry ? 'linear-gradient(150deg,#5f93f2,#2f63e0)' : undefined, color: '#fff', boxShadow: companyName && industry ? '0 14px 26px -14px #2f63e0' : 'none' }}
-        disabled={!companyName || !industry} onClick={next}>Continue</button>
+      <Foot><button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>Continue</button></Foot>
     </div>
   );
 }
 
+/* ── Venue ───────────────────────────────────────────── */
 function VenueScreen({ next, back }) {
-  const [venue, setVenue] = useState('');
   const [stations, setStations] = useState(['Bar', 'Restaurant']);
-  const [newStation, setNewStation] = useState('');
-  const addStation = () => { if (newStation.trim()) { setStations(s => [...s, newStation.trim()]); setNewStation(''); } };
+  const [val, setVal] = useState('');
+  const add = () => { const v = val.trim(); if (v && !stations.includes(v)) setStations(s => [...s, v]); setVal(''); };
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Your venue</div>
-      <div style={{ marginTop: 24, flex: 1 }}>
-        <div className="field"><label>Venue / trading name</label><input className="input" placeholder="e.g. The Grand Hotel — Bar" value={venue} onChange={e => setVenue(e.target.value)} /></div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label>Service stations</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-            {stations.map((s, i) => (
-              <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 999, background: 'rgba(47,99,224,0.1)', color: '#2f63e0', fontWeight: 700, fontSize: 13 }}>
-                {s}
-                <button onClick={() => setStations(ss => ss.filter((_, j) => j !== i))} style={{ background: 0, border: 0, cursor: 'pointer', color: '#2f63e0', lineHeight: 1, padding: 0 }}>×</button>
-              </span>
-            ))}
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="venue" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Add your first venue</h2><p>Where will your team collect tips? You can add more venues later.</p></div>
+          <div className="field" style={{ marginBottom: 0 }}><label>Venue name</label><input className="input" defaultValue="The Grand Hotel — Sandton" /></div>
+          <div>
+            <label className="field" style={{ display: 'block', marginBottom: 8 }}>Stations</label>
+            <div className="row" style={{ flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              {stations.map(s => (
+                <span key={s} className="badge" style={{ padding: '8px 12px', fontSize: 13 }}>{s}
+                  <button onClick={() => setStations(st => st.filter(x => x !== s))} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--accent-600)', display: 'inline', padding: 0, marginLeft: 4 }}>✕</button>
+                </span>
+              ))}
+            </div>
+            <div className="row gap10">
+              <input className="input" placeholder="Add a station (e.g. Valet)" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && add()} />
+              <button className="btn btn-ghost btn-sm" style={{ flex: '0 0 auto', padding: '13px 16px' }} onClick={add}><I.plus size={18} color="var(--accent-600)" /></button>
+            </div>
           </div>
-          <div className="row gap8">
-            <input className="input" placeholder="Add station…" value={newStation} onChange={e => setNewStation(e.target.value)} onKeyDown={e => e.key === 'Enter' && addStation()} style={{ flex: 1 }} />
-            <button onClick={addStation} className="btn btn-sm" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff', flex: '0 0 auto' }}><I.plus size={18} /></button>
+          <div className="trust-note teal">
+            <span className="ic"><I.qr size={18} /></span>
+            <div><div className="tt">Each station gets a QR</div><div className="ts">Print a SwiftTip code for every station so customers always find the right team.</div></div>
           </div>
         </div>
       </div>
-      <button className={'btn ' + (venue ? '' : 'btn-disabled')}
-        style={{ marginTop: 20, background: venue ? 'linear-gradient(150deg,#5f93f2,#2f63e0)' : undefined, color: '#fff', boxShadow: venue ? '0 14px 26px -14px #2f63e0' : 'none' }}
-        disabled={!venue} onClick={next}>Continue</button>
+      <Foot><button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>Continue</button></Foot>
     </div>
   );
 }
 
+/* ── Team ────────────────────────────────────────────── */
 function TeamScreen({ next, back }) {
-  const [workers, setWorkers] = useState([{ name: 'Sipho Dlamini', role: 'Bartender' }]);
-  const [newName, setNewName] = useState('');
-  const [newRole, setNewRole] = useState('');
-  const inviteLink = `${window.location.origin}/worker/onboarding?employer=grand-hotel`;
-  const [copied, setCopied] = useState(false);
-  const copyLink = () => { navigator.clipboard.writeText(inviteLink).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const [invited, setInvited] = useState([{ name: 'Sipho Dlamini', color: 'red' }, { name: 'Thandi Nkosi', color: 'purple' }]);
+  const [val, setVal] = useState('');
+  const colors = ['teal', 'gold', 'blue', 'red', 'purple'];
+  const add = () => { const v = val.trim(); if (v) setInvited(list => [...list, { name: v, color: colors[list.length % colors.length] }]); setVal(''); };
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Build your team</div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, marginTop: 20 }}>
-        <div className="card" style={{ padding: 14 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Share invite link</div>
-          <div style={{ fontSize: 12.5, color: 'var(--muted)', wordBreak: 'break-all', marginBottom: 10 }}>{inviteLink}</div>
-          <button className="btn btn-sm" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff' }} onClick={copyLink}><I.copy size={15} />{copied ? 'Copied!' : 'Copy link'}</button>
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Add manually</div>
-          <div className="row gap8" style={{ marginBottom: 8 }}>
-            <input className="input" placeholder="Worker name" value={newName} onChange={e => setNewName(e.target.value)} style={{ flex: 1 }} />
-            <input className="input" placeholder="Role" value={newRole} onChange={e => setNewRole(e.target.value)} style={{ flex: 1 }} />
-          </div>
-          <button className="btn btn-ghost" onClick={() => { if (newName) { setWorkers(w => [...w, { name: newName, role: newRole }]); setNewName(''); setNewRole(''); } }}>
-            <I.plus size={16} color="var(--accent-600)" /> Add worker
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="team" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Invite your team</h2><p>They finish their own profile &amp; banking — you just verify them.</p></div>
+          <button className="list-card" onClick={() => {}} style={{ border: 0, width: '100%', cursor: 'pointer', textAlign: 'left', background: 'var(--mint)', boxShadow: 'none' }}>
+            <div className="icon-chip" style={{ background: '#fff' }}><I.share size={20} /></div>
+            <div className="lc-main"><div className="lc-title" style={{ fontSize: 14.5 }}>Share invite link</div><div className="lc-sub">swifttip.co.za/join/grand-sandton</div></div>
+            <I.chevR size={18} color="var(--accent-600)" />
           </button>
-        </div>
-        <div className="stack gap8">
-          {workers.map((w, i) => (
-            <div key={i} className="list-card" style={{ padding: '10px 14px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(47,99,224,0.1)', display: 'grid', placeItems: 'center', flex: '0 0 36px' }}>
-                <I.user size={18} color="#2f63e0" />
-              </div>
-              <div className="lc-main">
-                <div className="lc-title" style={{ fontSize: 14 }}>{w.name}</div>
-                <div className="lc-sub">{w.role}</div>
-              </div>
-              <button onClick={() => setWorkers(ws => ws.filter((_, j) => j !== i))} style={{ background: 0, border: 0, cursor: 'pointer', padding: 4 }}>
-                <I.x size={16} color="var(--danger)" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-      <button className="btn" onClick={next} style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff', boxShadow: '0 14px 26px -14px #2f63e0', marginTop: 12 }}>Continue</button>
-    </div>
-  );
-}
-
-function PlanScreen({ next, back }) {
-  const [plan, setPlan] = useState('business');
-  const plans = [
-    { id: 'free', name: 'Free', price: 'R0', features: ['Up to 3 workers', 'Basic dashboard', 'Email support'] },
-    { id: 'business', name: 'Business', price: 'R199/mo', features: ['Unlimited workers', 'Full analytics', 'Priority support', 'Custom QR branding'], pop: true },
-    { id: 'enterprise', name: 'Enterprise', price: 'Custom', features: ['All Business features', 'Dedicated account manager', 'SLA guarantee', 'API access'] },
-  ];
-  return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Choose a plan</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>Start free, upgrade any time.</div>
-      <div style={{ marginTop: 20, flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {plans.map(p => (
-          <button key={p.id} onClick={() => setPlan(p.id)}
-            style={{ position: 'relative', padding: 16, borderRadius: 16, border: `2px solid ${plan === p.id ? '#5f93f2' : 'var(--line)'}`, background: plan === p.id ? 'rgba(95,147,242,0.07)' : '#fff', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
-            {p.pop && <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 10, fontWeight: 800, background: '#2f63e0', color: '#fff', padding: '3px 8px', borderRadius: 999 }}>POPULAR</span>}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-              <span style={{ fontWeight: 800, fontSize: 16 }}>{p.name}</span>
-              <span style={{ fontWeight: 800, fontSize: 18, color: plan === p.id ? '#2f63e0' : 'var(--text)' }}>{p.price}</span>
-            </div>
-            {p.features.map((f, i) => (
-              <div key={i} className="row gap6" style={{ marginBottom: 4 }}>
-                <I.check size={14} color={plan === p.id ? '#2f63e0' : 'var(--muted)'} stroke={2.5} />
-                <span style={{ fontSize: 13, color: 'var(--muted)' }}>{f}</span>
+          <div className="row gap10">
+            <input className="input" placeholder="Add by name or mobile" value={val} onChange={e => setVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && add()} />
+            <button className="btn btn-primary btn-sm" style={{ flex: '0 0 auto', padding: '13px 18px', background: 'linear-gradient(150deg,#5f93f2,#2f63e0)' }} onClick={add}>Invite</button>
+          </div>
+          <div className="stack gap10">
+            <div className="rail-section-label" style={{ margin: '2px 2px' }}>{invited.length} invited</div>
+            {invited.map((w, i) => (
+              <div key={i} className="list-card" style={{ boxShadow: 'var(--shadow-soft)' }}>
+                <Avatar name={w.name} color={w.color} size={40} />
+                <div className="lc-main"><div className="lc-title" style={{ fontSize: 14.5 }}>{w.name}</div><div className="lc-sub">Awaiting sign-up</div></div>
+                <span className="badge"><I.mail size={11} /> Invite sent</span>
               </div>
             ))}
-          </button>
-        ))}
+          </div>
+        </div>
       </div>
-      <button className="btn" onClick={next} style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff', boxShadow: '0 14px 26px -14px #2f63e0', marginTop: 16 }}>
-        Start with {plans.find(p => p.id === plan)?.name}
-      </button>
+      <Foot>
+        <button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>Continue</button>
+        <button className="btn-link" onClick={next}>I'll invite them later</button>
+      </Foot>
     </div>
   );
 }
 
+/* ── Plan ────────────────────────────────────────────── */
+function PlanScreen({ next, back }) {
+  const [plan, setPlan] = useState('Business');
+  return (
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="plan" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap12" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Choose your plan</h2><p>Start free. Upgrade anytime as your team grows.</p></div>
+          {PLANS.map(p => {
+            const on = plan === p.id;
+            return (
+              <button key={p.id} onClick={() => setPlan(p.id)}
+                style={{ position: 'relative', textAlign: 'left', cursor: 'pointer', fontFamily: 'var(--font)', border: '1.5px solid ' + (on ? '#5f93f2' : 'var(--line)'), background: on ? 'linear-gradient(160deg, rgba(95,147,242,0.08), #fff)' : '#fff', borderRadius: 18, padding: '15px 16px', boxShadow: on ? '0 12px 24px -16px #5f93f2' : 'none', transition: 'all .15s' }}>
+                {p.rec && <span style={{ position: 'absolute', top: -10, right: 14, background: 'var(--gold)', color: '#fff', fontSize: 10.5, fontWeight: 800, padding: '3px 9px', borderRadius: 999 }}>RECOMMENDED</span>}
+                <div className="between" style={{ alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 16 }}>{p.id}</div>
+                    <div style={{ marginTop: 2 }}><span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.5px' }}>{p.price}</span> <span className="muted" style={{ fontSize: 12.5 }}>{p.per}</span></div>
+                  </div>
+                  <span style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid ' + (on ? '#5f93f2' : 'var(--line)'), background: on ? '#5f93f2' : '#fff', display: 'grid', placeItems: 'center', flex: '0 0 auto', marginTop: 2 }}>{on && <I.check size={14} color="#fff" stroke={3} />}</span>
+                </div>
+                <div className="stack" style={{ gap: 6, marginTop: 12 }}>
+                  {p.feats.map((f, i) => <div key={i} className="row gap8" style={{ fontSize: 12.8, color: 'var(--text)' }}><I.check size={14} color="#5f93f2" stroke={2.6} /> {f}</div>)}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <Foot>
+        <button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={next}>
+          {plan === 'Free' ? 'Start for free' : plan === 'Enterprise' ? 'Talk to sales' : 'Start 14-day free trial'}
+        </button>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 10 }}>No card required for the trial · cancel anytime</div>
+      </Foot>
+    </div>
+  );
+}
+
+/* ── Success ─────────────────────────────────────────── */
 function SuccessScreen() {
   const navigate = useNavigate();
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 28px', background: 'linear-gradient(170deg,#0d1f4c,#1a3a8a)', color: '#fff' }}>
-      <div style={{ width: 100, height: 100, borderRadius: 50, background: 'rgba(95,147,242,0.2)', display: 'grid', placeItems: 'center', marginBottom: 24 }}>
-        <I.check size={52} color="#7aaaff" stroke={3} />
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <EmpConfetti n={28} />
+      <div className="screen-body" style={{ position: 'relative', zIndex: 2, flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 28, gap: 6 }}>
+          <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.checkC size={48} /></div>
+          <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.6px', color: '#fff' }}>Your business is live!</div>
+          <div style={{ color: 'rgba(255,255,255,0.66)', fontSize: 14.5, maxWidth: 290, lineHeight: 1.55, marginTop: 4 }}>Print your station QR codes and watch the tips roll in.</div>
+          <div className="glass-card" style={{ marginTop: 22, padding: 18, width: '100%', maxWidth: 320, textAlign: 'left', color: '#fff' }}>
+            <div className="between">
+              <div className="row gap10">
+                <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(18,196,178,0.2)', display: 'grid', placeItems: 'center', flex: '0 0 38px' }}>
+                  <I.users size={20} color="var(--accent)" />
+                </div>
+                <div><div style={{ fontWeight: 800, fontSize: 15 }}>The Grand Group</div><div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)' }}>Sandton · 2 stations</div></div>
+              </div>
+              <span className="badge live"><span className="dot" /> Active</span>
+            </div>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.12)', margin: '14px 0' }} />
+            <div className="between" style={{ fontSize: 12.5 }}>
+              <div><div style={{ color: 'rgba(255,255,255,0.55)' }}>Plan</div><div style={{ fontWeight: 800, fontSize: 14, marginTop: 2 }}>Business</div></div>
+              <div><div style={{ color: 'rgba(255,255,255,0.55)' }}>Invites sent</div><div style={{ fontWeight: 800, fontSize: 14, marginTop: 2 }}>2 workers</div></div>
+              <div><div style={{ color: 'rgba(255,255,255,0.55)' }}>Stations</div><div style={{ fontWeight: 800, fontSize: 14, marginTop: 2 }}>Bar · Rest.</div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.6px' }}>You're ready to go!</div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.6, maxWidth: 280 }}>
-        Your employer account is live. Invite your team and start tracking tips today.
-      </div>
-      <div style={{ marginTop: 32, width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <button className="btn" onClick={() => navigate('/employer')} style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', color: '#fff', boxShadow: '0 14px 26px -14px #2f63e0' }}>Open my dashboard</button>
-        <button className="btn" onClick={() => navigate('/')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff' }}>Back to home</button>
+      <div className="onb-foot" style={{ position: 'relative', zIndex: 2 }}>
+        <button className="btn btn-primary" style={{ background: 'linear-gradient(150deg,#5f93f2,#2f63e0)', boxShadow: '0 14px 26px -14px #2f63e0' }} onClick={() => navigate('/employer')}>Open my dashboard</button>
+        <button className="btn-link" style={{ color: 'rgba(255,255,255,0.7)' }} onClick={() => navigate('/')}>Back to home</button>
       </div>
     </div>
   );
@@ -327,23 +373,22 @@ function SuccessScreen() {
 
 export default function EmployerOnboarding() {
   const [arcIdx, setArcIdx] = useState(0);
+  const [slide, setSlide] = useState(0);
   const screen = ARC[arcIdx];
-  const next = () => setArcIdx(i => Math.min(i + 1, ARC.length - 1));
+  const next = () => { if (screen === 'tour') setSlide(0); setArcIdx(i => Math.min(i + 1, ARC.length - 1)); };
   const back = () => setArcIdx(i => Math.max(i - 1, 0));
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      {!['welcome', 'tour', 'success'].includes(screen) && <ProgressBar screen={screen} />}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {screen === 'welcome' && <WelcomeScreen next={next} />}
-        {screen === 'tour' && <TourScreen next={next} back={back} />}
-        {screen === 'account' && <AccountScreen next={next} back={back} />}
-        {screen === 'verify' && <VerifyScreen next={next} back={back} />}
-        {screen === 'business' && <BusinessScreen next={next} back={back} />}
-        {screen === 'venue' && <VenueScreen next={next} back={back} />}
-        {screen === 'team' && <TeamScreen next={next} back={back} />}
-        {screen === 'plan' && <PlanScreen next={next} back={back} />}
-        {screen === 'success' && <SuccessScreen />}
-      </div>
-    </div>
+    <>
+      {screen === 'welcome'  && <WelcomeScreen next={next} />}
+      {screen === 'tour'     && <TourScreen slide={slide} setSlide={setSlide} next={next} back={back} />}
+      {screen === 'account'  && <AccountScreen next={next} back={back} />}
+      {screen === 'verify'   && <VerifyScreen next={next} back={back} />}
+      {screen === 'business' && <BusinessScreen next={next} back={back} />}
+      {screen === 'venue'    && <VenueScreen next={next} back={back} />}
+      {screen === 'team'     && <TeamScreen next={next} back={back} />}
+      {screen === 'plan'     && <PlanScreen next={next} back={back} />}
+      {screen === 'success'  && <SuccessScreen />}
+    </>
   );
 }

@@ -1,302 +1,390 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { I, Avatar } from '../../../components/ui.jsx';
+import { I, Avatar, QRCode } from '../../../components/ui.jsx';
 import { signUp } from '../../../services/auth.js';
 import { supabase, isDemo } from '../../../services/supabase.js';
+import {
+  WelcomeScene, IntroArtScan, IntroArtPayout, IntroArtReputation,
+  PermissionArt, Confetti,
+} from './WorkerArt.jsx';
 
-const STEPS = ['phone', 'otp', 'profile', 'work', 'banking'];
 const ARC = ['welcome', 'intro', 'phone', 'otp', 'profile', 'work', 'banking', 'permissions', 'success'];
+const SETUP = ['phone', 'otp', 'profile', 'work', 'banking'];
 const INTRO_SLIDES = [
-  { icon: I.qr,     title: 'Your own QR code',       body: 'Customers scan your badge to tip you instantly — no cash, no fumbling.' },
-  { icon: I.wallet, title: 'Wallet in your pocket',   body: 'Tips land in your SwiftTip wallet the moment they\'re sent.' },
-  { icon: I.bank,   title: 'Payout any time',         body: 'Request a bank transfer whenever you want — zero fees.' },
+  { art: 'scan',       title: 'Get tipped, cashless',   sub: 'Customers scan your QR badge and tip by card or instant EFT — no cash, no app for them.' },
+  { art: 'payout',     title: 'Your money, fast',       sub: 'Withdraw to your bank account whenever you like. Tips arrive in under two hours.' },
+  { art: 'reputation', title: 'Build your reputation',  sub: 'Earn a Verified badge, collect ratings and compliments, and stand out to every customer.' },
 ];
 
 function slugify(name) {
   return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
-function ProgressBar({ screen }) {
-  const idx = STEPS.indexOf(screen);
-  if (idx < 0) return null;
+function ProgressHeader({ step, onBack }) {
+  const idx = SETUP.indexOf(step);
+  const pct = ((idx + 1) / SETUP.length) * 100;
   return (
-    <div style={{ padding: '16px 22px 0' }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        {STEPS.map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 4, borderRadius: 3, background: i <= idx ? 'var(--accent)' : 'var(--line)', transition: 'background .3s' }} />
-        ))}
-      </div>
-      <div style={{ marginTop: 6, fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>Step {idx + 1} of {STEPS.length}</div>
+    <div className="onb-prog-head">
+      <button className="onb-iconbtn-light" onClick={onBack} aria-label="Back"><I.back size={20} /></button>
+      <div className="onb-prog-bar"><i style={{ width: pct + '%' }} /></div>
+      <div className="onb-prog-step">Step {idx + 1} of {SETUP.length}</div>
     </div>
   );
 }
 
+function Foot({ children }) {
+  return <div className="onb-foot" style={{ marginTop: 'auto' }}>{children}</div>;
+}
+
+/* ── Welcome ───────────────────────────────────────── */
 function WelcomeScreen({ next }) {
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', background: 'linear-gradient(170deg,#052B36,#083C4A)', color: '#fff', padding: '60px 28px 36px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 20 }}>
-        <div style={{ width: 90, height: 90, borderRadius: 28, background: 'rgba(18,196,178,0.15)', border: '2px solid rgba(18,196,178,0.3)', display: 'grid', placeItems: 'center' }}>
-          <I.wallet size={44} color="var(--accent)" />
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh' }}>
+      <WelcomeScene />
+      <div className="onb-sheet">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.4px', color: 'var(--accent)' }}>SwiftTip</span>
+          <span className="badge" style={{ marginLeft: 'auto' }}>🇿🇦 South Africa</span>
         </div>
-        <div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.6px' }}>Welcome to SwiftTip</div>
-          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.55 }}>
-            The fastest way to receive tips from customers — no cash, no waiting.
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', marginTop: 8 }}>
-          {['Get tipped instantly via QR', 'Free payouts to your bank', 'Your reputation, built over time'].map((t, i) => (
-            <div key={i} className="row gap10">
-              <div style={{ width: 28, height: 28, borderRadius: 9, background: 'rgba(18,196,178,0.15)', display: 'grid', placeItems: 'center', flex: '0 0 28px' }}>
-                <I.check size={15} color="var(--accent)" stroke={3} />
-              </div>
-              <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{t}</span>
-            </div>
-          ))}
-        </div>
+        <h2>Earn every tip — even when no one carries cash.</h2>
+        <p>Join thousands of service workers getting tipped instantly, straight to their bank.</p>
+        <button className="btn btn-primary" style={{ marginTop: 18 }} onClick={next}>
+          Get started <I.chevR size={18} color="#fff" />
+        </button>
+        <button className="btn-link" onClick={() => {}}>I already have an account</button>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>Banking-grade security · POPIA compliant</div>
       </div>
-      <button className="btn btn-primary" onClick={next} style={{ marginTop: 20 }}>Get started</button>
-      <div style={{ textAlign: 'center', marginTop: 14, fontSize: 12.5, color: 'rgba(255,255,255,0.4)' }}>Takes about 3 minutes · POPIA compliant</div>
     </div>
   );
 }
 
-function IntroScreen({ next, back }) {
-  const [slide, setSlide] = useState(0);
-  const s = INTRO_SLIDES[slide];
-  const Ic = s.icon;
+/* ── Intro carousel ────────────────────────────────── */
+function IntroScreen({ slide, setSlide, next, back }) {
+  const total = INTRO_SLIDES.length;
+  const data = INTRO_SLIDES[Math.min(slide, total - 1)];
+  const Art = data.art === 'scan' ? IntroArtScan : data.art === 'payout' ? IntroArtPayout : IntroArtReputation;
+  const last = slide >= total - 1;
+  const advance = () => { if (last) next(); else setSlide(slide + 1); };
+  const goBack = () => { if (slide === 0) back(); else setSlide(slide - 1); };
+
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', background: 'linear-gradient(170deg,#052B36,#083C4A)', color: '#fff', padding: '50px 28px 36px' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 24 }}>
-        <div style={{ width: 100, height: 100, borderRadius: 30, background: 'rgba(18,196,178,0.12)', border: '2px solid rgba(18,196,178,0.2)', display: 'grid', placeItems: 'center' }}>
-          <Ic size={48} color="var(--accent)" />
-        </div>
-        <div>
-          <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>{s.title}</div>
-          <div style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.6, maxWidth: 280 }}>{s.body}</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {INTRO_SLIDES.map((_, i) => (
-            <button key={i} onClick={() => setSlide(i)} style={{ width: i === slide ? 22 : 8, height: 8, borderRadius: 4, background: i === slide ? 'var(--accent)' : 'rgba(255,255,255,0.2)', border: 0, cursor: 'pointer', transition: 'all .25s', padding: 0 }} />
-          ))}
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px 0' }}>
+        <button className="onb-iconbtn-light" onClick={goBack} aria-label="Back"
+          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.14)', color: '#fff' }}>
+          <I.back size={20} />
+        </button>
+        <button className="btn-link" style={{ width: 'auto', padding: '8px 6px', color: 'rgba(255,255,255,0.7)' }} onClick={next}>Skip</button>
+      </div>
+      <div key={slide} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Art />
+        <div className="intro-copy">
+          <h2 style={{ color: '#fff' }}>{data.title}</h2>
+          <p style={{ color: 'rgba(255,255,255,0.68)' }}>{data.sub}</p>
         </div>
       </div>
-      <div className="row gap10">
-        <button className="btn btn-dark" style={{ flex: '0 0 auto', width: 'auto', padding: '16px 20px' }} onClick={back}><I.back size={18} color="#fff" /></button>
-        {slide < INTRO_SLIDES.length - 1
-          ? <button className="btn btn-dark" style={{ flex: 1 }} onClick={() => setSlide(s => s + 1)}>Next</button>
-          : <button className="btn btn-primary" style={{ flex: 1 }} onClick={next}>Let's set up your account</button>
-        }
+      <div style={{ padding: '14px 24px 24px' }}>
+        <div className="onb-dots" style={{ marginBottom: 18 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <span key={i} className={'onb-dot dark' + (i === slide ? ' on' : '')} />
+          ))}
+        </div>
+        <button className="btn btn-primary" onClick={advance}>
+          {last ? 'Create my account' : 'Next'} <I.chevR size={18} color="#fff" />
+        </button>
       </div>
     </div>
   );
 }
 
+/* ── Phone ─────────────────────────────────────────── */
 function PhoneScreen({ next, back, form, setForm }) {
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>What's your phone number?</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>We'll send you a one-time code to verify your number.</div>
-      <div style={{ marginTop: 28 }}>
-        <div className="field">
-          <label>Phone number</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ background: '#fff', border: '1.5px solid var(--line)', borderRadius: 12, padding: '13px 14px', fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap' }}>🇿🇦 +27</div>
-            <input className="input" type="tel" inputMode="numeric" placeholder="081 234 5678" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g,'').slice(0,10) }))} style={{ flex: 1 }} autoFocus />
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="phone" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap16" style={{ paddingTop: 14 }}>
+          <div className="form-h">
+            <h2>What's your number?</h2>
+            <p>We'll send a one-time code to confirm it's you. This becomes your sign-in.</p>
+          </div>
+          <div>
+            <label className="field" style={{ marginBottom: 8, display: 'block' }}>Mobile number</label>
+            <div className="row gap10">
+              <div className="country"><span className="flag">🇿🇦</span> +27</div>
+              <input className="phone-input" inputMode="tel" placeholder="82 000 0000"
+                value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g,'').slice(0,10) }))} />
+            </div>
+          </div>
+          <div className="trust-note teal">
+            <span className="ic"><I.lock size={18} /></span>
+            <div><div className="tt">Your number stays private</div><div className="ts">Customers never see it — only your first name and QR.</div></div>
           </div>
         </div>
       </div>
-      <div style={{ flex: 1 }} />
-      <button className={'btn ' + (form.phone.length >= 9 ? 'btn-primary' : 'btn-disabled')} disabled={form.phone.length < 9} onClick={next}>Send OTP</button>
-      <div style={{ textAlign: 'center', marginTop: 12, fontSize: 12, color: 'var(--muted)' }}>Standard SMS rates may apply</div>
+      <Foot>
+        <button className={'btn ' + (form.phone.length >= 9 ? 'btn-primary' : 'btn-disabled')}
+          disabled={form.phone.length < 9} onClick={next}>Send me a code</button>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 10 }}>Standard SMS rates may apply</div>
+      </Foot>
     </div>
   );
 }
 
+/* ── OTP ───────────────────────────────────────────── */
 function OtpScreen({ next, back }) {
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const [error, setError] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const refs = [useRef(), useRef(), useRef(), useRef()];
-  const code = otp.join('');
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [secs, setSecs] = useState(30);
+  const manual = useRef(false);
+  const fired = useRef(false);
+  const filled = code.length;
 
-  useEffect(() => { setTimeout(() => setOtp(['4','3','2','1']), 1200); }, []);
   useEffect(() => {
-    if (countdown > 0) { const t = setTimeout(() => setCountdown(c => c - 1), 1000); return () => clearTimeout(t); }
-  }, [countdown]);
+    const id = setInterval(() => setSecs(s => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(id);
+  }, []);
 
-  const change = (i, v) => {
-    const d = v.replace(/\D/g,'').slice(-1);
-    const n = [...otp]; n[i] = d; setOtp(n); setError(false);
-    if (d && i < 3) refs[i+1].current?.focus();
+  useEffect(() => {
+    let i = 0;
+    const start = setTimeout(() => {
+      const id = setInterval(() => {
+        if (manual.current) { clearInterval(id); return; }
+        i++; setCode('4321'.slice(0, i));
+        if (i >= 4) clearInterval(id);
+      }, 220);
+    }, 1500);
+    return () => clearTimeout(start);
+  }, []);
+
+  useEffect(() => {
+    if (filled !== 4 || fired.current) return;
+    if (code === '4321') {
+      fired.current = true;
+      setStatus('verifying');
+      const id = setTimeout(next, 850);
+      return () => clearTimeout(id);
+    }
+    setStatus('error');
+    const id = setTimeout(() => { setCode(''); setStatus('idle'); }, 900);
+    return () => clearTimeout(id);
+  }, [filled]);
+
+  const press = (k) => {
+    if (fired.current || status === 'verifying') return;
+    manual.current = true;
+    if (status === 'error') { setStatus('idle'); setCode(k === 'del' ? '' : k); return; }
+    if (k === 'del') setCode(c => c.slice(0, -1));
+    else setCode(c => (c + k).slice(0, 4));
   };
 
-  const verify = () => {
-    if (code === '4321') { next(); return; }
-    setError(true); setOtp(['','','','']); refs[0].current?.focus();
-  };
+  const error = status === 'error';
 
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Enter the code</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>We sent a 4-digit code to your number. <span style={{ color: 'var(--muted-2)', fontSize: 12 }}>(demo: 4321)</span></div>
-      <div className={'otp-row' + (error ? ' shake' : '')} style={{ display: 'flex', gap: 12, justifyContent: 'center', margin: '36px 0' }}>
-        {otp.map((v, i) => (
-          <input key={i} ref={refs[i]} className="otp-box input" value={v} maxLength={1} inputMode="numeric"
-            onChange={e => change(i, e.target.value)}
-            onKeyDown={e => { if (e.key === 'Backspace' && !v && i > 0) refs[i-1].current?.focus(); }}
-            style={{ width: 60, height: 68, textAlign: 'center', fontSize: 28, fontWeight: 800, borderColor: error ? 'var(--danger)' : v ? 'var(--accent)' : undefined }} />
-        ))}
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="otp" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap16" style={{ paddingTop: 14 }}>
+          <div className="form-h">
+            <h2>Enter your code</h2>
+            <p>We sent a 4-digit code to your mobile number. <span className="link" onClick={back} style={{ cursor: 'pointer', color: 'var(--accent-600)' }}>Change</span></p>
+          </div>
+          <div className={'otp-row' + (error ? ' shake' : '')} style={{ marginTop: 6 }}>
+            {[0, 1, 2, 3].map(i => {
+              const isCursor = i === filled && status === 'idle';
+              return (
+                <div key={i} className={'otp-box' + (code[i] ? ' filled' : '') + (isCursor ? ' cursor' : '')}
+                  style={error ? { borderColor: 'var(--danger)', color: 'var(--danger)' } : undefined}>
+                  {code[i] ? <span className="otp-d">{code[i]}</span> : (isCursor ? <span className="otp-caret" /> : '')}
+                </div>
+              );
+            })}
+          </div>
+          <div className="center" style={{ marginTop: 2 }}>
+            {status === 'verifying'
+              ? <span className="badge live"><span className="dot" /> Verifying…</span>
+              : error
+                ? <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>Incorrect code — check your SMS and try again</span>
+                : secs > 0
+                  ? <span className="muted" style={{ fontSize: 13 }}>Auto-detecting… · Resend in 0:{String(secs).padStart(2, '0')}</span>
+                  : <span className="muted" style={{ fontSize: 13 }}>Didn't get it? <span className="link" style={{ cursor: 'pointer', color: 'var(--accent-600)' }} onClick={() => { setSecs(30); setCode(''); setStatus('idle'); fired.current = false; }}>Resend code</span></span>}
+          </div>
+          <div className="kpad" style={{ marginTop: 8 }}>
+            {['1','2','3','4','5','6','7','8','9','','0','del'].map((k, i) => (
+              k === '' ? <span key={i} className="kkey blank" /> :
+              <button key={i} className="kkey" onClick={() => press(k)}>
+                {k === 'del' ? <I.del size={22} color="var(--muted)" /> : k}
+              </button>
+            ))}
+          </div>
+          <div className="center muted" style={{ fontSize: 11.5 }}>Demo: <b style={{ color: 'var(--text)' }}>4321</b> verifies</div>
+        </div>
       </div>
-      {error && <div style={{ color: 'var(--danger)', fontSize: 13.5, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>Wrong code — try again</div>}
-      <div style={{ flex: 1 }} />
-      <button className={'btn ' + (code.length === 4 ? 'btn-primary' : 'btn-disabled')} disabled={code.length < 4} onClick={verify}>Verify</button>
-      <button style={{ background: 0, border: 0, cursor: countdown > 0 ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, color: countdown > 0 ? 'var(--muted-2)' : 'var(--accent-600)', marginTop: 14, textAlign: 'center' }}
-        disabled={countdown > 0} onClick={() => setCountdown(30)}>
-        {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
-      </button>
     </div>
   );
 }
 
+/* ── Profile ───────────────────────────────────────── */
 function ProfileScreen({ next, back, form, setForm }) {
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Your profile</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>Customers will see this when they tip you.</div>
-      <div style={{ marginTop: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-          <div style={{ position: 'relative' }}>
-            <Avatar name={form.fullName || 'You'} color="teal" size={80} />
-            <button style={{ position: 'absolute', bottom: -4, right: -4, width: 28, height: 28, borderRadius: 9, background: 'var(--accent)', border: '2px solid #fff', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-              <I.camera size={14} color="#fff" />
-            </button>
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="profile" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Tell us about you</h2><p>This is how customers and your employer recognise you.</p></div>
+          <div className="photo-pick" onClick={() => {}}>
+            <I.camera size={26} color="var(--accent-600)" />
+            <span className="cam-badge"><I.plus size={16} color="#fff" /></span>
           </div>
-        </div>
-        <div className="field">
-          <label>Full name</label>
-          <input className="input" placeholder="e.g. Sipho Dlamini" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} autoFocus />
-        </div>
-        <div className="field">
-          <label>Email</label>
-          <input className="input" type="email" placeholder="sipho@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
-        </div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label>Password</label>
-          <input className="input" type="password" placeholder="At least 8 characters" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
-        </div>
-      </div>
-      <div style={{ flex: 1 }} />
-      <button className={'btn ' + (form.fullName.length >= 2 && form.email.includes('@') && form.password.length >= 8 ? 'btn-primary' : 'btn-disabled')}
-        disabled={form.fullName.length < 2 || !form.email.includes('@') || form.password.length < 8} onClick={next}>Continue</button>
-    </div>
-  );
-}
-
-function WorkScreen({ next, back, form, setForm }) {
-  const roles = ['Bartender', 'Waiter / Waitress', 'Receptionist', 'Housekeeper', 'Porter', 'Other'];
-  return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Where do you work?</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>This helps customers find you.</div>
-      <div style={{ marginTop: 24, flex: 1 }}>
-        <div className="field">
-          <label>Employer / venue name</label>
-          <input className="input" placeholder="e.g. The Grand Hotel" value={form.employer} onChange={e => setForm(f => ({ ...f, employer: e.target.value }))} />
-        </div>
-        <div className="field" style={{ marginBottom: 0 }}>
-          <label>Your role</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 2 }}>
-            {roles.map(r => (
-              <button key={r} onClick={() => setForm(f => ({ ...f, roleTitle: r }))}
-                style={{ padding: '12px 10px', borderRadius: 12, border: `1.5px solid ${form.roleTitle === r ? 'var(--accent)' : 'var(--line)'}`, background: form.roleTitle === r ? 'rgba(18,196,178,0.08)' : '#fff', fontFamily: 'inherit', fontWeight: 600, fontSize: 13.5, color: form.roleTitle === r ? 'var(--accent-600)' : 'var(--text)', cursor: 'pointer', textAlign: 'center' }}>
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      <button className={'btn ' + (form.roleTitle && form.employer ? 'btn-primary' : 'btn-disabled')} disabled={!form.roleTitle || !form.employer} onClick={next} style={{ marginTop: 20 }}>Continue</button>
-    </div>
-  );
-}
-
-function BankingScreen({ next, back, form, setForm }) {
-  const banks = ['Capitec', 'FNB', 'Standard Bank', 'ABSA', 'Nedbank', 'Tyme Bank'];
-  return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>Payout account</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>Where should we send your tips?</div>
-      <div style={{ marginTop: 24, flex: 1 }}>
-        <div className="field">
-          <label>Bank</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {banks.map(b => (
-              <button key={b} onClick={() => setForm(f => ({ ...f, bank: b }))}
-                style={{ padding: '9px 16px', borderRadius: 999, border: `1.5px solid ${form.bank === b ? 'var(--accent)' : 'var(--line)'}`, background: form.bank === b ? 'var(--accent-600)' : '#fff', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, color: form.bank === b ? '#fff' : 'var(--text)', cursor: 'pointer' }}>
-                {b}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="field">
-          <label>Account number</label>
-          <input className="input" inputMode="numeric" placeholder="1234567890" value={form.accNo} onChange={e => setForm(f => ({ ...f, accNo: e.target.value.replace(/\D/g,'').slice(0,11) }))} />
-        </div>
-        <div style={{ padding: 14, borderRadius: 12, background: 'rgba(18,196,178,0.07)', border: '1px solid rgba(18,196,178,0.2)', fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
-          <I.lock size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Your banking details are encrypted and never shared with employers.
-        </div>
-      </div>
-      <button className={'btn ' + (form.bank && form.accNo.length >= 8 ? 'btn-primary' : 'btn-disabled')} disabled={!form.bank || form.accNo.length < 8} onClick={next}>Save & continue</button>
-    </div>
-  );
-}
-
-function PermissionsScreen({ next, back }) {
-  const [perms, setPerms] = useState({ camera: false, notifications: false });
-  const toggle = (k) => setPerms(p => ({ ...p, [k]: !p[k] }));
-  return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <button onClick={back} style={{ background: 0, border: 0, cursor: 'pointer', alignSelf: 'flex-start', marginBottom: 8 }}><I.back size={22} color="var(--text)" /></button>
-      <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px', marginTop: 8 }}>A couple of permissions</div>
-      <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 6 }}>These make SwiftTip work best for you.</div>
-      <div style={{ marginTop: 28, flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {[
-          { k: 'notifications', icon: I.bell,   title: 'Push notifications', body: 'Get alerted the moment a tip lands — real time.' },
-          { k: 'camera',        icon: I.camera, title: 'Camera access',      body: 'Scan QR codes quickly when tipping others.' },
-        ].map(p => {
-          const Ic = p.icon; const on = perms[p.k];
-          return (
-            <div key={p.k} className="card" style={{ display: 'flex', gap: 14, alignItems: 'center', padding: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: on ? 'rgba(18,196,178,0.12)' : '#f3f9fa', display: 'grid', placeItems: 'center', flex: '0 0 48px' }}>
-                <Ic size={24} color={on ? 'var(--accent-600)' : 'var(--muted)'} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{p.title}</div>
-                <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{p.body}</div>
-              </div>
-              <button onClick={() => toggle(p.k)} style={{ width: 50, height: 28, borderRadius: 999, border: 0, cursor: 'pointer', background: on ? 'var(--accent)' : 'var(--line)', position: 'relative', transition: 'background .2s' }}>
-                <span style={{ position: 'absolute', top: 3, left: on ? 24 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} />
-              </button>
+          <div className="center muted" style={{ fontSize: 12, marginTop: -4 }}>Add a profile photo</div>
+          <div className="row gap12">
+            <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+              <label>First name</label>
+              <input className="input" placeholder="Sipho"
+                value={form.fullName.split(' ')[0] || ''}
+                onChange={e => setForm(f => ({ ...f, fullName: e.target.value + (f.fullName.includes(' ') ? ' ' + f.fullName.split(' ').slice(1).join(' ') : '') }))} />
             </div>
-          );
-        })}
+            <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+              <label>Last name</label>
+              <input className="input" placeholder="Dlamini"
+                value={form.fullName.split(' ').slice(1).join(' ') || ''}
+                onChange={e => setForm(f => ({ ...f, fullName: (f.fullName.split(' ')[0] || '') + ' ' + e.target.value }))} />
+            </div>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Email</label>
+            <input className="input" type="email" placeholder="you@email.co.za"
+              value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Password</label>
+            <input className="input" type="password" placeholder="At least 8 characters"
+              value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+          </div>
+        </div>
       </div>
-      <button className="btn btn-primary" onClick={next}>Continue</button>
-      <button style={{ background: 0, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: 'var(--muted)', marginTop: 12, textAlign: 'center' }} onClick={next}>Skip for now</button>
+      <Foot>
+        <button className={'btn ' + (form.fullName.trim().length >= 2 && form.email.includes('@') && form.password.length >= 8 ? 'btn-primary' : 'btn-disabled')}
+          disabled={form.fullName.trim().length < 2 || !form.email.includes('@') || form.password.length < 8}
+          onClick={next}>Continue</button>
+      </Foot>
     </div>
   );
 }
 
+/* ── Work ──────────────────────────────────────────── */
+function WorkScreen({ next, back, form, setForm }) {
+  return (
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="work" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Where do you work?</h2><p>Your employer confirms your role to give you the Verified badge.</p></div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Employer</label>
+            <input className="input" placeholder="The Grand Hotel" value={form.employer} onChange={e => setForm(f => ({ ...f, employer: e.target.value }))} />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Job title</label>
+            <input className="input" placeholder="e.g. Bartender" value={form.roleTitle} onChange={e => setForm(f => ({ ...f, roleTitle: e.target.value }))} />
+          </div>
+          <div className="trust-note teal">
+            <span className="ic"><I.shield size={18} /></span>
+            <div><div className="tt">Verification pending</div><div className="ts">You can start receiving tips right away — the badge appears once your manager approves.</div></div>
+          </div>
+        </div>
+      </div>
+      <Foot>
+        <button className={'btn ' + (form.employer && form.roleTitle ? 'btn-primary' : 'btn-disabled')}
+          disabled={!form.employer || !form.roleTitle} onClick={next}>Continue</button>
+      </Foot>
+    </div>
+  );
+}
+
+/* ── Banking ───────────────────────────────────────── */
+function BankingScreen({ next, back, form, setForm }) {
+  const [acct, setAcct] = useState('Savings');
+  return (
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <ProgressHeader step="banking" onBack={back} />
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap14" style={{ paddingTop: 14 }}>
+          <div className="form-h"><h2>Where should we pay you?</h2><p>Your tips land here whenever you withdraw. Add it now or later.</p></div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Bank</label>
+            <input className="input" placeholder="Choose your bank" value={form.bank} onChange={e => setForm(f => ({ ...f, bank: e.target.value }))} />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Account number</label>
+            <input className="input" inputMode="numeric" placeholder="0000 0000 00"
+              value={form.accNo} onChange={e => setForm(f => ({ ...f, accNo: e.target.value.replace(/\D/g,'').slice(0,11) }))} />
+          </div>
+          <div>
+            <label className="field" style={{ display: 'block', marginBottom: 8 }}>Account type</label>
+            <div className="seg-choice">
+              {['Savings', 'Cheque', 'Transmission'].map(o => (
+                <button key={o} className={'seg-opt' + (acct === o ? ' on' : '')} onClick={() => setAcct(o)}>{o}</button>
+              ))}
+            </div>
+          </div>
+          <div className="trust-note">
+            <span className="ic"><I.lock size={18} /></span>
+            <div><div className="tt">Bank-grade encryption</div><div className="ts">Encrypted at rest, never shared. POPIA &amp; PCI-DSS compliant.</div></div>
+          </div>
+        </div>
+      </div>
+      <Foot>
+        <button className="btn btn-primary" onClick={next}>Continue</button>
+        <button className="btn-link" onClick={next}>Skip for now</button>
+      </Foot>
+    </div>
+  );
+}
+
+/* ── Permissions ───────────────────────────────────── */
+function PermissionsScreen({ next, back }) {
+  const rows = [
+    { ic: I.card,  t: 'Instant tip alerts',    s: 'Know the moment a customer tips you.' },
+    { ic: I.heart, t: 'Compliments & ratings', s: 'See the kind words customers leave.' },
+    { ic: I.bank,  t: 'Payout confirmations',  s: 'A nudge when your money lands.' },
+  ];
+  return (
+    <div className="onb-screen" style={{ minHeight: '100vh', background: 'radial-gradient(620px 440px at 50% -6%, #e3f6f2, transparent 62%), var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '14px 18px 0' }}>
+        <button className="onb-iconbtn-light" onClick={back} aria-label="Back"><I.back size={20} /></button>
+      </div>
+      <div className="screen-body" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack gap16" style={{ paddingTop: 18 }}>
+          <PermissionArt />
+          <div className="form-h" style={{ textAlign: 'center' }}>
+            <h2>Never miss a tip</h2>
+            <p style={{ maxWidth: 280, margin: '0 auto' }}>Turn on notifications so you feel every buzz the instant a customer tips you.</p>
+          </div>
+          <div className="card stack gap16" style={{ padding: '18px 18px' }}>
+            {rows.map((r, i) => { const Ic = r.ic; return (
+              <div key={i} className="val-row">
+                <span className="vic"><Ic size={19} /></span>
+                <div><div className="vt">{r.t}</div><div className="vs">{r.s}</div></div>
+              </div>
+            ); })}
+          </div>
+        </div>
+      </div>
+      <Foot>
+        <button className="btn btn-primary" onClick={next}>Allow notifications</button>
+        <button className="btn-link" onClick={next}>Maybe later</button>
+      </Foot>
+    </div>
+  );
+}
+
+/* ── Success ───────────────────────────────────────── */
 function SuccessScreen({ form }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState('registering');
   const slug = slugify(form.fullName) || 'worker';
+  const first = form.fullName.split(' ')[0] || 'there';
 
   useEffect(() => {
     async function register() {
@@ -310,9 +398,6 @@ function SuccessScreen({ form }) {
           role: 'worker',
         });
         if (error) { setStatus('error:' + error.message); return; }
-
-        // After signUp, auth trigger creates profile + wallet.
-        // Insert worker record (needs session — wait for it)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           await supabase.from('workers').insert({
@@ -325,40 +410,48 @@ function SuccessScreen({ form }) {
         }
         setStatus('done');
       } catch (e) {
-        setStatus('done'); // degrade gracefully in demo/test
+        setStatus('done');
       }
     }
     register();
   }, []);
 
   if (status === 'registering') return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: 'linear-gradient(170deg,#052B36,#083C4A)', color: '#fff' }}>
-      <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(18,196,178,0.2)', borderTopColor: 'var(--accent)' }} className="spin" />
-      <div style={{ fontSize: 16, fontWeight: 600 }}>Creating your account…</div>
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+      <div className="spin" style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(18,196,178,0.2)', borderTopColor: 'var(--accent)' }} />
+      <div style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>Creating your account…</div>
     </div>
   );
 
-  const tipUrl = `${window.location.origin}/tip/${slug}`;
-
   return (
-    <div className="onb-screen screen-anim" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 28px', background: 'linear-gradient(170deg,#052B36,#083C4A)', color: '#fff' }}>
-      <div style={{ width: 100, height: 100, borderRadius: 50, background: 'rgba(18,196,178,0.18)', display: 'grid', placeItems: 'center', marginBottom: 24 }}>
-        <I.check size={52} color="var(--accent)" stroke={3} />
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Confetti n={28} />
+      <div className="screen-body" style={{ position: 'relative', zIndex: 2, flex: 1, overflowY: 'auto' }}>
+        <div className="pad stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 30, gap: 6 }}>
+          <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.checkC size={48} /></div>
+          <div style={{ fontSize: 27, fontWeight: 800, letterSpacing: '-0.6px', color: '#fff' }}>You're all set, {first}!</div>
+          <div style={{ color: 'rgba(255,255,255,0.66)', fontSize: 14.5, maxWidth: 290, lineHeight: 1.55, marginTop: 4 }}>Your wallet, worker ID and QR badge are ready. Display your QR and start earning.</div>
+          <div className="glass-card" style={{ marginTop: 24, padding: 18, width: '100%', maxWidth: 320, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ background: '#fff', padding: 9, borderRadius: 14, flex: '0 0 auto' }}>
+              <QRCode value={'swifttip:' + slug} size={78} />
+            </div>
+            <div style={{ textAlign: 'left', color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <Avatar name={form.fullName || 'New Worker'} color="red" size={26} />
+                <div style={{ fontWeight: 800, fontSize: 14 }}>{form.fullName || 'New Worker'}</div>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', margin: '9px 0 1px' }}>Worker ID</div>
+              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ST-2050-{slug.slice(0,2).toUpperCase()}</div>
+              <span className="badge" style={{ marginTop: 8 }}><I.check size={11} stroke={3} /> Wallet active</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.6px' }}>You're all set!</div>
-      <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 10, lineHeight: 1.6, maxWidth: 280 }}>
-        Your SwiftTip profile is live. Share your QR code to start receiving tips instantly.
-      </div>
-      <div style={{ marginTop: 18, padding: '12px 18px', borderRadius: 12, background: 'rgba(18,196,178,0.12)', border: '1px solid rgba(18,196,178,0.25)', fontSize: 12.5, color: 'rgba(255,255,255,0.7)', wordBreak: 'break-all', maxWidth: 300 }}>
-        {tipUrl}
-      </div>
-      <div style={{ marginTop: 28, width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="onb-foot" style={{ position: 'relative', zIndex: 2 }}>
         <button className="btn btn-primary" onClick={() => navigate('/worker')}>Go to my dashboard</button>
-        <button className="btn btn-dark" onClick={() => navigate('/')}>Back to home</button>
+        <button className="btn-link" style={{ color: 'rgba(255,255,255,0.7)' }} onClick={() => navigate('/')}>Back to home</button>
+        {status.startsWith('error') && <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(239,68,68,0.8)', textAlign: 'center' }}>{status.replace('error:','')}</div>}
       </div>
-      {status.startsWith('error') && (
-        <div style={{ marginTop: 14, fontSize: 12, color: 'rgba(239,68,68,0.8)' }}>{status.replace('error:', '')}</div>
-      )}
     </div>
   );
 }
@@ -367,26 +460,24 @@ const BLANK_FORM = { phone: '', fullName: '', email: '', password: '', roleTitle
 
 export default function WorkerOnboarding() {
   const [arcIdx, setArcIdx] = useState(0);
+  const [slide, setSlide] = useState(0);
   const [form, setForm] = useState(BLANK_FORM);
   const screen = ARC[arcIdx];
-  const next = () => setArcIdx(i => Math.min(i + 1, ARC.length - 1));
+  const next = () => { if (screen === 'intro') setSlide(0); setArcIdx(i => Math.min(i + 1, ARC.length - 1)); };
   const back = () => setArcIdx(i => Math.max(i - 1, 0));
   const props = { next, back, form, setForm };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      {!['welcome', 'intro', 'success'].includes(screen) && <ProgressBar screen={screen} />}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {screen === 'welcome'     && <WelcomeScreen next={next} />}
-        {screen === 'intro'       && <IntroScreen {...props} />}
-        {screen === 'phone'       && <PhoneScreen {...props} />}
-        {screen === 'otp'         && <OtpScreen next={next} back={back} />}
-        {screen === 'profile'     && <ProfileScreen {...props} />}
-        {screen === 'work'        && <WorkScreen {...props} />}
-        {screen === 'banking'     && <BankingScreen {...props} />}
-        {screen === 'permissions' && <PermissionsScreen next={next} back={back} />}
-        {screen === 'success'     && <SuccessScreen form={form} />}
-      </div>
-    </div>
+    <>
+      {screen === 'welcome'     && <WelcomeScreen next={next} />}
+      {screen === 'intro'       && <IntroScreen slide={slide} setSlide={setSlide} next={next} back={back} />}
+      {screen === 'phone'       && <PhoneScreen {...props} />}
+      {screen === 'otp'         && <OtpScreen next={next} back={back} />}
+      {screen === 'profile'     && <ProfileScreen {...props} />}
+      {screen === 'work'        && <WorkScreen {...props} />}
+      {screen === 'banking'     && <BankingScreen {...props} />}
+      {screen === 'permissions' && <PermissionsScreen next={next} back={back} />}
+      {screen === 'success'     && <SuccessScreen form={form} />}
+    </>
   );
 }
