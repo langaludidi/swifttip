@@ -152,7 +152,8 @@ function IdentityScreen({ next, back }) {
 
 function TwoFAScreen({ next, back }) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const refs = otp.map(() => useRef());
+  const r0 = useRef(), r1 = useRef(), r2 = useRef(), r3 = useRef(), r4 = useRef(), r5 = useRef();
+  const refs = [r0, r1, r2, r3, r4, r5];
   const code = otp.join('');
 
   const change = (i, v) => {
