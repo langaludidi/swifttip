@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { I, Header, Avatar, Stars } from '../../components/ui.jsx';
+import { invokeTip } from '../../services/tips.js';
+import { leaveCompliment } from '../../services/compliments.js';
 
 function toast(msg) { console.log('[toast]', msg); }
 
@@ -43,9 +45,25 @@ export default function CustomerFlow({ screen, nav, data }) {
   const [rating, setRating] = useState(5);
   const [compliment, setCompliment] = useState('');
   const [sent, setSent] = useState(false);
+  const [tipId, setTipId] = useState(null);
   const w = workers[wid] || workers[0];
   const amt = Number(amount || 0);
   const go = (s) => nav(s);
+
+  const submitTip = async () => {
+    const { tip } = await invokeTip({
+      workerId: w.id || w.slug,
+      amountCents: Math.round(amt * 100),
+      customerSession: crypto.randomUUID?.() ?? String(Date.now()),
+    });
+    if (tip?.id) setTipId(tip.id);
+    go('success');
+  };
+
+  const submitCompliment = async () => {
+    if (tipId) await leaveCompliment({ tipId, stars: rating, note: compliment });
+    setSent(true);
+  };
 
   if (screen === 'scan') return (
     <>
@@ -262,7 +280,7 @@ export default function CustomerFlow({ screen, nav, data }) {
     );
   }
 
-  if (screen === 'processing') return <ProcessingScreen onDone={() => go('success')} />;
+  if (screen === 'processing') return <ProcessingScreen onDone={submitTip} />;
 
   if (screen === 'success') {
     const rcpt = 'ST-' + (10000 + Math.floor((amt || 20) * 137) % 89999);
@@ -326,7 +344,7 @@ export default function CustomerFlow({ screen, nav, data }) {
               <label>Add a message</label>
               <textarea className="input" rows={3} style={{ resize: 'none', fontFamily: 'var(--font)' }} placeholder="Write something nice…" value={compliment} onChange={e => setCompliment(e.target.value)} />
             </div>
-            <button className="btn btn-primary" onClick={() => setSent(true)}>Send compliment</button>
+            <button className="btn btn-primary" onClick={submitCompliment}>Send compliment</button>
           </div>
         </div>
       </>

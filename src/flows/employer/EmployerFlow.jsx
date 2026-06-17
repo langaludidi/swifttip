@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Header, Avatar, BottomNav } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
+import { useEmployerData } from '../../lib/hooks.js';
+import { useSession } from '../../App.jsx';
 
 const TABS = [
   { id: 'dash', label: 'Overview', icon: I.home },
@@ -123,7 +125,9 @@ function PayoutsScreen({ data }) {
 export default function EmployerFlow({ screen: screenProp, nav: navProp, data: dataProp }) {
   const navigate = useNavigate();
   const [screen, setScreen] = useState(screenProp || 'dash');
-  const data = dataProp || SAMPLE;
+  const { session } = useSession();
+  const { data: liveData } = useEmployerData(session?.user?.id);
+  const data = dataProp || liveData;
 
   useEffect(() => { if (screenProp) setScreen(screenProp); }, [screenProp]);
 

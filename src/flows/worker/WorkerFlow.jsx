@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Header, Avatar, Stars, BottomNav, QRCode } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
+import { useWorkerData } from '../../lib/hooks.js';
+import { useSession } from '../../App.jsx';
 
 const TABS = [
   { id: 'dash', label: 'Home', icon: I.home },
@@ -211,7 +213,9 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
   const navigate = useNavigate();
   const isStandalone = !navProp;
   const [screen, setScreen] = useState(screenProp || 'dash');
-  const data = dataProp || SAMPLE;
+  const { session } = useSession();
+  const { data: liveData } = useWorkerData(session?.user?.id);
+  const data = dataProp || liveData;
 
   useEffect(() => { if (screenProp) setScreen(screenProp); }, [screenProp]);
 
