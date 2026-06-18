@@ -13,7 +13,7 @@ export default function TipPage() {
   const [screen, setScreen] = useState('scan');
 
   useEffect(() => {
-    getWorkerBySlug(slug === 'demo' ? 'sipho-dlamini' : slug).then(({ worker: w }) => {
+    getWorkerBySlug(slug).then(({ worker: w }) => {
       setWorker(w);
       setLoading(false);
       if (w) setScreen('profile');
