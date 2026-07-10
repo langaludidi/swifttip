@@ -1,44 +1,54 @@
--- Atomic settle_tip stored procedure
--- Called by the create-tip and settle-tip Edge Functions (SECURITY DEFINER)
+-- ============================================================================
+-- 0002 — atomic tip settlement (double-entry) + config
+-- Run after 0001_init.sql.
+-- ============================================================================
 
-CREATE OR REPLACE FUNCTION settle_tip(tip_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_worker_id   uuid;
-  v_amount_cents bigint;
-  v_wallet_id   uuid;
-BEGIN
-  -- Lock the tip row so concurrent calls can't double-credit
-  SELECT worker_id, amount_cents
-    INTO v_worker_id, v_amount_cents
-    FROM tips
-   WHERE id = tip_id AND status = 'pending'
-   FOR UPDATE;
+-- Credit a worker's wallet for a successful payment, exactly once.
+-- Called by the ozow-webhook Edge Function via supabase.rpc('settle_tip', …).
+create or replace function settle_tip(p_ref text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_payment payments%rowtype;
+  v_tip     tips%rowtype;
+  v_wallet  wallets%rowtype;
+  v_new     bigint;
+begin
+  -- lock the payment row
+  select * into v_payment from payments where gateway_ref = p_ref for update;
+  if not found then
+    raise exception 'payment % not found', p_ref;
+  end if;
 
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'tip % not found or already settled', tip_id;
-  END IF;
+  -- idempotent: if already settled, do nothing
+  if v_payment.status = 'succeeded' then
+    return;
+  end if;
 
-  -- Resolve wallet
-  SELECT id INTO v_wallet_id FROM wallets WHERE owner_id = v_worker_id;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'wallet not found for worker %', v_worker_id;
-  END IF;
+  update payments set status = 'succeeded' where id = v_payment.id;
 
-  -- Credit wallet (atomic)
-  UPDATE wallets
-     SET balance_cents = balance_cents + v_amount_cents,
-         updated_at    = now()
-   WHERE id = v_wallet_id;
+  select * into v_tip from tips where payment_id = v_payment.id;
+  if not found then
+    raise exception 'tip for payment % not found', p_ref;
+  end if;
 
-  -- Ledger credit entry
-  INSERT INTO ledger_entries (wallet_id, tip_id, kind, amount_cents)
-  VALUES (v_wallet_id, tip_id, 'credit', v_amount_cents);
+  -- ensure the worker has a wallet, then credit it
+  select * into v_wallet from wallets where worker_id = v_tip.worker_id for update;
+  if not found then
+    insert into wallets (worker_id, balance_cents) values (v_tip.worker_id, 0)
+    returning * into v_wallet;
+  end if;
 
-  -- Mark tip as settled
-  UPDATE tips SET status = 'settled' WHERE id = tip_id;
-END;
+  v_new := v_wallet.balance_cents + v_tip.net_cents;
+  update wallets set balance_cents = v_new where id = v_wallet.id;
+
+  insert into ledger_entries (wallet_id, type, amount_cents, balance_after, ref_id, description)
+  values (v_wallet.id, 'tip', v_tip.net_cents, v_new, v_tip.id, 'Tip received');
+end;
 $$;
+
+-- settle_tip is invoked only by the service role (Edge Function); never exposed to clients.
+revoke all on function settle_tip(text) from anon, authenticated;
