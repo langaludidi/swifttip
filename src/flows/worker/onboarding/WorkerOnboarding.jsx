@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Avatar, QRCode } from '../../../components/ui.jsx';
 import { signUp, savePendingWorker } from '../../../services/auth.js';
+import { addPayoutAccount } from '../../../services/workers.js';
 import { supabase, isDemo } from '../../../services/supabase.js';
 import {
   WelcomeScene, IntroArtScan, IntroArtPayout, IntroArtReputation,
@@ -305,7 +306,7 @@ function WorkScreen({ next, back, form, setForm }) {
 
 /* ── Banking ───────────────────────────────────────── */
 function BankingScreen({ next, back, form, setForm }) {
-  const [acct, setAcct] = useState('Savings');
+  const acct = form.accountType;
   return (
     <div className="onb-screen" style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <ProgressHeader step="banking" onBack={back} />
@@ -325,7 +326,7 @@ function BankingScreen({ next, back, form, setForm }) {
             <label className="field" style={{ display: 'block', marginBottom: 8 }}>Account type</label>
             <div className="seg-choice">
               {['Savings', 'Cheque', 'Transmission'].map(o => (
-                <button key={o} className={'seg-opt' + (acct === o ? ' on' : '')} onClick={() => setAcct(o)}>{o}</button>
+                <button key={o} className={'seg-opt' + (acct === o ? ' on' : '')} onClick={() => setForm(f => ({ ...f, accountType: o }))}>{o}</button>
               ))}
             </div>
           </div>
@@ -402,19 +403,27 @@ function SuccessScreen({ form }) {
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const { error: insertErr } = await supabase.from('workers').insert({
+          const { data: newWorker, error: insertErr } = await supabase.from('workers').insert({
             profile_id: session.user.id,
             display_name: form.fullName,
             slug,
             job_title: form.roleTitle,
-          });
+          }).select('id').single();
           if (insertErr) { setStatus('error:' + insertErr.message); return; }
+
+          if (form.bank.trim() && form.accNo.trim()) {
+            await addPayoutAccount({ workerId: newWorker.id, bank: form.bank, accNo: form.accNo, accountType: form.accountType });
+          }
           setStatus('done');
         } else {
           // No session yet — this project requires email confirmation. Save the
           // profile fields so WorkerLogin can finish creating the worker row
-          // right after the user confirms and signs in for the first time.
-          savePendingWorker({ email: form.email, fullName: form.fullName, slug, roleTitle: form.roleTitle });
+          // (and its payout account, if provided) right after the user confirms
+          // and signs in for the first time.
+          savePendingWorker({
+            email: form.email, fullName: form.fullName, slug, roleTitle: form.roleTitle,
+            bank: form.bank, accNo: form.accNo, accountType: form.accountType,
+          });
           setStatus('confirm');
         }
       } catch (e) {
@@ -483,7 +492,7 @@ function SuccessScreen({ form }) {
   );
 }
 
-const BLANK_FORM = { phone: '', fullName: '', email: '', password: '', roleTitle: '', employer: '', bank: '', accNo: '' };
+const BLANK_FORM = { phone: '', fullName: '', email: '', password: '', roleTitle: '', employer: '', bank: '', accNo: '', accountType: 'Savings' };
 
 export default function WorkerOnboarding() {
   const [arcIdx, setArcIdx] = useState(0);

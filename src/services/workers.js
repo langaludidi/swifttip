@@ -67,3 +67,16 @@ export async function setWorkerActive(workerId, active) {
     .eq('id', workerId);
   return { error };
 }
+
+// Only called with non-empty bank + accNo — the caller decides whether the
+// worker actually submitted banking details or skipped that step.
+export async function addPayoutAccount({ workerId, bank, accNo, accountType }) {
+  if (isDemo) return { error: null };
+  const { error } = await supabase.from('payout_accounts').insert({
+    worker_id: workerId,
+    bank_name: bank,
+    account_number: accNo,
+    account_type: accountType,
+  });
+  return { error };
+}
