@@ -1,11 +1,13 @@
 import { supabase, isDemo } from './supabase.js';
 
-export async function requestPayout({ workerId, amountCents }) {
+export async function requestPayout({ amountCents }) {
   if (isDemo) {
     return { payout: { id: 'demo-payout', amount_cents: amountCents }, error: null };
   }
+  // worker_id is intentionally not sent — request-payout derives it server-side
+  // from the caller's own session, never from a client-supplied value.
   const { data, error } = await supabase.functions.invoke('request-payout', {
-    body: { worker_id: workerId, amount_cents: amountCents },
+    body: { amount_cents: amountCents },
   });
   return { payout: data, error };
 }

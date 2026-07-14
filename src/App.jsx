@@ -7,6 +7,7 @@ import TipPage from './pages/TipPage.jsx';
 
 const WorkerFlow         = lazy(() => import('./flows/worker/WorkerFlow.jsx'));
 const WorkerOnboarding   = lazy(() => import('./flows/worker/onboarding/WorkerOnboarding.jsx'));
+const WorkerLogin        = lazy(() => import('./flows/worker/onboarding/WorkerLogin.jsx'));
 const EmployerFlow       = lazy(() => import('./flows/employer/EmployerFlow.jsx'));
 const EmployerOnboarding = lazy(() => import('./flows/employer/onboarding/EmployerOnboarding.jsx'));
 const AdminFlow          = lazy(() => import('./flows/admin/AdminFlow.jsx'));
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/" element={<Launcher />} />
           <Route path="/tip/:slug" element={<TipPage />} />
           <Route path="/worker/onboarding" element={<WorkerOnboarding />} />
+          <Route path="/worker/login" element={<WorkerLogin />} />
           <Route path="/worker/*" element={<WorkerFlow />} />
           <Route path="/employer/onboarding" element={<EmployerOnboarding />} />
           <Route path="/employer/*" element={<EmployerFlow />} />

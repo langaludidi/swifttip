@@ -1,6 +1,29 @@
 import { supabase, isDemo } from './supabase.js';
 import { SAMPLE } from '../lib/data.js';
 
+const AVATAR_COLORS = ['red', 'purple', 'teal', 'gold', 'blue'];
+
+function colorForId(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+// `workers` has no profiles(full_name, phone) embed on the public tip page —
+// RLS only lets a profile owner read their own row, so that join returns null
+// for every customer. display_name exists on `workers` for exactly this reason.
+function mapPublicWorker(row) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.display_name || 'Worker',
+    role: row.job_title || 'Staff',
+    color: colorForId(row.id),
+    rating: 5.0,
+    tips: 0,
+  };
+}
+
 export async function getWorkerBySlug(slug) {
   if (isDemo) {
     const w = SAMPLE.workers.find(x => x.name.toLowerCase().replace(/\s+/g, '-') === slug);
@@ -8,11 +31,12 @@ export async function getWorkerBySlug(slug) {
   }
   const { data, error } = await supabase
     .from('workers')
-    .select('*, profiles(full_name, phone)')
+    .select('id, slug, display_name, job_title')
     .eq('slug', slug)
     .eq('active', true)
     .single();
-  return { worker: data, error };
+  if (error || !data) return { worker: null, error };
+  return { worker: mapPublicWorker(data), error: null };
 }
 
 export async function getWorkers(employerId) {

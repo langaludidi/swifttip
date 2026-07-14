@@ -162,7 +162,6 @@ function HistoryScreen({ data }) {
 
 function PayoutScreen({ data, nav }) {
   const s = data.self;
-  const { session } = useSession();
   const [amount, setAmount] = useState('');
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -171,8 +170,7 @@ function PayoutScreen({ data, nav }) {
 
   const submit = async () => {
     setSubmitting(true); setErr('');
-    const workerId = session?.user?.id;
-    const { error } = await requestPayout({ workerId, amountCents: Math.round(amt * 100) });
+    const { error } = await requestPayout({ amountCents: Math.round(amt * 100) });
     setSubmitting(false);
     if (error) { setErr(error.message || 'Payout failed'); return; }
     setDone(true);
@@ -224,6 +222,17 @@ function PayoutScreen({ data, nav }) {
   );
 }
 
+function NoProfileScreen() {
+  const navigate = useNavigate();
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
+      <div style={{ fontSize: 18, fontWeight: 800 }}>No worker profile found</div>
+      <div className="muted" style={{ maxWidth: 280 }}>We couldn't find a worker profile linked to this account. Finish setting one up to see your dashboard.</div>
+      <button className="btn btn-primary" style={{ maxWidth: 260 }} onClick={() => navigate('/worker/onboarding')}>Set up my profile</button>
+    </div>
+  );
+}
+
 export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dataProp }) {
   const navigate = useNavigate();
   const isStandalone = !navProp;
@@ -239,6 +248,8 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
     if (s === '__home') { navigate('/'); return; }
     setScreen(s);
   };
+
+  if (data.noProfile) return <NoProfileScreen />;
 
   const screens = { dash: DashScreen, qr: QRScreen, history: HistoryScreen, payout: PayoutScreen };
   const Screen = screens[screen] || DashScreen;

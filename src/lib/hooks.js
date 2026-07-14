@@ -8,13 +8,32 @@ export function useWorkerData(userId) {
 
   useEffect(() => {
     if (isDemo || !userId) { setLoading(false); return; }
+    let cancelled = false;
+    let channel = null;
 
     async function load() {
-      const [walletRes, tipsRes, workerRes] = await Promise.all([
-        supabase.from('wallets').select('balance_cents').eq('owner_id', userId).single(),
-        supabase.from('tips').select('*').eq('worker_id', userId).order('created_at', { ascending: false }).limit(20),
-        supabase.from('workers').select('*, profiles(full_name, phone)').eq('id', userId).single(),
+      // workers.id is its own uuid, linked via profile_id -> profiles.id (= auth uid).
+      // Everything downstream (wallets, tips, payouts) is keyed off workers.id, not the auth uid.
+      const { data: workerRow, error: workerErr } = await supabase
+        .from('workers')
+        .select('id, slug, display_name, job_title')
+        .eq('profile_id', userId)
+        .single();
+
+      if (cancelled) return;
+      if (workerErr || !workerRow) {
+        setData(d => ({ ...d, noProfile: true }));
+        setLoading(false);
+        return;
+      }
+
+      const workerId = workerRow.id;
+      const [walletRes, tipsRes, profileRes] = await Promise.all([
+        supabase.from('wallets').select('balance_cents').eq('owner_id', workerId).single(),
+        supabase.from('tips').select('*').eq('worker_id', workerId).order('created_at', { ascending: false }).limit(20),
+        supabase.from('profiles').select('full_name, phone').eq('id', userId).single(),
       ]);
+      if (cancelled) return;
 
       const balanceCents = walletRes.data?.balance_cents ?? 0;
       const tips = (tipsRes.data ?? []).map(t => ({
@@ -24,34 +43,35 @@ export function useWorkerData(userId) {
         type: 'tip',
         id: t.id,
       }));
-      const profile = workerRes.data?.profiles;
 
       setData(d => ({
         ...d,
+        noProfile: false,
         self: {
           ...d.self,
-          name: profile?.full_name ?? d.self.name,
+          workerId,
+          name: profileRes.data?.full_name ?? d.self.name,
           balance: balanceCents / 100,
-          slug: workerRes.data?.slug ?? d.self.slug,
-          role: workerRes.data?.role_title ?? d.self.role,
+          slug: workerRow.slug ?? d.self.slug,
+          role: workerRow.job_title ?? d.self.role,
         },
         recent: tips.length ? tips : d.recent,
       }));
       setLoading(false);
+
+      // Real-time wallet updates
+      channel = supabase
+        .channel(`wallet:${workerId}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `owner_id=eq.${workerId}` },
+          (payload) => {
+            setData(d => ({ ...d, self: { ...d.self, balance: payload.new.balance_cents / 100 } }));
+          })
+        .subscribe();
     }
 
     load();
 
-    // Real-time wallet updates
-    const channel = supabase
-      .channel(`wallet:${userId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wallets', filter: `owner_id=eq.${userId}` },
-        (payload) => {
-          setData(d => ({ ...d, self: { ...d.self, balance: payload.new.balance_cents / 100 } }));
-        })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
   }, [userId]);
 
   return { data, loading };

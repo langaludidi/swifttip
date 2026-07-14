@@ -14,7 +14,7 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const { worker_id, amount_cents, note, customer_session, customer_email } = await req.json();
+    const { worker_id, amount_cents, note, customer_session, customer_email, callback_url } = await req.json();
 
     if (!worker_id || !amount_cents || amount_cents <= 0) {
       return json({ error: 'worker_id and positive amount_cents required' }, 400);
@@ -51,6 +51,7 @@ serve(async (req) => {
         email: customer_email || `tipper-${tip.id}@swifttip.app`,
         amount: amount_cents,
         currency: 'ZAR',
+        callback_url,
         metadata: { tip_id: tip.id },
       }),
     });

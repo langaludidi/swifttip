@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Avatar, QRCode } from '../../../components/ui.jsx';
-import { signUp } from '../../../services/auth.js';
+import { signUp, savePendingWorker } from '../../../services/auth.js';
 import { supabase, isDemo } from '../../../services/supabase.js';
 import {
   WelcomeScene, IntroArtScan, IntroArtPayout, IntroArtReputation,
@@ -38,6 +38,7 @@ function Foot({ children }) {
 
 /* ── Welcome ───────────────────────────────────────── */
 function WelcomeScreen({ next }) {
+  const navigate = useNavigate();
   return (
     <div className="onb-screen onb-scene" style={{ minHeight: '100vh' }}>
       <WelcomeScene />
@@ -51,7 +52,7 @@ function WelcomeScreen({ next }) {
         <button className="btn btn-primary" style={{ marginTop: 18 }} onClick={next}>
           Get started <I.chevR size={18} color="#fff" />
         </button>
-        <button className="btn-link" onClick={() => {}}>I already have an account</button>
+        <button className="btn-link" onClick={() => navigate('/worker/login')}>I already have an account</button>
         <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>Banking-grade security · POPIA compliant</div>
       </div>
     </div>
@@ -398,19 +399,26 @@ function SuccessScreen({ form }) {
           role: 'worker',
         });
         if (error) { setStatus('error:' + error.message); return; }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          await supabase.from('workers').insert({
-            id: session.user.id,
+          const { error: insertErr } = await supabase.from('workers').insert({
+            profile_id: session.user.id,
+            display_name: form.fullName,
             slug,
-            venue: form.employer,
-            role_title: form.roleTitle,
-            avatar_color: 'teal',
+            job_title: form.roleTitle,
           });
+          if (insertErr) { setStatus('error:' + insertErr.message); return; }
+          setStatus('done');
+        } else {
+          // No session yet — this project requires email confirmation. Save the
+          // profile fields so WorkerLogin can finish creating the worker row
+          // right after the user confirms and signs in for the first time.
+          savePendingWorker({ email: form.email, fullName: form.fullName, slug, roleTitle: form.roleTitle });
+          setStatus('confirm');
         }
-        setStatus('done');
       } catch (e) {
-        setStatus('done');
+        setStatus('error:' + (e.message || 'Something went wrong'));
       }
     }
     register();
@@ -420,6 +428,26 @@ function SuccessScreen({ form }) {
     <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <div className="spin" style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(18,196,178,0.2)', borderTopColor: 'var(--accent)' }} />
       <div style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>Creating your account…</div>
+    </div>
+  );
+
+  if (status === 'confirm') return (
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+      <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.mail size={40} /></div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Check your email, {first}</div>
+      <div style={{ color: 'rgba(255,255,255,0.66)', fontSize: 14.5, maxWidth: 300, lineHeight: 1.55 }}>
+        We sent a confirmation link to {form.email}. Confirm it, then log in — your wallet and QR badge will be ready.
+      </div>
+      <button className="btn btn-primary" style={{ maxWidth: 280, marginTop: 8 }} onClick={() => navigate('/worker/login')}>Go to login</button>
+      <button className="btn-link" style={{ color: 'rgba(255,255,255,0.7)' }} onClick={() => navigate('/')}>Back to home</button>
+    </div>
+  );
+
+  if (status.startsWith('error')) return (
+    <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Something went wrong</div>
+      <div style={{ color: 'rgba(239,68,68,0.85)', fontSize: 14, maxWidth: 300 }}>{status.replace('error:', '')}</div>
+      <button className="btn btn-primary" style={{ maxWidth: 280 }} onClick={() => navigate('/worker/onboarding')}>Try again</button>
     </div>
   );
 
@@ -450,7 +478,6 @@ function SuccessScreen({ form }) {
       <div className="onb-foot" style={{ position: 'relative', zIndex: 2 }}>
         <button className="btn btn-primary" onClick={() => navigate('/worker')}>Go to my dashboard</button>
         <button className="btn-link" style={{ color: 'rgba(255,255,255,0.7)' }} onClick={() => navigate('/')}>Back to home</button>
-        {status.startsWith('error') && <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(239,68,68,0.8)', textAlign: 'center' }}>{status.replace('error:','')}</div>}
       </div>
     </div>
   );

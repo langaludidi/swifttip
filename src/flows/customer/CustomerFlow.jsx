@@ -6,43 +6,24 @@ import { ScanScene, BuzzPhone, CustConfetti } from './CustomerArt.jsx';
 
 function toast(msg) { console.log('[toast]', msg); }
 
-function ProcessingScreen({ onDone }) {
-  const [step, setStep] = useState(0);
-  const steps = ['Connecting securely', 'Authorising payment', 'Confirming with bank'];
-  useEffect(() => {
-    const t1 = setTimeout(() => setStep(1), 800);
-    const t2 = setTimeout(() => setStep(2), 1700);
-    const t3 = setTimeout(onDone, 2700);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-  }, [onDone]);
+// Real redirect is imminent once invokeTip() resolves — this just covers the
+// network round-trip, not a fake payment animation.
+function RedirectingScreen() {
   return (
     <div className="overlay dark" style={{ position: 'static', flex: 1 }}>
       <div style={{ width: 70, height: 70, borderRadius: '50%', border: '4px solid rgba(255,255,255,0.12)', borderTopColor: 'var(--accent)' }} className="spin" />
-      <div style={{ fontSize: 20, fontWeight: 700, marginTop: 28 }}>Processing payment</div>
-      <div className="stack gap8" style={{ marginTop: 18 }}>
-        {steps.map((s, i) => (
-          <div key={i} className="row gap8" style={{ opacity: i <= step ? 1 : 0.35, fontSize: 13.5, transition: 'opacity .3s' }}>
-            {i < step
-              ? <I.checkC size={18} color="var(--accent)" />
-              : i === step
-                ? <div className="spin" style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: 'var(--accent)', borderRadius: '50%' }} />
-                : <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.2)' }} />
-            }
-            <span style={{ color: '#fff' }}>{s}</span>
-          </div>
-        ))}
-      </div>
+      <div style={{ fontSize: 20, fontWeight: 700, marginTop: 28 }}>Taking you to secure payment…</div>
       <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12.5, marginTop: 24 }}>Do not close the app</div>
     </div>
   );
 }
 
-export default function CustomerFlow({ screen, nav, data }) {
+export default function CustomerFlow({ screen, nav, data, presetAmountCents, presetTipId }) {
   const workers = data.workers || [];
   const [wid, setWid] = useState(0);
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('card');
-  const [card, setCard] = useState('');
+  const [payErr, setPayErr] = useState('');
   const [rating, setRating] = useState(5);
   const [compliment, setCompliment] = useState('');
   const [sent, setSent] = useState(false);
@@ -51,14 +32,31 @@ export default function CustomerFlow({ screen, nav, data }) {
   const amt = Number(amount || 0);
   const go = (s) => nav(s);
 
-  const submitTip = async () => {
-    const { tip } = await invokeTip({
-      workerId: w.id || w.slug,
+  // Populated by TipPage after a real Paystack payment confirms — the SPA
+  // reloaded on redirect, so any in-progress amount/tipId state was lost.
+  useEffect(() => {
+    if (presetAmountCents != null) setAmount(String(presetAmountCents / 100));
+    if (presetTipId) setTipId(presetTipId);
+  }, [presetAmountCents, presetTipId]);
+
+  // Hands off to Paystack's own hosted checkout — the app never touches raw
+  // card details. Paystack redirects back to callback_url with a reference
+  // once the customer finishes paying (or cancels).
+  const goToCheckout = async () => {
+    setPayErr('');
+    go('redirecting');
+    const { tip, error } = await invokeTip({
+      workerId: w.id,
       amountCents: Math.round(amt * 100),
       customerSession: crypto.randomUUID?.() ?? String(Date.now()),
+      callbackUrl: `${window.location.origin}/tip/${w.slug}`,
     });
-    if (tip?.id) setTipId(tip.id);
-    go('success');
+    if (error || !tip?.authorization_url) {
+      setPayErr(error?.message || 'Could not start payment. Please try again.');
+      go('amount');
+      return;
+    }
+    window.location.href = tip.authorization_url;
   };
 
   const submitCompliment = async () => {
@@ -224,47 +222,19 @@ export default function CustomerFlow({ screen, nav, data }) {
                 ); })}
               </div>
             </div>
+            {payErr && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{payErr}</div>}
             <button className={'btn ' + (amt > 0 ? 'btn-primary' : 'btn-disabled')} disabled={amt <= 0}
-              onClick={() => go(method === 'card' ? 'card' : 'processing')}>
+              onClick={goToCheckout}>
               Tip R{amt.toFixed(2)} to {w.name.split(' ')[0]}
             </button>
+            <div className="center muted" style={{ fontSize: 12.5 }}><I.lock size={13} /> Paid via Paystack · 256-bit SSL · POPIA compliant</div>
           </div>
         </div>
       </>
     );
   }
 
-  if (screen === 'card') {
-    const fmt = card.replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim();
-    return (
-      <>
-        <Header title="Card Details" onBack={() => go('amount')} />
-        <div className="screen-body screen-anim">
-          <div className="pad stack gap16">
-            <div style={{ background: 'linear-gradient(150deg,#0c2f39,#06181e)', borderRadius: 18, padding: 22, color: '#fff', minHeight: 180, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'var(--shadow-card)' }}>
-              <div className="between"><I.card size={30} color="var(--accent)" /><i style={{ fontWeight: 800, fontStyle: 'italic', letterSpacing: 1 }}>VISA</i></div>
-              <div style={{ fontSize: 20, letterSpacing: 3, fontWeight: 600 }}>{fmt || '•••• •••• •••• ••••'}</div>
-              <div><div style={{ fontSize: 9, letterSpacing: 1, opacity: 0.6 }}>VALID THRU</div><div style={{ fontWeight: 700, fontSize: 14 }}>MM/YY</div></div>
-            </div>
-            <div className="field">
-              <label>Card number</label>
-              <input className="input" inputMode="numeric" placeholder="1234 5678 9012 3456" value={fmt} onChange={e => setCard(e.target.value.replace(/\D/g,'').slice(0,16))} />
-            </div>
-            <div className="row gap12">
-              <div className="field" style={{ flex:1, marginBottom:0 }}><label>Expiry</label><input className="input" placeholder="MM/YY" /></div>
-              <div className="field" style={{ flex:1, marginBottom:0 }}><label>CVV</label><input className="input" placeholder="123" /></div>
-            </div>
-            <button className={'btn ' + (card.length >= 12 ? 'btn-primary' : 'btn-disabled')} disabled={card.length < 12} onClick={() => go('processing')}>
-              Pay R{amt.toFixed(2)} Securely
-            </button>
-            <div className="center muted" style={{ fontSize: 12.5 }}><I.lock size={13} /> 256-bit SSL · POPIA compliant</div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (screen === 'processing') return <ProcessingScreen onDone={submitTip} />;
+  if (screen === 'redirecting') return <RedirectingScreen />;
 
   if (screen === 'success') {
     const rcpt = 'ST-' + (10000 + Math.floor((amt || 20) * 137) % 89999);
