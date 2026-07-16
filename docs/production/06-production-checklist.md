@@ -47,9 +47,13 @@ this, KYC/payout approval is hand-written SQL against production, per worker, da
 The project owner is already an admin (Sprint 1 manual promotion), so none of this
 needs an invite/role-grant system — see "Deferred to pilot #2" below for that part.
 
-- [ ] **Admin — `review-kyc` implementation + review screen**: currently a stub
-      (`{ok:true}`, no logic), and no in-app screen exists to approve/reject a
-      worker's submitted documents.
+- [x] **Admin — `review-kyc` implementation + review screen** *(Sprint A)*: real
+      admin-gated edge function (`review-kyc`), an atomic `decide_kyc()` Postgres
+      function (only code path allowed to set `active=true`), and a live
+      `KycReviewScreen` in `AdminFlow.jsx`. Verified live: non-admin → 403,
+      approve → `active=true` + appears on public tip page + `create-tip` accepts
+      it, reject without a reason → 422, reject with a reason → stays invisible,
+      reason stored and returned to the worker's own dashboard.
 - [ ] **Admin — view transactions**: a real screen showing tips/payments, not
       `AdminFlow.jsx`'s current hardcoded local React state.
 - [ ] **Admin — payout queue calling `set-payout-status`**: `PayoutsScreen`'s

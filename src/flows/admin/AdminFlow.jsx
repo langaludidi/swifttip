@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { I, Header, Avatar, BottomNav } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
 import { setWorkerActive } from '../../services/workers.js';
+import KycReviewScreen from './KycReviewScreen.jsx';
 
 const TABS = [
   { id: 'dash', label: 'Dashboard', icon: I.home },
+  { id: 'kyc', label: 'KYC', icon: I.shield },
   { id: 'workers', label: 'Workers', icon: I.users },
   { id: 'payouts', label: 'Payouts', icon: I.bank },
   { id: 'fraud', label: 'Fraud', icon: I.flag },
@@ -165,7 +167,7 @@ export default function AdminFlow({ screen: screenProp, nav: navProp, data: data
     setScreen(s);
   };
 
-  const screens = { dash: DashScreen, workers: WorkersScreen, payouts: PayoutsScreen, fraud: FraudScreen };
+  const screens = { dash: DashScreen, kyc: KycReviewScreen, workers: WorkersScreen, payouts: PayoutsScreen, fraud: FraudScreen };
   const Screen = screens[screen] || DashScreen;
 
   return (
@@ -178,6 +180,7 @@ export default function AdminFlow({ screen: screenProp, nav: navProp, data: data
 
 AdminFlow.screens = [
   { id: 'dash', label: 'Platform dashboard' },
+  { id: 'kyc', label: 'KYC review' },
   { id: 'workers', label: 'Worker management' },
   { id: 'payouts', label: 'Payout queue' },
   { id: 'fraud', label: 'Fraud monitor' },

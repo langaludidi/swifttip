@@ -39,13 +39,19 @@ export async function getWorkerBySlug(slug) {
   return { worker: mapPublicWorker(data), error: null };
 }
 
-export async function getWorkers(employerId) {
+// Was hardcoded to employer-scoped, active-only workers — unusable for e.g.
+// an admin queue of workers pending KYC review (active is false for those by
+// definition). Never called anywhere until now, so free to generalize: pass
+// only the filters you need.
+export async function getWorkers({ employerId, statusIn, active } = {}) {
   if (isDemo) return { workers: SAMPLE.workers, error: null };
-  const { data, error } = await supabase
+  let query = supabase
     .from('workers')
-    .select('*, profiles(full_name), wallets(balance_cents)')
-    .eq('employer_id', employerId)
-    .eq('active', true);
+    .select('id, slug, display_name, job_title, station, status, active, submitted_at, reviewed_at, rejection_reason, created_at, profiles(full_name, phone)');
+  if (employerId) query = query.eq('employer_id', employerId);
+  if (statusIn) query = query.in('status', statusIn);
+  if (active !== undefined) query = query.eq('active', active);
+  const { data, error } = await query.order('submitted_at', { ascending: true, nullsFirst: false });
   return { workers: data ?? [], error };
 }
 

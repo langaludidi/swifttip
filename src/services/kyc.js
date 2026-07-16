@@ -35,3 +35,29 @@ export async function submitKycForReview() {
   if (data?.error) return { error: new Error(data.error) };
   return { error: null };
 }
+
+// Admin-only. GET mode (no decision): fetches the worker + signed URLs for
+// their documents, and — as a side effect server-side — flips submitted to
+// under_review. Signed URLs are short-lived; this is the only way the kyc
+// bucket's contents are ever readable, there is no client SELECT policy.
+export async function getKycReview(workerId) {
+  if (isDemo) return { worker: null, documents: [], error: null };
+  const { data, error } = await supabase.functions.invoke('review-kyc', {
+    body: { worker_id: workerId },
+  });
+  if (error) return { worker: null, documents: [], error };
+  if (data?.error) return { worker: null, documents: [], error: new Error(data.error) };
+  return { worker: data.worker, documents: data.documents ?? [], error: null };
+}
+
+// Admin-only. DECIDE mode — approve or reject. rejection_reason is required
+// by decide_kyc() when decision is 'rejected'.
+export async function decideKyc({ workerId, decision, rejectionReason }) {
+  if (isDemo) return { error: null };
+  const { data, error } = await supabase.functions.invoke('review-kyc', {
+    body: { worker_id: workerId, decision, rejection_reason: rejectionReason },
+  });
+  if (error) return { error };
+  if (data?.error) return { error: new Error(data.error) };
+  return { error: null };
+}
