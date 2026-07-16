@@ -42,6 +42,27 @@ dedicated record. Add future findings here rather than as inline mentions only.
   only caller is the admin console). Verified live post-fix: the same chain's final
   step now fails (RLS filters the row, 0 rows affected), and an admin session can
   still update workers normally (console unaffected).
+- **C6 — `profiles.role` self-escalation (fixed 2026-07-17, migration
+  `0012_prevent_profile_role_selfescalation.sql`).** `"profiles update own"`
+  (`0001_init.sql`) is `for update using (id = auth.uid())` with no `WITH CHECK`,
+  which defaults to the same USING expression — that only restricts *which row*
+  can be touched, never *which columns*. Any authenticated user could `PATCH`
+  their own `role` to `'admin'` directly. Live-proven with only the anon key:
+  HTTP 200, `role: "admin"` returned. More severe than C5 — grants full platform
+  admin, not one worker's `active` flag, and unwinds every `auth_role() =
+  'admin'` check in the system, including C5's own fix. Distinct from C4 (which
+  only fixed signup-time `raw_user_meta_data` trust and left this ongoing-UPDATE
+  vector untouched). Urgent checks before the fix confirmed **not exploited**
+  (only `ludidil@gmail.com` had `role != 'worker'`) and **no public frontend
+  deployment exists** (checked Vercel and Netlify — no `swifttip` project on
+  either), though the Supabase backend itself was always independently reachable
+  by anyone holding the anon key, frontend or not. Fixed with a `BEFORE UPDATE`
+  trigger comparing `OLD`/`NEW` directly (a bare RLS `WITH CHECK` can't compare
+  old vs. new row snapshots), gated on `auth.role() = 'authenticated'` so
+  service-role/SQL-based promotion (how the real admin account was created)
+  keeps working. Verified live in both directions post-fix: self-promotion now
+  fails with a clear error, legitimate self-update of name/phone still
+  succeeds, and SQL-based promotion still succeeds.
 - **Admin-side integrity gap (open, not yet fixed).** Even after C5, an *admin*
   account can still bypass `decide_kyc()` via a direct client `UPDATE` on `workers`
   — no reason required on rejection, no `audit_logs` row written, no status-
