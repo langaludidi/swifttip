@@ -21,6 +21,37 @@ following are true:
    (tips settling, payouts requested/approved/paid) must leave a `ledger_entries`
    row or equivalent trail, not just mutate a balance.
 
+## Security findings (post-Sprint-1 criticals)
+
+Sprint 1 tracked C1–C4 inline in checklist context; this section is the first
+dedicated record. Add future findings here rather than as inline mentions only.
+
+- **C5 — `workers` self-approval via the employer RLS clause (fixed 2026-07-16,
+  migration `0011_workers_admin_only_update.sql`).** `"workers employer or admin
+  update"` let any employer owner directly UPDATE their own workers' `active`/
+  `status`/`rejection_reason`/`reviewed_at` with no validation and no audit trail —
+  entirely bypassing `decide_kyc()`. Live-proven exploitable by a member of the
+  public with only the anon key: self-insert an `employers` row (`owner_id = self`,
+  already permitted), self-insert a `workers` row attached to it (`employer_id`
+  unconstrained on insert — see the pilot-2 note below), then `PATCH` that worker's
+  `active` to `true` directly. Confirmed reachable end-to-end, including a fully
+  anonymous read afterward showing the worker as `active: true` (i.e., tippable —
+  real customer money could have flowed to a fully fake, zero-KYC "worker"). Fixed
+  by dropping the employer clause entirely — employer self-service is deferred to
+  pilot #2 and nothing in the current codebase calls this path (`setWorkerActive`'s
+  only caller is the admin console). Verified live post-fix: the same chain's final
+  step now fails (RLS filters the row, 0 rows affected), and an admin session can
+  still update workers normally (console unaffected).
+- **Admin-side integrity gap (open, not yet fixed).** Even after C5, an *admin*
+  account can still bypass `decide_kyc()` via a direct client `UPDATE` on `workers`
+  — no reason required on rejection, no `audit_logs` row written, no status-
+  transition validation. Lower severity than C5 (requires an already-privileged
+  account, not reachable by the public), but it means `decide_kyc()`'s "sole path"
+  design intent still isn't actually enforced at the database layer. Needs
+  trigger-level enforcement (reject any `active`/`status`/`reviewed_at`/
+  `rejection_reason` change on `workers` that didn't originate from `decide_kyc`'s
+  service-role context) — not fixed by C5, tracked here as a known gap.
+
 ## High priority — Pilot #1 (Customer + Worker) — open items
 
 Live repair list, scoped to what's actually blocking pilot #1 per the recalibrated
@@ -79,6 +110,17 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
 - [ ] **Employer — dashboard ID-chain fix**: fix `useEmployerData` in `src/lib/hooks.js`
       — same class of `workers.id` vs `auth.uid()` bug that was fixed for the worker
       dashboard this session, not yet applied here.
+- [ ] **Employer — `workers` INSERT policy must constrain `employer_id` before
+      self-service employer onboarding ships.** `"workers insert self"` only checks
+      `profile_id = auth.uid()` — it never validates that the caller's `employer_id`
+      is one they're actually entitled to attach to. Live-proven (2026-07-16, C5
+      investigation): a throwaway account can self-create an `employers` row via
+      the already-public `/employer/onboarding` route, then attach an arbitrary
+      `workers` row to it. C5 closed the resulting privilege-escalation path (the
+      `workers` UPDATE side), but this INSERT-side gap is a **prerequisite blocker**
+      for pilot #2's employer self-service, not something safe to leave for later —
+      don't build employer roster/worker-attach features on top of this policy
+      as-is.
 - [ ] **Admin — onboarding backend**: invite-code system, 2FA/TOTP, responsibilities
       gate — the path by which a NEW admin is granted the role. UI scaffold already
       matches the design spec; zero backend wiring exists. Touches the same
