@@ -36,28 +36,34 @@ done above against real Supabase data — not once the UI looks right.
       `active` defaults false, but nothing prevents it) could still request a payout.
       Add an explicit `status = 'approved'` check, matching the identity-check pattern
       already used in `request-payout` for C1 (Sprint 1).
-- [ ] **KYC review path for pilot #1**: `review-kyc` is still a stub (`{ok:true}`, no
-      logic), and there is **no in-app way for anyone to approve a worker's KYC
-      submission** — right now that's a manual SQL operation. Decide next session:
-      build a minimal `review-kyc` + small review screen scoped to pilot #1 (the
-      project owner is already an admin via Sprint 1's manual promotion, so this
-      doesn't require the deferred admin-invite/role-grant system), or accept manual
-      DB approval as the pilot #1 process and document it as such.
-- [ ] **Payout approval path for pilot #1**: same shape of gap — `set-payout-status`
-      is fully implemented server-side, but nothing in the app calls it (the only
-      caller would be the deferred Admin payout queue). Without it, a worker's payout
-      request has no path to actually being marked paid except manual SQL. Same
-      decision needed as the KYC review path above.
 - [ ] **Worker — employer linkage at signup**: set a real `employer_id` on the
       `workers` row during onboarding. Currently always left `null`. Lower urgency
       than the items above — doesn't block a worker from being tipped or paid out.
 
-## Deferred to pilot #2 — do not start without explicit kickoff
+### Admin console (Tier 3) — minimal, ugly is fine, but blocking pilot #1
 
-Employer administrator and SwiftTip administrator, in full (onboarding + console).
-Admin in particular touches the same admin-role-grant surface as the C4 privilege-
-escalation fix (Sprint 1) and needs its own focused security pass, not a tail-end
-session addition.
+The operational stopgap that makes self-service worker onboarding viable — without
+this, KYC/payout approval is hand-written SQL against production, per worker, daily.
+The project owner is already an admin (Sprint 1 manual promotion), so none of this
+needs an invite/role-grant system — see "Deferred to pilot #2" below for that part.
+
+- [ ] **Admin — `review-kyc` implementation + review screen**: currently a stub
+      (`{ok:true}`, no logic), and no in-app screen exists to approve/reject a
+      worker's submitted documents.
+- [ ] **Admin — view transactions**: a real screen showing tips/payments, not
+      `AdminFlow.jsx`'s current hardcoded local React state.
+- [ ] **Admin — payout queue calling `set-payout-status`**: `PayoutsScreen`'s
+      approve/reject buttons only mutate local state. `set-payout-status` is fully
+      implemented server-side — the UI needs to call it.
+- [ ] **Admin — worker management on live data**: `WorkersScreen` renders a hardcoded
+      mock list. The suspend/activate toggle calls the real `setWorkerActive` service,
+      but against fake ids — wire the list itself to real `workers` rows first.
+- [ ] **Admin — audit log**: no schema, no logging calls anywhere yet. Needs a
+      queryable record of admin actions (KYC approve/reject, payout marked paid,
+      worker suspended — who, what, when). Distinct from `ledger_entries`, which
+      tracks money, not admin actions.
+
+## Deferred to pilot #2 — do not start without explicit kickoff
 
 - [ ] **Employer — login screen**: build employer sign-in (mirror `WorkerLogin`).
       Only an onboarding/signup flow exists today.
@@ -70,17 +76,15 @@ session addition.
       — same class of `workers.id` vs `auth.uid()` bug that was fixed for the worker
       dashboard this session, not yet applied here.
 - [ ] **Admin — onboarding backend**: invite-code system, 2FA/TOTP, responsibilities
-      gate. UI scaffold already matches the design spec; zero backend wiring exists.
-- [ ] **Admin — dashboard KPIs on live data**: `AdminFlow.jsx`'s `DashScreen` renders
-      hardcoded numbers, not a Supabase query.
-- [ ] **Admin — worker management on live data**: `WorkersScreen` renders a hardcoded
-      mock list. The suspend/activate toggle calls the real `setWorkerActive` service,
-      but against fake ids — wire the list itself to real `workers` rows first.
-- [ ] **Admin — payout queue calling `set-payout-status`**: `PayoutsScreen`'s
-      approve/reject buttons only mutate local state — full admin console version of
-      the pilot #1 stopgap above.
+      gate — the path by which a NEW admin is granted the role. UI scaffold already
+      matches the design spec; zero backend wiring exists. Touches the same
+      admin-role-grant surface as the C4 privilege-escalation fix (Sprint 1); needs
+      its own focused security pass, not a tail-end session addition.
+- [ ] **Admin — platform KPI dashboard**: not named in the Tier 3 console scope —
+      treat as pilot #2 unless explicitly pulled forward.
 - [ ] **Admin — fraud detection**: `FraudScreen` is a static empty state with no
-      detection logic behind it. Scope the actual detection rules before implementing.
+      detection logic behind it, and wasn't named in Tier 3 scope either. Scope the
+      actual detection rules before implementing, in a later sprint.
 
 ## Pre-pilot gate
 

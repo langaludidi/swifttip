@@ -29,6 +29,45 @@ Full detail: `@docs/production/01-mvp-scope.md`. Live repair list against that s
 
 Four roles: **Customer**, **Worker**, **Employer administrator**, **SwiftTip administrator**.
 
+**North star for pilot #1**: will a customer at a petrol station scan a stranger's
+QR and tip real money, and does that money reach the worker cleanly and on time?
+Every scope call serves that question. Pilot shape: one fuel station, ~20 workers,
+Paystack only, overnight payouts, owner watching every transaction daily.
+
+**The four tiers (recalibrated MVP):**
+
+- **Tier 1 — must be excellent, this is the actual test**: the customer journey.
+  Scan → worker confirmation (name/photo/workplace) → choose amount → pay via
+  Paystack → clear success with reference / clear failure. Must be fast and
+  trustworthy on a cheap phone with a weak signal. Settlement by webhook only,
+  never redirect.
+- **Tier 2 — must work, can be plain, this earns worker trust**: money reaching
+  workers. Tip → pending → cleared → overnight payout batch → paid.
+  `request-payout` gated on KYC-approved + never exceeding cleared balance. Worker
+  dashboard shows real states (pending/available/paid) derived from
+  `ledger_entries`. "You've been paid" SMS. Daily reconciliation that balances to
+  zero. Ugly is fine; wrong is fatal.
+- **Tier 3 — must exist, minimal internal tool**: the admin console (see the
+  admin-console-vs-onboarding distinction below).
+- **Tier 4 — required because onboarding is self-service (owner's call)**: worker
+  registration + real mobile OTP (replacing `4321`), KYC upload, KYC status
+  lifecycle surfaced to the worker, worker tippable only after KYC approval.
+
+**Deferred to pilot #2**: employer self-service dashboard, admin onboarding,
+multiple payment providers, instant payouts, compliments (already built — don't
+extend further), NFC, customer accounts, referrals, rewards, analytics, native apps.
+
+**"Admin" is two separate things — do not conflate them:**
+- **Admin onboarding** (how someone *becomes* an admin) — deferred to pilot #2. It
+  touches the same admin-role-grant surface as the C4 privilege-escalation fix
+  (Sprint 1) and needs its own focused security pass.
+- **Admin console/portal** (what an *existing* admin does — review KYC, view
+  transactions, mark payouts paid, suspend a worker, audit log) — **in scope for
+  pilot #1**. The project owner is already an admin via Sprint 1's manual SQL
+  promotion, so the console needs no invite/role-grant system. Minimal and ugly is
+  fine — it exists so pilot #1's self-service worker onboarding doesn't mean
+  hand-writing SQL against production to approve every worker.
+
 **No feature gets built unless it appears in the MVP scope doc.** If asked to build
 something not listed there, say so and ask before proceeding — don't silently add it.
 
@@ -68,6 +107,13 @@ the live checklist in `@docs/production/06-production-checklist.md`:
   A tip is only ever settled by the verified `paystack-webhook` handler (HMAC-SHA512
   signature check) calling `settle_tip`. The frontend may poll for status after a
   redirect, but must never optimistically show success itself.
+- **The `claude.ai/design` handoff project is a visual/interaction reference, not a
+  scope document.** It shows intended look, copy, and behavior for a given flow —
+  useful for fidelity work once a feature is already in scope. It does not decide
+  *what's* in scope; that's `01-mvp-scope.md` and the tiers above. A screen existing
+  in the design handoff is not authorization to build it if it isn't already in the
+  MVP scope doc (e.g., the handoff's Employer/Admin-onboarding flows are fully
+  designed but deferred to pilot #2 — don't build from the design alone).
 
 ## Known architectural gotcha
 
