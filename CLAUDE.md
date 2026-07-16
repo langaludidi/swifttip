@@ -114,6 +114,19 @@ the live checklist in `@docs/production/06-production-checklist.md`:
   in the design handoff is not authorization to build it if it isn't already in the
   MVP scope doc (e.g., the handoff's Employer/Admin-onboarding flows are fully
   designed but deferred to pilot #2 — don't build from the design alone).
+- **Run `get_advisors` (security) at the start of every session, not only when
+  something feels wrong.** Three drift incidents have been found in this project's
+  live database so far (`settle_tip`, the `kyc` storage bucket, a stale
+  `decide_kyc` overload) — all three found by accident, and `get_advisors` would
+  have caught each one immediately. It's a standing habit now, not a one-off.
+- **If the design-reference build's KYC screens/schema (`0006_kyc.sql` in that
+  project — file-numbering collision with this repo's own `0006_kyc_bucket.sql`,
+  a different migration) are ever ported: do NOT bring across `kyc_submissions` or
+  `workers.verified`.** Those two objects are exactly what a stale, anon-callable
+  `decide_kyc` overload was found writing to live in the database (drift incident
+  #3, closed in `0013_drop_stale_decide_kyc_overload.sql`) — introducing them for
+  real would create a second verification concept competing with `worker_status`,
+  which is the single source of truth for whether a worker is verified.
 
 ## Known architectural gotcha
 

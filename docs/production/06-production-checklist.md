@@ -63,6 +63,37 @@ dedicated record. Add future findings here rather than as inline mentions only.
   keeps working. Verified live in both directions post-fix: self-promotion now
   fails with a clear error, legitimate self-update of name/phone still
   succeeds, and SQL-based promotion still succeeds.
+- **Drift incident #3 — stale `decide_kyc` overload (fixed 2026-07-17, migration
+  `0013_drop_stale_decide_kyc_overload.sql`).** A second `decide_kyc(uuid, text,
+  uuid, text)` overload existed live in the database, never created by any
+  migration file, with `EXECUTE` never revoked from `anon`/`authenticated`. Found
+  by `get_advisors(type: security)` — the first time that tool had been run on
+  this project. Worse than C5/C6: needs no session at all, just an unauthenticated
+  RPC call. Its body wrote to `kyc_submissions`/`workers.verified`, neither of
+  which currently exist, so it was inert today — but those are exactly the two
+  objects the design-reference build's `0006_kyc.sql` would create if ever ported
+  (queued as a Sprint A tail item; see the note in `CLAUDE.md`). Landing that port
+  without this fix would have silently reactivated an anonymous, zero-auth
+  KYC-approval bypass. Same failure signature as incident #1 (`settle_tip`,
+  `0003_drop_stale_settle_tip_overload.sql`) and #2 (the `kyc` bucket,
+  `0006_kyc_bucket.sql`) — an object hand-created directly against the live
+  database, never captured in a migration. All three have been found by accident.
+  **`get_advisors` should be run at the start of every session, not only when
+  something feels wrong** — it would have caught this immediately, and might have
+  caught #1/#2 sooner too.
+  Fixed with a surgical `drop function` targeting only the stale signature — the
+  real `decide_kyc(uuid, worker_status, text, uuid)` (`0010_kyc_review.sql`) was
+  untouched. Also folded in as hygiene: revoked `EXECUTE` from `anon`/
+  `authenticated` on the three `SECURITY DEFINER` trigger functions
+  (`handle_new_user`, `handle_new_worker`, `prevent_self_role_change`) — inert
+  (trigger functions error if called directly, since they reference the
+  trigger-only `new` record) but the grant itself was wrong. `auth_role()` was
+  deliberately left alone — RLS policy expressions call it directly, so it must
+  stay executable by `anon`/`authenticated`. Verified live: the stale signature
+  now 404s (`PGRST202`, function not found) via `/rest/v1/rpc/decide_kyc`; the
+  real one still works end-to-end (a throwaway worker was approved through the
+  actual `review-kyc` edge function, confirmed `active=true` and an `audit_logs`
+  row written).
 - **Admin-side integrity gap (open, not yet fixed).** Even after C5, an *admin*
   account can still bypass `decide_kyc()` via a direct client `UPDATE` on `workers`
   — no reason required on rejection, no `audit_logs` row written, no status-
