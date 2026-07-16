@@ -5,6 +5,8 @@ import { SAMPLE } from './data.js';
 export function useWorkerData(userId) {
   const [data, setData] = useState(SAMPLE);
   const [loading, setLoading] = useState(!isDemo);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refetch = () => setRefreshKey(k => k + 1);
 
   useEffect(() => {
     if (isDemo || !userId) { setLoading(false); return; }
@@ -16,7 +18,7 @@ export function useWorkerData(userId) {
       // Everything downstream (wallets, tips, payouts) is keyed off workers.id, not the auth uid.
       const { data: workerRow, error: workerErr } = await supabase
         .from('workers')
-        .select('id, slug, display_name, job_title')
+        .select('id, slug, display_name, job_title, status, rejection_reason')
         .eq('profile_id', userId)
         .single();
 
@@ -54,6 +56,8 @@ export function useWorkerData(userId) {
           balance: balanceCents / 100,
           slug: workerRow.slug ?? d.self.slug,
           role: workerRow.job_title ?? d.self.role,
+          status: workerRow.status,
+          rejectionReason: workerRow.rejection_reason,
         },
         recent: tips.length ? tips : d.recent,
       }));
@@ -72,9 +76,9 @@ export function useWorkerData(userId) {
     load();
 
     return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
-  }, [userId]);
+  }, [userId, refreshKey]);
 
-  return { data, loading };
+  return { data, loading, refetch };
 }
 
 export function useEmployerData(employerId) {

@@ -21,18 +21,44 @@ following are true:
    (tips settling, payouts requested/approved/paid) must leave a `ledger_entries`
    row or equivalent trail, not just mutate a balance.
 
-## High priority — open items
+## High priority — Pilot #1 (Customer + Worker) — open items
 
-Live repair list. Every item below is confirmed MVP scope (see `01-mvp-scope.md`) that
-is currently stubbed, mocked, or faked in the running app. Check off only once it
-passes the full definition of done above against real Supabase data — not once the UI
-looks right.
+Live repair list, scoped to what's actually blocking pilot #1 per the recalibrated
+MVP (see `01-mvp-scope.md`). Check off only once it passes the full definition of
+done above against real Supabase data — not once the UI looks right.
 
 - [ ] **Worker — real OTP verification**: wire `send-sms` (BulkSMS) into
       `WorkerOnboarding`'s phone step. Currently hardcodes `4321` as always-correct;
       `send-sms` exists as a working edge function but nothing calls it.
+- [ ] **`request-payout` — KYC status gate**: the function currently has **no status
+      check at all** — it only checks wallet balance. A worker who somehow has
+      `active=true` with `status` not `approved` (shouldn't normally happen given
+      `active` defaults false, but nothing prevents it) could still request a payout.
+      Add an explicit `status = 'approved'` check, matching the identity-check pattern
+      already used in `request-payout` for C1 (Sprint 1).
+- [ ] **KYC review path for pilot #1**: `review-kyc` is still a stub (`{ok:true}`, no
+      logic), and there is **no in-app way for anyone to approve a worker's KYC
+      submission** — right now that's a manual SQL operation. Decide next session:
+      build a minimal `review-kyc` + small review screen scoped to pilot #1 (the
+      project owner is already an admin via Sprint 1's manual promotion, so this
+      doesn't require the deferred admin-invite/role-grant system), or accept manual
+      DB approval as the pilot #1 process and document it as such.
+- [ ] **Payout approval path for pilot #1**: same shape of gap — `set-payout-status`
+      is fully implemented server-side, but nothing in the app calls it (the only
+      caller would be the deferred Admin payout queue). Without it, a worker's payout
+      request has no path to actually being marked paid except manual SQL. Same
+      decision needed as the KYC review path above.
 - [ ] **Worker — employer linkage at signup**: set a real `employer_id` on the
-      `workers` row during onboarding. Currently always left `null`.
+      `workers` row during onboarding. Currently always left `null`. Lower urgency
+      than the items above — doesn't block a worker from being tipped or paid out.
+
+## Deferred to pilot #2 — do not start without explicit kickoff
+
+Employer administrator and SwiftTip administrator, in full (onboarding + console).
+Admin in particular touches the same admin-role-grant surface as the C4 privilege-
+escalation fix (Sprint 1) and needs its own focused security pass, not a tail-end
+session addition.
+
 - [ ] **Employer — login screen**: build employer sign-in (mirror `WorkerLogin`).
       Only an onboarding/signup flow exists today.
 - [ ] **Employer — payouts view on real data**: wire the Payouts screen to actual
@@ -43,18 +69,37 @@ looks right.
 - [ ] **Employer — dashboard ID-chain fix**: fix `useEmployerData` in `src/lib/hooks.js`
       — same class of `workers.id` vs `auth.uid()` bug that was fixed for the worker
       dashboard this session, not yet applied here.
+- [ ] **Admin — onboarding backend**: invite-code system, 2FA/TOTP, responsibilities
+      gate. UI scaffold already matches the design spec; zero backend wiring exists.
 - [ ] **Admin — dashboard KPIs on live data**: `AdminFlow.jsx`'s `DashScreen` renders
       hardcoded numbers, not a Supabase query.
 - [ ] **Admin — worker management on live data**: `WorkersScreen` renders a hardcoded
       mock list. The suspend/activate toggle calls the real `setWorkerActive` service,
       but against fake ids — wire the list itself to real `workers` rows first.
 - [ ] **Admin — payout queue calling `set-payout-status`**: `PayoutsScreen`'s
-      approve/reject buttons only mutate local state. The `set-payout-status` edge
-      function is fully implemented server-side — the UI needs to call it.
-- [ ] **Admin — `review-kyc` implementation**: currently a stub (`{ok:true}`, no logic).
-      Needs a real KYC review workflow.
+      approve/reject buttons only mutate local state — full admin console version of
+      the pilot #1 stopgap above.
 - [ ] **Admin — fraud detection**: `FraudScreen` is a static empty state with no
       detection logic behind it. Scope the actual detection rules before implementing.
+
+## Pre-pilot gate
+
+Separate from MVP feature scope above — these are operational/infrastructure items
+that must be verified before any real person outside the team uses the app, even
+if every feature above were done:
+
+- [ ] **Rate limiting on `create-tip`**: currently unauthenticated by design (customers
+      have no account) with no rate limit — nothing stops a script from hammering it.
+- [ ] **Rate limiting on signup**: currently only bounded by Supabase Auth's own
+      default email-rate-limit (hit repeatedly during this session's own testing) —
+      confirm that's actually sufficient, don't just assume it.
+- [ ] **Verified DB backups**: confirm backups are actually enabled and — critically —
+      that a restore has actually been tested, not just that the setting is on.
+- [ ] **Error monitoring**: no error-tracking/alerting exists yet for either the
+      frontend or Edge Functions. Right now a failure is only visible if someone is
+      manually watching Supabase logs.
+- [ ] **Password reset tested end-to-end**: not exercised at all this session — worth
+      confirming it works before real users hit "forgot password" with no one watching.
 
 ## Concrete examples from this codebase (illustrating what "not done" looks like)
 

@@ -22,7 +22,6 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
   const workers = data.workers || [];
   const [wid, setWid] = useState(0);
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('card');
   const [payErr, setPayErr] = useState('');
   const [rating, setRating] = useState(5);
   const [compliment, setCompliment] = useState('');
@@ -100,7 +99,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>{w.name}</div>
             <div className="muted" style={{ fontSize: 14, marginTop: 3 }}>{w.role} · {data.employer}</div>
-            <div style={{ margin: '12px 0' }}><span className="badge"><I.check size={12} stroke={3} /> Verified</span></div>
+            <div style={{ margin: '12px 0' }}><span className="badge"><I.check size={12} stroke={3} /> Verified worker</span></div>
             <div className="row" style={{ justifyContent: 'center', gap: 8 }}>
               <Stars value={w.rating} /> <b style={{ fontSize: 16 }}>{w.rating}</b>
               <span className="muted">· {w.tips} tips</span>
@@ -109,8 +108,12 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
             <div className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Station</div>
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2 }}>{data.employer}</div>
           </div>
+          <div className="trust-note teal">
+            <span className="ic"><I.lock size={18} /></span>
+            <div><div className="tt">No account needed</div><div className="ts">Tip in seconds — your card details are never stored.</div></div>
+          </div>
           <button className="btn btn-primary" onClick={() => { setAmount(''); go('amount'); }}>
-            Tip {w.name.split(' ')[0]}
+            Tip {w.name.split(' ')[0]} <I.heart size={17} color="#fff" />
           </button>
         </div>
       </div>
@@ -118,20 +121,12 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
   );
 
   if (screen === 'amount') {
-    const presets = [10, 15, 20, 30, 50];
     const press = (k) => {
       if (k === 'del') setAmount(a => a.slice(0, -1));
       else if (k === '.') setAmount(a => a.includes('.') ? a : (a || '0') + '.');
       else setAmount(a => (a + k).replace(/^0(?=\d)/, '').slice(0, 6));
     };
-    const methods = [
-      { id: 'card', label: 'Card', icon: I.card },
-      { id: 'snap', label: 'SnapScan', icon: I.phone },
-      { id: 'ozow', label: 'Ozow EFT', icon: I.bank },
-    ];
-    const layout = data.tipLayout || 'numpad';
-    const cardPresets = [{ v: 10, l: 'Thanks' }, { v: 20, l: 'Generous', pop: true }, { v: 50, l: 'Amazing' }, { v: 100, l: 'VIP' }];
-    const sliderMax = 200;
+    const cardPresets = [{ v: 10, l: 'Thanks' }, { v: 20, l: 'Generous', pop: true }, { v: 50, l: 'Amazing' }];
     return (
       <>
         <Header title="Tip Amount" onBack={() => go('profile')} />
@@ -145,83 +140,27 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
               </div>
             </div>
 
-            {layout === 'numpad' && <>
-              <div className="amount-display">
-                <div className="amount-label">Tip amount</div>
-                <div className="amount-big">R{amount || '0'}</div>
-              </div>
-              <div className="pill-row">
-                {presets.map(p => (
-                  <button key={p} className={'pill' + (amount === String(p) ? ' active' : '')} onClick={() => setAmount(String(p))}>R{p}</button>
-                ))}
-              </div>
-              <div className="numpad">
-                {['1','2','3','4','5','6','7','8','9','.','0','del'].map(k => (
-                  <button key={k} className="numkey" onClick={() => press(k)}>
-                    {k === 'del' ? <I.del size={24} color="var(--muted)" /> : k}
-                  </button>
-                ))}
-              </div>
-            </>}
-
-            {layout === 'cards' && <>
-              <div className="amount-display" style={{ margin: '2px 0' }}>
-                <div className="amount-label">You're tipping</div>
-                <div className="amount-big" style={{ fontSize: 44 }}>R{amount || '0'}</div>
-              </div>
-              <div className="tip-cards">
-                {cardPresets.map(p => (
-                  <button key={p.v} className={'tip-card' + (amount === String(p.v) ? ' active' : '')} onClick={() => setAmount(String(p.v))}>
-                    {p.pop && <span className="tc-pop">POPULAR</span>}
-                    <span className="tc-amt">R{p.v}</span>
-                    <span className="tc-lab">{p.l}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label>Custom amount</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: 12, fontWeight: 700, color: 'var(--muted)' }}>R</span>
-                  <input className="input" inputMode="numeric" placeholder="Other" style={{ paddingLeft: 28 }}
-                    value={cardPresets.some(p => String(p.v) === amount) ? '' : amount}
-                    onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, '').slice(0, 6))} />
-                </div>
-              </div>
-            </>}
-
-            {layout === 'slider' && <>
-              <div className="amount-display" style={{ margin: '6px 0 2px' }}>
-                <div className="amount-label">Drag to tip</div>
-                <div className="amount-big">R{amt || '0'}</div>
-              </div>
-              <div className="tip-slider-wrap">
-                <input className="tip-slider" type="range" min="0" max={sliderMax} step="5"
-                  value={Math.min(amt, sliderMax)} onChange={e => setAmount(e.target.value)}
-                  style={{ background: `linear-gradient(90deg,var(--accent) 0%,var(--accent-600) ${(Math.min(amt,sliderMax)/sliderMax)*100}%,var(--line) ${(Math.min(amt,sliderMax)/sliderMax)*100}%)` }} />
-                <div className="tip-ticks">
-                  {[0,50,100,150,200].map(v => (
-                    <button key={v} className={'tip-tick' + (amt === v ? ' active' : '')} onClick={() => setAmount(String(v))}>R{v}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="pill-row" style={{ marginTop: 4 }}>
-                {[10,20,50,100].map(p => (
-                  <button key={p} className={'pill' + (amount === String(p) ? ' active' : '')} onClick={() => setAmount(String(p))}>R{p}</button>
-                ))}
-              </div>
-            </>}
-
-            <div>
-              <div className="rail-section-label" style={{ margin: '0 2px 8px' }}>Pay with</div>
-              <div className="row gap8">
-                {methods.map(m => { const Ic = m.icon; const on = method === m.id; return (
-                  <button key={m.id} onClick={() => setMethod(m.id)} className="btn btn-sm"
-                    style={{ flex: 1, justifyContent: 'center', background: on ? 'linear-gradient(150deg,var(--accent),var(--accent-600))' : '#fff', color: on ? '#fff' : 'var(--text)', boxShadow: on ? 'none' : 'var(--shadow-soft)', fontSize: 13 }}>
-                    <Ic size={16} color={on ? '#fff' : 'var(--accent-600)'} /> {m.label}
-                  </button>
-                ); })}
-              </div>
+            <div className="amount-display">
+              <div className="amount-label">Your tip</div>
+              <div className="amount-big">R{amount || '0'}</div>
             </div>
+            <div className="tip-cards">
+              {cardPresets.map(p => (
+                <button key={p.v} className={'tip-card' + (amount === String(p.v) ? ' active' : '')} onClick={() => setAmount(String(p.v))}>
+                  {p.pop && <span className="tc-pop">MOST PICKED</span>}
+                  <span className="tc-amt">R{p.v}</span>
+                  <span className="tc-lab">{p.l}</span>
+                </button>
+              ))}
+            </div>
+            <div className="numpad">
+              {['1','2','3','4','5','6','7','8','9','.','0','del'].map(k => (
+                <button key={k} className="numkey" onClick={() => press(k)}>
+                  {k === 'del' ? <I.del size={24} color="var(--muted)" /> : k}
+                </button>
+              ))}
+            </div>
+
             {payErr && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{payErr}</div>}
             <button className={'btn ' + (amt > 0 ? 'btn-primary' : 'btn-disabled')} disabled={amt <= 0}
               onClick={goToCheckout}>
@@ -305,10 +244,11 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
               ))}
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label>Add a message</label>
+              <label>Add a message <span className="muted" style={{ fontWeight: 500 }}>(optional)</span></label>
               <textarea className="input" rows={3} style={{ resize: 'none', fontFamily: 'var(--font)' }} placeholder="Write something nice…" value={compliment} onChange={e => setCompliment(e.target.value)} />
             </div>
             <button className="btn btn-primary" onClick={submitCompliment}>Send compliment</button>
+            <button className="btn-link" onClick={() => { setWid(0); nav('__home'); }}>Skip</button>
           </div>
         </div>
       </>
@@ -322,8 +262,7 @@ CustomerFlow.screens = [
   { id: 'scan', label: 'Scan / Find worker' },
   { id: 'profile', label: 'Worker profile' },
   { id: 'amount', label: 'Tip amount' },
-  { id: 'card', label: 'Card details' },
-  { id: 'processing', label: 'Processing' },
+  { id: 'redirecting', label: 'Redirecting to Paystack' },
   { id: 'success', label: 'Payment success' },
   { id: 'compliment', label: 'Compliment' },
 ];

@@ -68,6 +68,32 @@ export async function setWorkerActive(workerId, active) {
   return { error };
 }
 
+function randomSlugSuffix() {
+  return Math.random().toString(36).slice(2, 6);
+}
+
+// slug is derived from the worker's name with no uniqueness check up front —
+// two workers with the same or similar name collide on workers_slug_key.
+// Retries with a short random suffix appended on conflict, a few times, so
+// signup fails only if something else is actually wrong.
+export async function createWorker({ profileId, displayName, slug, jobTitle, station }) {
+  if (isDemo) return { worker: { id: 'demo', slug }, error: null };
+  let candidate = slug;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await supabase.from('workers').insert({
+      profile_id: profileId,
+      display_name: displayName,
+      slug: candidate,
+      job_title: jobTitle,
+      station: station || null,
+    }).select('id, slug').single();
+    if (!error) return { worker: data, error: null };
+    if (error.code !== '23505') return { worker: null, error };
+    candidate = `${slug}-${randomSlugSuffix()}`;
+  }
+  return { worker: null, error: new Error('Could not generate a unique profile link — please try again.') };
+}
+
 // Only called with non-empty bank + accNo — the caller decides whether the
 // worker actually submitted banking details or skipped that step.
 export async function addPayoutAccount({ workerId, bank, accNo, accountType }) {

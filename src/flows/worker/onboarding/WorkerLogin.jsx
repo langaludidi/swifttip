@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I } from '../../../components/ui.jsx';
 import { signIn, getPendingWorker, clearPendingWorker } from '../../../services/auth.js';
-import { addPayoutAccount } from '../../../services/workers.js';
+import { addPayoutAccount, createWorker } from '../../../services/workers.js';
 import { supabase, isDemo } from '../../../services/supabase.js';
 
 export default function WorkerLogin() {
@@ -29,12 +29,9 @@ export default function WorkerLogin() {
         if (!existing) {
           const pending = getPendingWorker(email);
           if (pending) {
-            const { data: newWorker } = await supabase.from('workers').insert({
-              profile_id: session.user.id,
-              display_name: pending.fullName,
-              slug: pending.slug,
-              job_title: pending.roleTitle,
-            }).select('id').single();
+            const { worker: newWorker } = await createWorker({
+              profileId: session.user.id, displayName: pending.fullName, slug: pending.slug, jobTitle: pending.roleTitle, station: pending.station,
+            });
             if (newWorker && pending.bank?.trim() && pending.accNo?.trim()) {
               await addPayoutAccount({ workerId: newWorker.id, bank: pending.bank, accNo: pending.accNo, accountType: pending.accountType });
             }

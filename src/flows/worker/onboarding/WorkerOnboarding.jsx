@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Avatar, QRCode } from '../../../components/ui.jsx';
 import { signUp, savePendingWorker } from '../../../services/auth.js';
-import { addPayoutAccount } from '../../../services/workers.js';
+import { addPayoutAccount, createWorker } from '../../../services/workers.js';
 import { supabase, isDemo } from '../../../services/supabase.js';
 import {
   WelcomeScene, IntroArtScan, IntroArtPayout, IntroArtReputation,
@@ -134,7 +134,7 @@ function PhoneScreen({ next, back, form, setForm }) {
 }
 
 /* ── OTP ───────────────────────────────────────────── */
-function OtpScreen({ next, back }) {
+function OtpScreen({ next, back, phone }) {
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('idle');
   const [secs, setSecs] = useState(30);
@@ -189,7 +189,7 @@ function OtpScreen({ next, back }) {
         <div className="pad stack gap16" style={{ paddingTop: 14 }}>
           <div className="form-h">
             <h2>Enter your code</h2>
-            <p>We sent a 4-digit code to your mobile number. <span className="link" onClick={back} style={{ cursor: 'pointer', color: 'var(--accent-600)' }}>Change</span></p>
+            <p>We sent a 4-digit code to <b style={{ color: 'var(--text)' }}>+27 {phone}</b>. <span className="link" onClick={back} style={{ cursor: 'pointer', color: 'var(--accent-600)' }}>Change</span></p>
           </div>
           <div className={'otp-row' + (error ? ' shake' : '')} style={{ marginTop: 6 }}>
             {[0, 1, 2, 3].map(i => {
@@ -287,6 +287,10 @@ function WorkScreen({ next, back, form, setForm }) {
             <input className="input" placeholder="The Grand Hotel" value={form.employer} onChange={e => setForm(f => ({ ...f, employer: e.target.value }))} />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
+            <label>Station / branch</label>
+            <input className="input" placeholder="Bar" value={form.station} onChange={e => setForm(f => ({ ...f, station: e.target.value }))} />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
             <label>Job title</label>
             <input className="input" placeholder="e.g. Bartender" value={form.roleTitle} onChange={e => setForm(f => ({ ...f, roleTitle: e.target.value }))} />
           </div>
@@ -382,7 +386,7 @@ function PermissionsScreen({ next, back }) {
 }
 
 /* ── Success ───────────────────────────────────────── */
-function SuccessScreen({ form }) {
+function SuccessScreen({ form, restart }) {
   const navigate = useNavigate();
   const [status, setStatus] = useState('registering');
   const slug = slugify(form.fullName) || 'worker';
@@ -403,12 +407,9 @@ function SuccessScreen({ form }) {
 
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          const { data: newWorker, error: insertErr } = await supabase.from('workers').insert({
-            profile_id: session.user.id,
-            display_name: form.fullName,
-            slug,
-            job_title: form.roleTitle,
-          }).select('id').single();
+          const { worker: newWorker, error: insertErr } = await createWorker({
+            profileId: session.user.id, displayName: form.fullName, slug, jobTitle: form.roleTitle, station: form.station,
+          });
           if (insertErr) { setStatus('error:' + insertErr.message); return; }
 
           if (form.bank.trim() && form.accNo.trim()) {
@@ -421,7 +422,7 @@ function SuccessScreen({ form }) {
           // (and its payout account, if provided) right after the user confirms
           // and signs in for the first time.
           savePendingWorker({
-            email: form.email, fullName: form.fullName, slug, roleTitle: form.roleTitle,
+            email: form.email, fullName: form.fullName, slug, roleTitle: form.roleTitle, station: form.station,
             bank: form.bank, accNo: form.accNo, accountType: form.accountType,
           });
           setStatus('confirm');
@@ -456,7 +457,7 @@ function SuccessScreen({ form }) {
     <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
       <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Something went wrong</div>
       <div style={{ color: 'rgba(239,68,68,0.85)', fontSize: 14, maxWidth: 300 }}>{status.replace('error:', '')}</div>
-      <button className="btn btn-primary" style={{ maxWidth: 280 }} onClick={() => navigate('/worker/onboarding')}>Try again</button>
+      <button className="btn btn-primary" style={{ maxWidth: 280 }} onClick={restart}>Try again</button>
     </div>
   );
 
@@ -480,6 +481,7 @@ function SuccessScreen({ form }) {
               <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', margin: '9px 0 1px' }}>Worker ID</div>
               <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ST-2050-{slug.slice(0,2).toUpperCase()}</div>
               <span className="badge" style={{ marginTop: 8 }}><I.check size={11} stroke={3} /> Wallet active</span>
+              <span className="badge" style={{ marginTop: 8, marginLeft: 6, background: 'rgba(242,167,27,0.16)', color: '#F2A71B' }}><I.clockC size={11} /> Verification pending</span>
             </div>
           </div>
         </div>
@@ -492,7 +494,7 @@ function SuccessScreen({ form }) {
   );
 }
 
-const BLANK_FORM = { phone: '', fullName: '', email: '', password: '', roleTitle: '', employer: '', bank: '', accNo: '', accountType: 'Savings' };
+const BLANK_FORM = { phone: '', fullName: '', email: '', password: '', roleTitle: '', employer: '', station: '', bank: '', accNo: '', accountType: 'Savings' };
 
 export default function WorkerOnboarding() {
   const [arcIdx, setArcIdx] = useState(0);
@@ -501,6 +503,7 @@ export default function WorkerOnboarding() {
   const screen = ARC[arcIdx];
   const next = () => { if (screen === 'intro') setSlide(0); setArcIdx(i => Math.min(i + 1, ARC.length - 1)); };
   const back = () => setArcIdx(i => Math.max(i - 1, 0));
+  const restart = () => { setForm(BLANK_FORM); setSlide(0); setArcIdx(0); };
   const props = { next, back, form, setForm };
 
   return (
@@ -508,12 +511,12 @@ export default function WorkerOnboarding() {
       {screen === 'welcome'     && <WelcomeScreen next={next} />}
       {screen === 'intro'       && <IntroScreen slide={slide} setSlide={setSlide} next={next} back={back} />}
       {screen === 'phone'       && <PhoneScreen {...props} />}
-      {screen === 'otp'         && <OtpScreen next={next} back={back} />}
+      {screen === 'otp'         && <OtpScreen next={next} back={back} phone={form.phone} />}
       {screen === 'profile'     && <ProfileScreen {...props} />}
       {screen === 'work'        && <WorkScreen {...props} />}
       {screen === 'banking'     && <BankingScreen {...props} />}
       {screen === 'permissions' && <PermissionsScreen next={next} back={back} />}
-      {screen === 'success'     && <SuccessScreen form={form} />}
+      {screen === 'success'     && <SuccessScreen form={form} restart={restart} />}
     </>
   );
 }

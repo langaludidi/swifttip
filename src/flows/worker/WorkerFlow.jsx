@@ -5,6 +5,15 @@ import { SAMPLE } from '../../lib/data.js';
 import { useWorkerData } from '../../lib/hooks.js';
 import { useSession } from '../../App.jsx';
 import { requestPayout } from '../../services/payouts.js';
+import KycScreen from './KycScreen.jsx';
+
+const STATUS_BANNER = {
+  draft:        { text: 'Verify your account to start receiving tips',   cta: 'Start verification', tone: 'teal' },
+  rejected:     { text: 'Your verification was rejected',                cta: 'Resubmit documents',  tone: 'danger' },
+  submitted:    { text: 'Your documents are under review',               cta: 'View status',         tone: 'teal' },
+  under_review: { text: 'Your documents are under review',               cta: 'View status',         tone: 'teal' },
+  suspended:    { text: 'Your account is suspended',                     cta: 'View details',         tone: 'danger' },
+};
 
 const TABS = [
   { id: 'dash', label: 'Home', icon: I.home },
@@ -16,6 +25,7 @@ const TABS = [
 function DashScreen({ data, nav }) {
   const s = data.self;
   const recent = data.recent || [];
+  const banner = s.status && STATUS_BANNER[s.status];
   return (
     <>
       <div className="app-header tall">
@@ -52,6 +62,14 @@ function DashScreen({ data, nav }) {
       </div>
       <div className="screen-body screen-anim">
         <div className="pad stack gap12">
+          {banner && (
+            <button className="trust-note" style={{ width: '100%', textAlign: 'left', border: 0, cursor: 'pointer',
+              borderLeft: `3px solid var(--${banner.tone === 'danger' ? 'danger' : 'accent'})` }}
+              onClick={() => nav('kyc')}>
+              <span className="ic">{banner.tone === 'danger' ? <I.flag size={18} color="var(--danger)" /> : <I.shield size={18} />}</span>
+              <div><div className="tt">{banner.text}</div><div className="ts" style={{ color: 'var(--accent-600)', fontWeight: 700 }}>{banner.cta} →</div></div>
+            </button>
+          )}
           <div className="section-row" style={{ marginTop: 4 }}>
             <div className="section-title">Recent activity</div>
           </div>
@@ -238,7 +256,7 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
   const isStandalone = !navProp;
   const [screen, setScreen] = useState(screenProp || 'dash');
   const { session } = useSession();
-  const { data: liveData } = useWorkerData(session?.user?.id);
+  const { data: liveData, refetch } = useWorkerData(session?.user?.id);
   const data = dataProp || liveData;
 
   useEffect(() => { if (screenProp) setScreen(screenProp); }, [screenProp]);
@@ -246,12 +264,13 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
   const nav = (s) => {
     if (navProp) { navProp(s); return; }
     if (s === '__home') { navigate('/'); return; }
+    if (s === '__refetch') { refetch?.(); setScreen('dash'); return; }
     setScreen(s);
   };
 
   if (data.noProfile) return <NoProfileScreen />;
 
-  const screens = { dash: DashScreen, qr: QRScreen, history: HistoryScreen, payout: PayoutScreen };
+  const screens = { dash: DashScreen, qr: QRScreen, history: HistoryScreen, payout: PayoutScreen, kyc: KycScreen };
   const Screen = screens[screen] || DashScreen;
 
   return (
@@ -267,6 +286,7 @@ WorkerFlow.screens = [
   { id: 'qr', label: 'My QR code' },
   { id: 'history', label: 'Tip history' },
   { id: 'payout', label: 'Request payout' },
+  { id: 'kyc', label: 'Verification' },
 ];
 WorkerFlow.initial = 'dash';
 WorkerFlow.statusDark = () => true;
