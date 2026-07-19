@@ -101,9 +101,18 @@ PSP relationship actually is:
 - Operational Plan, §2.1: "**Confirmed** in writing with the PSP" (stated as
   already done).
 
-This brief does not resolve that discrepancy — it's listed as a specialist
-question below, because the answer changes what's actually true about SwiftTip's
-regulatory position today versus what's aspirational.
+**Resolved, 2026-07-18, directly from the founder**: no PSP relationship is locked
+in yet. SwiftTip is currently in negotiations with **Ozow and Stitch** to be
+payment partners, with a signed agreement considered likely sooner rather than
+later, but not yet in place. The Operational Plan's "Confirmed in writing with the
+PSP" language was aspirational/premature at the time it was written, not a
+description of an actual signed state — the Concept Document's "to be confirmed by
+quote" and the Business Plan's "confirm... in writing" (listed as a next step) were
+the accurate ones. This also confirms Ozow and Stitch specifically (not Paystack)
+remain the real candidate partners, which sharpens the gap already flagged above:
+their split-at-source/subaccount/Transfer capabilities still have not been
+verified by anyone, in any session — and now that a decision may land soon, that
+verification is time-sensitive, not theoretical.
 
 ## 2. What the code does today — the exact custody mechanism
 
@@ -263,11 +272,13 @@ every time.
    worker-direct tips count as employer payroll). Is that ruling a prerequisite
    before *any* of the three funds-model options can be safely launched,
    independent of which one is chosen?
-7. The documents disagree on whether the PSP relationship is already "confirmed
-   in writing" (Operational Plan) or still an open next step (Business Plan,
-   Concept Document). Is there an actual signed agreement with any payment
-   provider today, and if so, does it name Ozow, Stitch, Paystack, or none of
-   these?
+7. ~~Resolved 2026-07-18~~: no PSP agreement is signed yet. SwiftTip is in active
+   negotiations with **Ozow and Stitch**, considered likely to close soon rather
+   than later. This sharpens rather than closes the open question: **neither
+   Ozow's nor Stitch's split-at-source/subaccount/Transfer capabilities in South
+   Africa have been verified by anyone in any session.** That verification is now
+   time-sensitive — if a decision on Option A depends on subaccount/split support
+   existing at all, it needs answering before, not after, an agreement is signed.
 8. `SwiftTip (Pty) Ltd` registration status — the documents state a dedicated
    entity "should be registered before collecting real revenue... not run under
    another entity." Has that registration happened, and does it gate any of the
@@ -286,8 +297,9 @@ every time.
   that verification was not performed by this document's author.
 - **Ozow's and Stitch's actual split-at-source/subaccount/Transfer capabilities
   have not been verified at all**, in any session, by anyone. This is the single
-  largest gap in this brief given they are the providers actually named in the
-  founding planning documents, not Paystack.
-- This document does not resolve the "confirmed in writing" vs. "to be confirmed"
-  inconsistency across the four source documents (see §1) — it's listed as
-  specialist question 7.
+  largest gap in this brief, and it's now time-sensitive: negotiations with both
+  are active (confirmed 2026-07-18) and may close soon, before this capability
+  gap has been checked.
+- The "confirmed in writing" vs. "to be confirmed" inconsistency across the four
+  source documents (§1) is resolved as of 2026-07-18: no agreement is signed yet;
+  see specialist question 7.

@@ -127,6 +127,29 @@ the live checklist in `@docs/production/06-production-checklist.md`:
   #3, closed in `0013_drop_stale_decide_kyc_overload.sql`) — introducing them for
   real would create a second verification concept competing with `worker_status`,
   which is the single source of truth for whether a worker is verified.
+- **A separate, un-versioned codebase existed on the founder's Mac, built against
+  the DEAD project ref (`xvwggwvjcaptxvcfbzlx`) — archived 2026-07-19 to
+  `~/Library/Mobile Documents/.../SwiftTip/ARCHIVE-swifttip-app-jun15` and
+  `ARCHIVE-swifttip-app-jul10`.** It has a materially different architecture
+  (different auth pattern, a `qr_codes` table, an Ozow webhook attempt) and was
+  apparently built via a separate advisory chat. **If a session summary describes
+  work — commits, schema, config, decisions — that doesn't match what's actually
+  in this repo or live database, verify against the real state before acting on
+  it, don't assume the summary is accurate.** This happened repeatedly on
+  2026-07-19: a claimed commit hash didn't exist, a claimed `create-tip` bounds
+  change wasn't in the deployed function either, a claimed Launcher redesign
+  turned out to be a byte-for-byte unmodified file, and a claimed RLS gap
+  (`qr_codes` table) turned out to not exist in this schema at all — all because
+  they described the *other* codebase, not this one.
+- **Two, independent deployment bugs found 2026-07-18, being fixed 2026-07-19**:
+  Vercel's production alias was building from `claude/nice-bardeen-we0hfg` (frozen
+  before every fix in this engagement) instead of `production-mvp`, and
+  `VITE_SUPABASE_URL` was set to the Supabase *dashboard* URL instead of the API
+  host, so every real backend call failed. If you ever need to verify what's
+  actually deployed: fetch the live bundle directly and grep it for the baked-in
+  `VITE_SUPABASE_URL`/anon key rather than trusting the Vercel API (this session's
+  access to that specific project returned 404s on direct lookups despite the
+  team slug matching — a likely account-scope mismatch, never resolved).
 
 ## Known architectural gotcha
 
@@ -136,7 +159,10 @@ IS the auth uid). Any query against `wallets`, `tips`, or `payouts` must resolve
 `workers.id` first via `profile_id = auth.uid()`, then use that resolved id — never
 query those tables directly by the auth uid. This bug was already fixed for the
 worker dashboard (`useWorkerData` in `src/lib/hooks.js`); it still needs fixing for
-`useEmployerData` (see the checklist).
+`useEmployerData` (see the checklist) — which also has a second, independent bug
+(selects `role_title`/`avatar_color`, neither of which exist on `workers`) that
+fails silently and must be fixed in the same pass, or the dashboard will keep
+showing "no active workers" even after the id-chain fix lands.
 
 ## Migrations
 

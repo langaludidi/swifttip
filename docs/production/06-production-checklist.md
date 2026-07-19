@@ -94,15 +94,33 @@ dedicated record. Add future findings here rather than as inline mentions only.
   real one still works end-to-end (a throwaway worker was approved through the
   actual `review-kyc` edge function, confirmed `active=true` and an `audit_logs`
   row written).
-- **Admin-side integrity gap (open, not yet fixed).** Even after C5, an *admin*
-  account can still bypass `decide_kyc()` via a direct client `UPDATE` on `workers`
-  — no reason required on rejection, no `audit_logs` row written, no status-
-  transition validation. Lower severity than C5 (requires an already-privileged
-  account, not reachable by the public), but it means `decide_kyc()`'s "sole path"
-  design intent still isn't actually enforced at the database layer. Needs
+- **H2 — admin MFA (fixed 2026-07-19, migration `0014_auth_role_require_aal2.sql`
+  + edited `review-kyc`/`set-payout-status`).** The sole admin account
+  (`ludidil@gmail.com`) was password-only — the human-path equivalent of C5/C6:
+  anyone into that inbox owned KYC approval, worker activation, and payouts.
+  Two layers, both proven live in both directions against real (throwaway,
+  cleaned-up) accounts: (1) `review-kyc` and `set-payout-status` decode the
+  caller's JWT and require `aal2` after the existing admin-role check — this is
+  the layer that actually matters, since both run under the service role and
+  never touch RLS, so a database-only check would never have gated them; (2)
+  `auth_role()` now returns `'admin'` only at `aal2`, closing the remaining
+  direct-table-read paths (`kyc_documents`, `audit_logs`, `workers`). Every other
+  role is unaffected — proven live with a throwaway worker account (`aal1`, no
+  MFA, unaffected: signup, dashboard reads, KYC upload all still work). Frontend:
+  `MfaEnrollScreen.jsx` (new) + a login-challenge step in `WorkerLogin.jsx`.
+  Enrollment happened live before enforcement went on, in the correct order, with
+  a proven break-glass path (a direct Postgres connection has no JWT/`aal`
+  context at all — confirmed empirically, `auth.jwt()` returns `NULL` there).
+- **Admin-side integrity gap (open, narrowed by H2, not fully fixed).** An
+  *admin* account can still bypass `decide_kyc()` via a direct client `UPDATE`
+  on `workers` — no reason required on rejection, no `audit_logs` row written,
+  no status-transition validation. H2's `auth_role()` hardening means this now
+  also requires an `aal2` session (an `aal1` admin token can't reach it either,
+  same as the legitimate path) — a real narrowing, not nothing — but an `aal2`
+  admin session can still bypass `decide_kyc()` entirely via this path. Needs
   trigger-level enforcement (reject any `active`/`status`/`reviewed_at`/
   `rejection_reason` change on `workers` that didn't originate from `decide_kyc`'s
-  service-role context) — not fixed by C5, tracked here as a known gap.
+  service-role context) — still open, tracked here.
 
 ## High priority — Pilot #1 (Customer + Worker) — open items
 
@@ -122,6 +140,20 @@ done above against real Supabase data — not once the UI looks right.
 - [ ] **Worker — employer linkage at signup**: set a real `employer_id` on the
       `workers` row during onboarding. Currently always left `null`. Lower urgency
       than the items above — doesn't block a worker from being tipped or paid out.
+- [ ] **Customer — declined card never resolves to a failure state (Tier 1 audit,
+      2026-07-18).** `paystack-webhook` only handles `charge.success` — confirmed
+      via multiple independent sources that **Paystack sends no webhook event at
+      all for a failed/declined one-time charge** (subscriptions get
+      `invoice.payment_failed`; one-time charges don't have an equivalent). A
+      declined card leaves the tip stuck at `pending` forever; the customer sees
+      "still confirming... no need to pay again" instead of the truth. Documented
+      fix (not yet built): extend `get-tip-status` to call Paystack's Verify
+      Transaction API (`GET /transaction/verify/:reference`, server-side, secret
+      key) once our own DB status is still `pending` a few polls in — `data.status`
+      returns `success`/`abandoned`/`failed`; map the latter two to our existing
+      `tips.status = 'failed'` (no migration needed). This is the sharpest
+      correctness gap against the actual pilot #1 north star and should be the
+      next real engineering priority after this consolidation pass.
 
 ### Admin console (Tier 3) — minimal, ugly is fine, but blocking pilot #1
 
@@ -145,10 +177,13 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
 - [ ] **Admin — worker management on live data**: `WorkersScreen` renders a hardcoded
       mock list. The suspend/activate toggle calls the real `setWorkerActive` service,
       but against fake ids — wire the list itself to real `workers` rows first.
-- [ ] **Admin — audit log**: no schema, no logging calls anywhere yet. Needs a
-      queryable record of admin actions (KYC approve/reject, payout marked paid,
-      worker suspended — who, what, when). Distinct from `ledger_entries`, which
-      tracks money, not admin actions.
+- [x] / [ ] **Admin — audit log**: **partially done.** `audit_logs` table exists
+      (migration `0010_kyc_review.sql`) and `decide_kyc()` writes a row on every
+      KYC approve/reject — that part is real and live-verified. **Not yet done:**
+      no logging for payout status changes or worker suspension (neither of
+      those admin actions exists as a real flow yet either — see the items
+      below). Distinct from `ledger_entries`, which tracks money, not admin
+      actions.
 
 ## Deferred to pilot #2 — do not start without explicit kickoff
 
@@ -161,7 +196,14 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
       a no-op.
 - [ ] **Employer — dashboard ID-chain fix**: fix `useEmployerData` in `src/lib/hooks.js`
       — same class of `workers.id` vs `auth.uid()` bug that was fixed for the worker
-      dashboard this session, not yet applied here.
+      dashboard this session, not yet applied here. **Second, independent bug found
+      2026-07-18**: the same hook's query selects `role_title`/`avatar_color`,
+      neither of which exists on `workers` (real columns: `job_title`, no
+      `avatar_color` at all). Supabase-js doesn't throw on a query error by
+      default, so this fails silently — the employer dashboard renders "no active
+      workers" regardless of how many actually exist, indistinguishable from a
+      real empty state. Both bugs must be fixed together; fixing only the id-chain
+      issue would still return nothing.
 - [ ] **Employer — `workers` INSERT policy must constrain `employer_id` before
       self-service employer onboarding ships.** `"workers insert self"` only checks
       `profile_id = auth.uid()` — it never validates that the caller's `employer_id`
@@ -184,6 +226,30 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
       detection logic behind it, and wasn't named in Tier 3 scope either. Scope the
       actual detection rules before implementing, in a later sprint.
 
+## Deployment (found 2026-07-18, in progress)
+
+- [ ] **Vercel production is broken two independent ways.** `https://swifttip.vercel.app/`
+      is live (`200`) but (1) builds from `claude/nice-bardeen-we0hfg`, a branch
+      frozen at commit `5085651` — before every fix in this entire engagement (no
+      C1–C6, no drift-3, no H2/MFA) — and (2) `VITE_SUPABASE_URL` is set to
+      `https://supabase.com/dashboard/project/dmkaqmbuoosolsnkkmiq` (the human
+      dashboard page) instead of the actual API host, confirmed by calling that
+      exact URL the way the app would: `404`, Supabase's own marketing-site HTML,
+      not JSON — every real backend call fails. Fix in progress: re-point
+      production to `production-mvp` and correct the URL in the same pass (fixing
+      only the URL would make the *pre-security-fix* branch actually work, which
+      is worse than the current broken-but-safe state).
+- [ ] **A second, unrelated codebase was found on the same machine** (two
+      folders in iCloud Drive, archived 2026-07-19 as `ARCHIVE-swifttip-app-jun15`
+      and `ARCHIVE-swifttip-app-jul10`) — a materially different architecture
+      (different auth pattern, a `qr_codes` table, an Ozow webhook attempt)
+      running against the dead Supabase ref (`xvwggwvjcaptxvcfbzlx`). Confirmed
+      zero divergence between this repo and every deployed edge function on the
+      live project, so this parallel work never reached production. A real
+      BulkSMS credential exposure was noted in that workspace's own docs
+      ("rotate the token, it was shared in chat") with no confirmation it was
+      ever rotated — treat as compromised.
+
 ## Pre-pilot gate
 
 Separate from MVP feature scope above — these are operational/infrastructure items
@@ -195,6 +261,20 @@ if every feature above were done:
 - [ ] **Rate limiting on signup**: currently only bounded by Supabase Auth's own
       default email-rate-limit (hit repeatedly during this session's own testing) —
       confirm that's actually sufficient, don't just assume it.
+- [ ] **Login brute-force protection**: confirmed (2026-07-18) that the email-send
+      limit and the actual `/auth/v1/token` limit are different things — the only
+      thing gating password sign-in is a generic per-IP limit (1800 requests/hour,
+      bursts of 30), not account-specific, not a lockout. Supabase's native
+      per-account lockout hook requires the Teams/Enterprise plan (confirmed this
+      project is on Free) — options are CAPTCHA (native, off today,
+      `security_captcha_enabled: false`) or Cloudflare/Turnstile in front of the
+      app once one exists. No fix chosen yet.
+- [ ] **Password floor is weaker than the app claims**: confirmed live
+      (2026-07-18) that Supabase's actual enforced `password_min_length` is `6`,
+      not the `8` the app's own signup form enforces client-side only. A direct
+      API call bypasses the app's rule entirely. Fix is a one-line Management API
+      config change (`password_min_length: 8`+), not a code change — not yet
+      applied.
 - [ ] **Verified DB backups**: confirm backups are actually enabled and — critically —
       that a restore has actually been tested, not just that the setting is on.
 - [ ] **Error monitoring**: no error-tracking/alerting exists yet for either the

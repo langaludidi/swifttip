@@ -113,11 +113,15 @@ data for the first time; there's no other code depending on the current broken
   cleanup/hygiene: there is nothing to prune because nothing was ever built.
   Covered in more detail in the debug-diagnosis report.
 - **Standalone `settle-tip` edge function** (distinct from the `settle_tip()`
-  Postgres RPC that's actually used) — confirmed still deployed (`ACTIVE`) via
-  `list_edge_functions`, and confirmed zero references to it anywhere in `src/`
-  or any other edge function. This was flagged as a loose end in an earlier
-  session ("supposed to be disabled after confirming nothing depends on it") and
-  is still live and unreferenced today. **Classification: dead, zero live
+  Postgres RPC that's actually used) — **correction, 2026-07-19**: this was
+  originally reported here as an unresolved loose end. It is not. Checked its
+  actual deployed content directly (not just its `ACTIVE` status, which only
+  reflects "not paused/deleted") and it's a proper `410 Gone` stub, dated
+  2026-07-14, with a clear comment naming the exact vulnerability it replaced (no
+  caller-auth check, anyone with the anon key could force-settle any tip_id).
+  The local repo file already carries the same disabled stub — this was closed
+  before this diagnostic pass even started, not something still open.
+  **Classification: dead, zero live
   callers found.** Lowest-risk deletion candidate in this entire report — nothing
   refers to it, so nothing would break.
 - **`Invite worker` button** (`EmployerFlow.jsx:78`) — `<button className="btn
