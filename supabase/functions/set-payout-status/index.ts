@@ -9,6 +9,21 @@ const corsHeaders = {
 const VALID_STATUSES = ['approved', 'paid', 'rejected'] as const;
 type PayoutStatus = typeof VALID_STATUSES[number];
 
+// JWTs aren't encrypted — this is a plain base64url decode of the payload
+// segment to read the `aal` claim (Authenticator Assurance Level). Same
+// helper as review-kyc.
+function getJwtAal(jwt: string): string | null {
+  try {
+    const payload = jwt.split('.')[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const decoded = JSON.parse(atob(padded));
+    return decoded.aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -43,6 +58,12 @@ serve(async (req) => {
       .from('profiles').select('role').eq('id', user.id).single();
     if (profileErr || profile?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'admin role required' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (getJwtAal(jwt) !== 'aal2') {
+      return new Response(JSON.stringify({ error: 'admin actions require a verified second factor (aal2)' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

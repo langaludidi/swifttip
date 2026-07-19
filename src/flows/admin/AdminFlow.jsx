@@ -4,6 +4,7 @@ import { I, Header, Avatar, BottomNav } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
 import { setWorkerActive } from '../../services/workers.js';
 import KycReviewScreen from './KycReviewScreen.jsx';
+import MfaEnrollScreen from './MfaEnrollScreen.jsx';
 
 const TABS = [
   { id: 'dash', label: 'Dashboard', icon: I.home },
@@ -11,6 +12,7 @@ const TABS = [
   { id: 'workers', label: 'Workers', icon: I.users },
   { id: 'payouts', label: 'Payouts', icon: I.bank },
   { id: 'fraud', label: 'Fraud', icon: I.flag },
+  { id: 'mfa', label: '2FA', icon: I.lock },
 ];
 
 function DashScreen() {
@@ -167,7 +169,7 @@ export default function AdminFlow({ screen: screenProp, nav: navProp, data: data
     setScreen(s);
   };
 
-  const screens = { dash: DashScreen, kyc: KycReviewScreen, workers: WorkersScreen, payouts: PayoutsScreen, fraud: FraudScreen };
+  const screens = { dash: DashScreen, kyc: KycReviewScreen, workers: WorkersScreen, payouts: PayoutsScreen, fraud: FraudScreen, mfa: MfaEnrollScreen };
   const Screen = screens[screen] || DashScreen;
 
   return (
@@ -184,6 +186,7 @@ AdminFlow.screens = [
   { id: 'workers', label: 'Worker management' },
   { id: 'payouts', label: 'Payout queue' },
   { id: 'fraud', label: 'Fraud monitor' },
+  { id: 'mfa', label: 'Two-factor authentication' },
 ];
 AdminFlow.initial = 'dash';
 AdminFlow.statusDark = () => true;

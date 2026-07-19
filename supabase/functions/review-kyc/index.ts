@@ -12,6 +12,21 @@ const json = (body: unknown, status = 200) =>
 
 const SIGNED_URL_TTL_SECONDS = 600;
 
+// JWTs aren't encrypted — this is a plain base64url decode of the payload
+// segment to read the `aal` claim (Authenticator Assurance Level). Reused
+// as-is in set-payout-status.
+function getJwtAal(jwt: string): string | null {
+  try {
+    const payload = jwt.split('.')[1];
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const decoded = JSON.parse(atob(padded));
+    return decoded.aal ?? null;
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -30,6 +45,13 @@ serve(async (req) => {
     const { data: profile, error: profileErr } = await supabase
       .from('profiles').select('role').eq('id', user.id).single();
     if (profileErr || profile?.role !== 'admin') return json({ error: 'admin role required' }, 403);
+
+    // Covers both DECIDE mode (approve/reject) and GET mode (signed URLs into
+    // KYC documents) — an aal1 admin session, e.g. a hijacked token, can do
+    // neither.
+    if (getJwtAal(jwt) !== 'aal2') {
+      return json({ error: 'admin actions require a verified second factor (aal2)' }, 403);
+    }
 
     const { worker_id, decision, rejection_reason } = await req.json();
     if (!worker_id) return json({ error: 'worker_id required' }, 400);
