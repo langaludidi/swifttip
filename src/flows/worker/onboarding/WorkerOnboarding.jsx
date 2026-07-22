@@ -436,14 +436,14 @@ function SuccessScreen({ form, restart }) {
 
   if (status === 'registering') return (
     <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-      <div className="spin" style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(18,196,178,0.2)', borderTopColor: 'var(--accent)' }} />
+      <div className="spin" style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(5,182,180,0.2)', borderTopColor: 'var(--accent)' }} />
       <div style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>Creating your account…</div>
     </div>
   );
 
   if (status === 'confirm') return (
     <div className="onb-screen onb-scene" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
-      <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.mail size={40} /></div>
+      <div className="success-ring" style={{ background: 'rgba(5,182,180,0.18)', color: 'var(--accent)' }}><I.mail size={40} /></div>
       <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>Check your email, {first}</div>
       <div style={{ color: 'rgba(255,255,255,0.66)', fontSize: 14.5, maxWidth: 300, lineHeight: 1.55 }}>
         We sent a confirmation link to {form.email}. Confirm it, then log in — your wallet and QR badge will be ready.
@@ -466,7 +466,7 @@ function SuccessScreen({ form, restart }) {
       <Confetti n={28} />
       <div className="screen-body" style={{ position: 'relative', zIndex: 2, flex: 1, overflowY: 'auto' }}>
         <div className="pad stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 30, gap: 6 }}>
-          <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)' }}><I.checkC size={48} /></div>
+          <div className="success-ring" style={{ background: 'rgba(5,182,180,0.18)', color: 'var(--accent)' }}><I.checkC size={48} /></div>
           <div style={{ fontSize: 27, fontWeight: 800, letterSpacing: '-0.6px', color: '#fff' }}>You're all set, {first}!</div>
           <div style={{ color: 'rgba(255,255,255,0.66)', fontSize: 14.5, maxWidth: 290, lineHeight: 1.55, marginTop: 4 }}>Your wallet, worker ID and QR badge are ready. Display your QR and start earning.</div>
           <div className="glass-card" style={{ marginTop: 24, padding: 18, width: '100%', maxWidth: 320, display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -481,7 +481,7 @@ function SuccessScreen({ form, restart }) {
               <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.6)', margin: '9px 0 1px' }}>Worker ID</div>
               <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: '0.5px' }}>ST-2050-{slug.slice(0,2).toUpperCase()}</div>
               <span className="badge" style={{ marginTop: 8 }}><I.check size={11} stroke={3} /> Wallet active</span>
-              <span className="badge" style={{ marginTop: 8, marginLeft: 6, background: 'rgba(242,167,27,0.16)', color: '#F2A71B' }}><I.clockC size={11} /> Verification pending</span>
+              <span className="badge" style={{ marginTop: 8, marginLeft: 6 }}><I.clockC size={11} /> Verification pending</span>
             </div>
           </div>
         </div>

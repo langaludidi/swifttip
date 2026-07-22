@@ -90,7 +90,7 @@ export function Stars({ value = 5, size = 14 }) {
   return (
     <span className="stars">
       {[1,2,3,4,5].map(n => (
-        <I.star key={n} size={size} color={n <= value ? '#F2A71B' : '#ddd'} fill={n <= value ? '#F2A71B' : 'none'} />
+        <I.star key={n} size={size} color={n <= value ? 'var(--brand-text)' : '#ddd'} fill={n <= value ? 'var(--brand-text)' : 'none'} />
       ))}
     </span>
   );

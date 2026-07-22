@@ -43,7 +43,7 @@ function QueueList({ onSelect }) {
       {workers.map(w => (
         <button key={w.id} className="list-card" style={{ width: '100%', textAlign: 'left', border: 0, cursor: 'pointer' }}
           onClick={() => onSelect(w.id)}>
-          <div className={'icon-chip' + (w.status === 'under_review' ? ' gold' : '')}><I.doc size={20} /></div>
+          <div className="icon-chip"><I.doc size={20} /></div>
           <div className="lc-main">
             <div className="lc-title">{w.display_name || 'Worker'}</div>
             <div className="lc-sub">{w.job_title || 'Staff'}{w.station ? ` · ${w.station}` : ''} · {w.status === 'under_review' ? 'Under review' : 'Submitted'}</div>

@@ -113,7 +113,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
             <div><div className="tt">No account needed</div><div className="ts">Tip in seconds — your card details are never stored.</div></div>
           </div>
           <button className="btn btn-primary" onClick={() => { setAmount(''); go('amount'); }}>
-            Tip {w.name.split(' ')[0]} <I.heart size={17} color="#fff" />
+            Tip {w.name.split(' ')[0]} <I.heart size={17} color="var(--ink)" />
           </button>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
             </div>
 
             {payErr && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{payErr}</div>}
-            <button className={'btn ' + (amt > 0 ? 'btn-primary' : 'btn-disabled')} disabled={amt <= 0}
+            <button className={'btn ' + (amt > 0 ? 'btn-gold' : 'btn-disabled')} disabled={amt <= 0}
               onClick={goToCheckout}>
               Tip R{amt.toFixed(2)} to {w.name.split(' ')[0]}
             </button>
@@ -182,7 +182,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
         <CustConfetti n={26} />
         <div className="screen-body" style={{ position: 'relative', zIndex: 2, flex: 1, overflowY: 'auto' }}>
           <div className="pad stack" style={{ alignItems: 'center', textAlign: 'center', paddingTop: 24, gap: 5 }}>
-            <div className="success-ring" style={{ background: 'rgba(18,196,178,0.18)', color: 'var(--accent)', marginBottom: 14 }}><I.check size={44} stroke={3} /></div>
+            <div className="success-ring" style={{ background: 'rgba(5,182,180,0.18)', color: 'var(--accent)', marginBottom: 14 }}><I.check size={44} stroke={3} /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>Tip sent!</div>
             <div style={{ fontSize: 50, fontWeight: 800, letterSpacing: '-1.6px', color: '#fff', margin: '6px 0 0' }}>R{(amt || 20).toFixed(2)}</div>
             <div style={{ color: 'rgba(255,255,255,0.62)', fontSize: 14, marginTop: 2 }}>to {w.name} · Receipt {rcpt}</div>
@@ -203,7 +203,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
         </div>
         <div className="onb-foot" style={{ position: 'relative', zIndex: 2 }}>
           <button className="btn btn-primary" onClick={() => { setRating(5); setCompliment(''); setSent(false); go('compliment'); }}>
-            Leave a compliment <I.heart size={17} color="#fff" />
+            Leave a compliment <I.heart size={17} color="var(--ink)" />
           </button>
         </div>
       </div>
@@ -233,7 +233,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
               <div className="row" style={{ justifyContent: 'center', gap: 6, marginTop: 12 }}>
                 {[1,2,3,4,5].map(i => (
                   <button key={i} onClick={() => setRating(i)} style={{ background: 0, border: 0, cursor: 'pointer', padding: 2 }}>
-                    <I.star size={34} color={i <= rating ? '#F2A71B' : '#e2e8ec'} />
+                    <I.star size={34} color={i <= rating ? 'var(--brand-text)' : '#e2e8ec'} />
                   </button>
                 ))}
               </div>

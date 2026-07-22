@@ -3,19 +3,29 @@
    Premium fintech. Navy + Teal + Gold. Inter.
    ============================================================ */
 :root {
+  /* Brand source tokens — single source of truth, verified WCAG contrast pairs:
+     ink/white on --brand 8.23:1 / 2.51:1, on --brand-deep 6.47:1 / 3.2:1,
+     white on --brand-text 5.07:1. White text is only ever used on --brand-text
+     or darker — never on --brand, --brand-deep, or --gold. */
+  --brand:       #05b6b4;
+  --brand-deep:  #04a0a4;
+  --brand-text:  #037b7e;
+  --bg-wash:     #ecf6f8;
+  --ink:         #02020a;
+
   --navy-900: #052B36;
   --navy-800: #083C4A;
   --navy-700: #0c4d5d;
-  --teal-500: #12C4B2;
-  --teal-600: #08A392;
-  --accent:   #12C4B2;          /* tweakable */
-  --accent-600: #08A392;        /* tweakable */
-  --gold:     #F2A71B;
+  --teal-500: var(--brand);
+  --teal-600: var(--brand-deep);
+  --accent:   var(--brand);
+  --accent-600: var(--brand-deep);
+  --gold:     #ff9f1c;          /* money moments only: most-picked badge, final pay button — always ink text, never white */
   --success:  #22C55E;
-  --danger:   #EF4444;
+  --danger:   #cf3f3f;   /* 4.74:1 vs white/black — passes AA as text and as a solid fill with white text */
   --warning:  #F59E0B;
-  --bg:       #F6FAFB;
-  --text:     #102A43;
+  --bg:       var(--bg-wash);
+  --text:     var(--ink);
   --muted:    #6a8492;
   --muted-2:  #93a8b3;
   --card:     #ffffff;
@@ -24,7 +34,7 @@
   --hair:     var(--line);
   --text-strong: var(--text);
   --surface-2: var(--card);
-  --mint:     rgba(18,196,178,0.12);
+  --mint:     rgba(5,182,180,0.12);
   --radius:   20px;
   --radius-sm: 14px;
   --shadow-card: 0 10px 30px -16px rgba(8,60,74,0.28), 0 2px 8px -4px rgba(8,60,74,0.12);
@@ -33,6 +43,11 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* Every digit in the product — tips, balances, stats — gets a fixed width so
+   amounts don't jitter as they change. Set once at body level rather than
+   per-component so no monetary display can be missed. */
+body { font-variant-numeric: tabular-nums; }
 
 /* ---------- App stage ---------- */
 .st-stage {
@@ -69,7 +84,7 @@
   width: 42px; height: 42px; border-radius: 12px;
   background: linear-gradient(150deg, var(--teal-500), var(--teal-600));
   display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 15px;
-  letter-spacing: -0.5px; box-shadow: 0 8px 18px -8px rgba(8,163,146,0.7);
+  letter-spacing: -0.5px; box-shadow: 0 8px 18px -8px rgba(4,160,164,0.7);
 }
 .brand-name { font-weight: 700; font-size: 18px; letter-spacing: -0.3px; }
 .brand-tag { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
@@ -98,7 +113,7 @@
   font-size: 13px; font-weight: 500; text-align: left; transition: all .14s;
 }
 .rail-screen:hover { background: rgba(8,60,74,0.05); color: var(--text); }
-.rail-screen.active { color: var(--accent-600); font-weight: 700; }
+.rail-screen.active { color: var(--brand-text); font-weight: 700; }
 .rail-screen.active .dot { background: var(--accent); }
 .rail-screen .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line); flex: 0 0 6px; }
 
@@ -151,7 +166,7 @@
 /* ---------- Headers ---------- */
 .app-header {
   background:
-    radial-gradient(420px 200px at 88% -30%, rgba(18,196,178,0.22), transparent 60%),
+    radial-gradient(420px 200px at 88% -30%, rgba(5,182,180,0.22), transparent 60%),
     linear-gradient(165deg, var(--navy-900), var(--navy-800));
   color: #fff; padding: 0 22px 22px;
   border-radius: 0 0 28px 28px; position: relative;
@@ -185,17 +200,17 @@
   background: var(--mint); color: var(--accent-600); display: grid; place-items: center;
 }
 .icon-chip.danger { background: rgba(239,68,68,0.1); color: var(--danger); }
-.icon-chip.gold { background: rgba(242,167,27,0.13); color: var(--gold); }
+.icon-chip.gold { background: rgba(255,159,28,0.13); color: var(--gold); }
 .lc-main { flex: 1; min-width: 0; }
 .lc-title { font-weight: 700; font-size: 15px; }
 .lc-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-.lc-amt { font-weight: 800; font-size: 16px; letter-spacing: -0.3px; }
-.amt-pos { color: var(--accent-600); }
+.lc-amt { font-weight: 800; font-size: 16px; letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+.amt-pos { color: var(--brand-text); }
 .amt-neg { color: var(--danger); }
 
 .section-row { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 12px; }
 .section-title { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
-.link { color: var(--accent-600); font-weight: 700; font-size: 13.5px; cursor: pointer; border: 0; background: 0; font-family: var(--font); }
+.link { color: var(--brand-text); font-weight: 700; font-size: 13.5px; cursor: pointer; border: 0; background: 0; font-family: var(--font); }
 
 /* ---------- Avatars ---------- */
 .avatar {
@@ -216,14 +231,21 @@
 }
 .btn:active { transform: translateY(1px) scale(0.995); }
 .btn-primary {
-  background: linear-gradient(150deg, var(--accent), var(--accent-600)); color: #fff;
+  background: linear-gradient(150deg, var(--accent), var(--accent-600)); color: var(--ink);
   box-shadow: 0 14px 26px -14px var(--accent-600);
 }
 .btn-primary:hover { filter: brightness(1.04); }
 .btn-primary:disabled, .btn-disabled {
-  background: linear-gradient(150deg, #f3d49a, #ecc079); color: rgba(255,255,255,0.92);
+  background: #e7eef1; color: var(--muted);
   box-shadow: none; cursor: not-allowed;
 }
+/* Money-moment button only (the actual pay action) — solid fill, no gradient:
+   the one gradient budget in this design system is brand → brand-deep. */
+.btn-gold {
+  background: var(--gold); color: var(--ink);
+  box-shadow: 0 14px 26px -14px rgba(255,159,28,0.6);
+}
+.btn-gold:hover { filter: brightness(1.04); }
 .btn-ghost { background: #fff; color: var(--text); box-shadow: var(--shadow-soft); }
 .btn-dark { background: rgba(255,255,255,0.1); color: #fff; }
 .btn-sm { padding: 12px 14px; font-size: 14px; border-radius: 12px; width: auto; }
@@ -248,9 +270,9 @@
   font-family: var(--font); transition: all .14s;
 }
 .pill:hover { border-color: var(--accent); }
-.pill.active { background: var(--accent-600); border-color: var(--accent-600); color: #fff; }
+.pill.active { background: var(--accent-600); border-color: var(--accent-600); color: var(--ink); }
 .badge {
-  display: inline-flex; align-items: center; gap: 5px; background: var(--mint); color: var(--accent-600);
+  display: inline-flex; align-items: center; gap: 5px; background: var(--mint); color: var(--brand-text);
   font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
 }
 .badge.live { background: rgba(34,197,94,0.14); color: #16a34a; }
@@ -260,12 +282,12 @@
   border: 1.5px solid var(--line); background: #fff; color: var(--muted); border-radius: 999px;
   padding: 9px 18px; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: var(--font); transition: all .14s;
 }
-.tag-tab.active { background: var(--accent-600); border-color: var(--accent-600); color: #fff; }
+.tag-tab.active { background: var(--accent-600); border-color: var(--accent-600); color: var(--ink); }
 
 /* ---------- Numpad ---------- */
 .amount-display { text-align: center; }
 .amount-label { font-size: 13px; font-weight: 700; color: var(--muted); }
-.amount-big { font-size: 56px; font-weight: 800; letter-spacing: -2px; line-height: 1.1; }
+.amount-big { font-size: 56px; font-weight: 800; letter-spacing: -2px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .numpad { display: grid; grid-template-columns: repeat(3,1fr); }
 .numkey {
   background: transparent; border: 0; cursor: pointer; font-family: var(--font);
@@ -287,7 +309,7 @@
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   color: var(--muted-2); font-size: 11px; font-weight: 600; padding: 4px 0;
 }
-.tab.active { color: var(--accent-600); }
+.tab.active { color: var(--brand-text); }
 
 /* ---------- inputs ---------- */
 .field { margin-bottom: 14px; }
@@ -316,11 +338,11 @@
   display: flex; flex-direction: column; gap: 3px; transition: all .15s; box-shadow: var(--shadow-soft);
 }
 .tip-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.tip-card.active { border-color: var(--accent-600); background: linear-gradient(160deg, rgba(18,196,178,0.1), #fff); box-shadow: 0 12px 24px -14px var(--accent-600); }
-.tip-card .tc-amt { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+.tip-card.active { border-color: var(--accent-600); background: linear-gradient(160deg, rgba(5,182,180,0.1), #fff); box-shadow: 0 12px 24px -14px var(--accent-600); }
+.tip-card .tc-amt { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
 .tip-card.active .tc-amt { color: var(--accent-600); }
 .tip-card .tc-lab { font-size: 12.5px; color: var(--muted); font-weight: 600; }
-.tip-card .tc-pop { position: absolute; top: 10px; right: 10px; background: var(--gold); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; letter-spacing: .3px; }
+.tip-card .tc-pop { position: absolute; top: 10px; right: 10px; background: var(--gold); color: var(--ink); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; letter-spacing: .3px; }
 
 .tip-slider-wrap { padding: 4px 4px 0; }
 .tip-slider {
@@ -337,7 +359,7 @@
 }
 .tip-ticks { display: flex; justify-content: space-between; margin-top: 10px; }
 .tip-tick { background: 0; border: 0; cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 700; color: var(--muted); padding: 6px 4px; }
-.tip-tick.active { color: var(--accent-600); }
+.tip-tick.active { color: var(--brand-text); }
 
 /* fade/slide screen transition */
 @keyframes screenIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -354,7 +376,7 @@
   border: 1px solid rgba(255,255,255,0.08);
 }
 .stat .k { font-size: 12.5px; color: rgba(255,255,255,0.6); font-weight: 600; }
-.stat .v { font-size: 24px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; }
+.stat .v { font-size: 24px; font-weight: 800; margin-top: 4px; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
 .stat.light { background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
 .stat.light .k { color: var(--muted); }
 .stat.light .v { color: var(--text); }

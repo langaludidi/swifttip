@@ -4,7 +4,7 @@ import { I, QRCode, Avatar } from '../../components/ui.jsx';
 export function ScanScene({ locked, worker }) {
   return (
     <div className="cam-scene" style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
-      <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(18,196,178,0.18), transparent 65%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: '12%', left: '50%', transform: 'translateX(-50%)', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(5,182,180,0.18), transparent 65%)', pointerEvents: 'none' }} />
       <div style={{ textAlign: 'center', color: '#fff', zIndex: 2 }}>
         <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.3px' }}>{locked ? 'Badge found' : 'Scan to tip'}</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>{locked ? 'Loading worker…' : "Point at the worker's SwiftTip badge"}</div>
@@ -32,7 +32,7 @@ export function BuzzPhone({ amount, worker }) {
       <div style={{ position: 'absolute', inset: 0, borderRadius: 26, background: 'linear-gradient(165deg,#0c2f39,#06181e)', border: '2px solid rgba(255,255,255,0.08)', boxShadow: '0 26px 50px -24px rgba(0,0,0,0.6)' }} />
       <div style={{ position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)', width: 46, height: 8, borderRadius: 8, background: 'rgba(255,255,255,0.12)' }} />
       <div className="buzz-note" style={{ position: 'absolute', top: 30, left: 12, right: 12, background: 'rgba(255,255,255,0.97)', borderRadius: 13, padding: '10px 11px', display: 'flex', gap: 9, alignItems: 'center', boxShadow: '0 14px 26px -12px rgba(0,0,0,0.5)' }}>
-        <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(18,196,178,0.12)', display: 'grid', placeItems: 'center', flex: '0 0 30px' }}>
+        <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(5,182,180,0.12)', display: 'grid', placeItems: 'center', flex: '0 0 30px' }}>
           <I.wallet size={16} color="var(--accent-600)" />
         </span>
         <div style={{ lineHeight: 1.25, textAlign: 'left' }}>
