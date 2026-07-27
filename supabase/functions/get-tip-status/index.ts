@@ -27,12 +27,53 @@ serve(async (req) => {
 
     const { data, error } = await supabase
       .from('tips')
-      .select('id, status, amount_cents')
+      .select('id, status, amount_cents, created_at')
       .eq('gateway_ref', reference)
       .single();
     if (error || !data) return json({ error: 'tip not found' }, 404);
 
-    return json({ tip_id: data.id, status: data.status, amount_cents: data.amount_cents });
+    let status = data.status;
+
+    // Paystack sends no webhook event at all for a one-time-charge decline
+    // (only `charge.success` exists — confirmed against Paystack's own docs) —
+    // so a declined card leaves `status` stuck at 'pending' forever unless we
+    // ask Paystack directly. Give the webhook a head start on the common,
+    // fast success path before spending an API call on this.
+    const ageMs = Date.now() - new Date(data.created_at).getTime();
+    if (status === 'pending' && ageMs > 4000) {
+      try {
+        const verifyRes = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+          { headers: { Authorization: `Bearer ${Deno.env.get('PAYSTACK_SECRET_KEY')}` } },
+        );
+        const verify = await verifyRes.json();
+        const gatewayStatus = verify?.data?.status; // 'success' | 'abandoned' | 'failed'
+
+        if (verifyRes.ok && (gatewayStatus === 'abandoned' || gatewayStatus === 'failed')) {
+          // Guard on the row still being 'pending' so a webhook that settles
+          // concurrently between our read and this write can never be
+          // clobbered back to 'failed'.
+          const { data: updated } = await supabase
+            .from('tips')
+            .update({ status: 'failed' })
+            .eq('id', data.id)
+            .eq('status', 'pending')
+            .select('status')
+            .single();
+          if (updated) status = updated.status;
+        }
+        // gatewayStatus === 'success': leave status as 'pending'. Settlement
+        // stays exclusively `paystack-webhook`'s job — this function never
+        // calls `settle_tip`, it only unblocks the failure path the webhook
+        // can't ever report.
+      } catch {
+        // Verify call itself failing (network, bad response) just means we
+        // fall back to the DB's current status — never surface this as an
+        // error to a customer waiting on their payment.
+      }
+    }
+
+    return json({ tip_id: data.id, status, amount_cents: data.amount_cents });
   } catch (err) {
     return json({ error: (err as Error).message }, 500);
   }

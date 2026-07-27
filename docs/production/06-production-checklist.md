@@ -140,20 +140,24 @@ done above against real Supabase data — not once the UI looks right.
 - [ ] **Worker — employer linkage at signup**: set a real `employer_id` on the
       `workers` row during onboarding. Currently always left `null`. Lower urgency
       than the items above — doesn't block a worker from being tipped or paid out.
-- [ ] **Customer — declined card never resolves to a failure state (Tier 1 audit,
-      2026-07-18).** `paystack-webhook` only handles `charge.success` — confirmed
-      via multiple independent sources that **Paystack sends no webhook event at
-      all for a failed/declined one-time charge** (subscriptions get
-      `invoice.payment_failed`; one-time charges don't have an equivalent). A
-      declined card leaves the tip stuck at `pending` forever; the customer sees
-      "still confirming... no need to pay again" instead of the truth. Documented
-      fix (not yet built): extend `get-tip-status` to call Paystack's Verify
+- [x] **Customer — declined card never resolves to a failure state (Tier 1 audit,
+      2026-07-18; fixed 2026-07-28).** `paystack-webhook` only handles
+      `charge.success` — Paystack sends no webhook event at all for a
+      failed/declined one-time charge (subscriptions get `invoice.payment_failed`;
+      one-time charges don't have an equivalent), so a declined card left the tip
+      stuck at `pending` forever. Fixed in `get-tip-status`: once the DB status is
+      still `pending` and the tip row is >4s old (gives the webhook's fast path a
+      head start before spending a Paystack API call), it calls Paystack's Verify
       Transaction API (`GET /transaction/verify/:reference`, server-side, secret
-      key) once our own DB status is still `pending` a few polls in — `data.status`
-      returns `success`/`abandoned`/`failed`; map the latter two to our existing
-      `tips.status = 'failed'` (no migration needed). This is the sharpest
-      correctness gap against the actual pilot #1 north star and should be the
-      next real engineering priority after this consolidation pass.
+      key) and maps a `data.status` of `abandoned`/`failed` to `tips.status =
+      'failed'` via a `.eq('status','pending')`-guarded update — a webhook that
+      settles concurrently can never be clobbered back to `failed`. A `success`
+      verify result is deliberately left as `pending`: this function still never
+      calls `settle_tip` itself, settlement stays exclusively the webhook's job.
+      No migration needed (`failed` was already a valid `tips.status` value).
+      Verified live (2026-07-28) against a real, never-completed test-mode
+      Paystack checkout: the tip correctly flipped `pending` → `failed` in the
+      database, repeat polls stayed stable, and an unknown reference still 404s.
 
 ### Admin console (Tier 3) — minimal, ugly is fine, but blocking pilot #1
 
@@ -292,6 +296,12 @@ if every feature above were done:
       API call bypasses the app's rule entirely. Fix is a one-line Management API
       config change (`password_min_length: 8`+), not a code change — not yet
       applied.
+- [ ] **Leaked password protection disabled** (found by `get_advisors`,
+      2026-07-27): Supabase Auth's HaveIBeenPwned check is off, so a signup or
+      password change accepts a password already known to be compromised.
+      Same category of fix as the password-floor item above — a Management API
+      config toggle, not a code change — and worth bundling with it in the same
+      pass.
 - [ ] **Verified DB backups**: confirm backups are actually enabled and — critically —
       that a restore has actually been tested, not just that the setting is on.
 - [ ] **Error monitoring**: no error-tracking/alerting exists yet for either the
