@@ -17,19 +17,19 @@ function StatusNotice({ icon, iconColor, title, sub }) {
 function DocumentRow({ type, uploaded, uploading, error, onPick }) {
   const inputRef = useRef(null);
   return (
-    <div className="list-card">
-      <div className={'icon-chip' + (uploaded ? ' gold' : '')}>
-        {uploading ? <Spinner size={18} /> : uploaded ? <I.checkC size={20} /> : <I.doc size={20} />}
+    <div className="doc-row">
+      <div className="doc-ic" style={uploaded ? { background: 'rgba(34,197,94,0.15)', color: 'var(--success)' } : undefined}>
+        {uploading ? <Spinner size={16} /> : uploaded ? <I.checkC size={18} /> : <I.doc size={18} />}
       </div>
-      <div className="lc-main">
-        <div className="lc-title">{type.label}</div>
-        <div className="lc-sub">
+      <div className="doc-main">
+        <div className="doc-label">{type.label}</div>
+        <div className="doc-sub">
           {uploading ? 'Uploading…' : uploaded ? 'Uploaded' : error ? error : 'Not uploaded yet'}
         </div>
       </div>
       <input ref={inputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }}
         onChange={e => { const f = e.target.files?.[0]; if (f) onPick(f); e.target.value = ''; }} />
-      <button className="btn btn-sm btn-ghost" disabled={uploading} onClick={() => inputRef.current?.click()}>
+      <button className="doc-btn" disabled={uploading} onClick={() => inputRef.current?.click()}>
         {uploaded ? 'Replace' : 'Upload'}
       </button>
     </div>
@@ -144,13 +144,15 @@ export default function KycScreen({ data, nav }) {
               <button className="btn btn-ghost" onClick={loadDocuments}>Try again</button>
             </div>
           ) : (
-            KYC_DOCUMENT_TYPES.map(type => (
-              <DocumentRow key={type.key} type={type}
-                uploaded={documents.some(d => d.document_type === type.key)}
-                uploading={!!uploading[type.key]}
-                error={uploadErrors[type.key]}
-                onPick={file => handlePick(type, file)} />
-            ))
+            <div className="card">
+              {KYC_DOCUMENT_TYPES.map(type => (
+                <DocumentRow key={type.key} type={type}
+                  uploaded={documents.some(d => d.document_type === type.key)}
+                  uploading={!!uploading[type.key]}
+                  error={uploadErrors[type.key]}
+                  onPick={file => handlePick(type, file)} />
+              ))}
+            </div>
           )}
 
           {submitError && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{submitError}</div>}

@@ -1,0 +1,13 @@
+{
+  "name": "SwiftTip",
+  "short_name": "SwiftTip",
+  "description": "QR-based cashless tipping for South Africa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ecf6f8",
+  "theme_color": "#05b6b4",
+  "icons": [
+    { "src": "/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

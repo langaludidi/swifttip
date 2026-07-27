@@ -1,44 +1,114 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { I } from '../components/ui.jsx';
+import { I, Spinner } from '../components/ui.jsx';
+import { getWorkerBySlug } from '../services/workers.js';
+import stMark from '../assets/logo/ST-01.svg';
 
-const CARDS = [
-  { id: 'worker',   t: 'I am a worker',   s: 'Receive & withdraw tips',  icon: I.wallet, grad: 'linear-gradient(155deg,#1fd0bd,#0a9d8d)', shadow: '0 16px 30px -18px rgba(10,157,141,0.9)',   to: '/worker/onboarding' },
-  { id: 'customer', t: 'I want to tip',   s: 'Tip a worker securely',    icon: I.heart,  grad: 'linear-gradient(155deg,#f9b65a,#ef843a)', shadow: '0 16px 30px -18px rgba(239,132,58,0.9)',  to: '/tip/demo' },
-  { id: 'employer', t: 'I am an employer', s: 'Manage your team',         icon: I.users,  grad: 'linear-gradient(155deg,#5f93f2,#2f63e0)', shadow: '0 16px 30px -18px rgba(47,99,224,0.85)',  to: '/employer/onboarding' },
-  { id: 'admin',    t: 'Platform admin',  s: 'Operate the network',      icon: I.shield, grad: 'linear-gradient(155deg,#9f72f2,#7344e3)', shadow: '0 16px 30px -18px rgba(115,68,227,0.85)', to: '/admin/onboarding' },
+// Customer-first: "Tip a worker" is the hero, not one of four equal cards.
+// There is deliberately no "Scan QR" button here — a physical QR badge is
+// scanned with the phone's own camera app, which deep-links straight to
+// /tip/:slug and never touches this screen at all. The only interactive
+// element this screen needs for tipping is the manual fallback: a worker
+// code, for when scanning isn't practical (camera trouble, code read aloud,
+// etc). Resolving it through getWorkerBySlug means it inherits the exact
+// same active=true gate a QR scan would hit — no separate check to keep in sync.
+function TipHero() {
+  const navigate = useNavigate();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async () => {
+    const slug = code.trim().toLowerCase().replace(/\s+/g, '-');
+    if (!slug) return;
+    setBusy(true); setError('');
+    const { worker, error: err } = await getWorkerBySlug(slug);
+    setBusy(false);
+    if (err || !worker) { setError("We couldn't find a worker with that code — check it and try again."); return; }
+    navigate(`/tip/${worker.slug}`);
+  };
+
+  return (
+    <div style={{
+      width: '100%', maxWidth: 420, borderRadius: 26, padding: '30px 24px', textAlign: 'center',
+      background: 'linear-gradient(150deg, var(--brand), var(--brand-deep))', boxShadow: '0 20px 40px -20px rgba(4,160,164,0.5)',
+      color: 'var(--ink)', position: 'relative', overflow: 'hidden',
+    }}>
+      <span style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'radial-gradient(circle at 32% 32%,rgba(255,255,255,0.35),transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(255,255,255,0.32)', display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}>
+        <I.heart size={28} color="var(--ink)" />
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.4px' }}>Tip a worker</div>
+      <div style={{ fontSize: 13.5, color: 'rgba(2,2,10,0.72)', marginTop: 6, lineHeight: 1.4 }}>
+        Scan the QR code on their badge with your camera — no app needed.
+      </div>
+
+      <div style={{ marginTop: 22, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(2,2,10,0.7)', marginBottom: 8 }}>
+          No camera handy? Enter their code
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !busy) submit(); }}
+            placeholder="e.g. thabo-m4k2"
+            style={{ flex: 1, border: 0, borderRadius: 12, padding: '11px 13px', fontSize: 14.5, fontFamily: 'inherit', outline: 'none' }}
+          />
+          <button onClick={submit} disabled={busy || !code.trim()}
+            style={{ border: 0, borderRadius: 12, padding: '0 16px', background: 'var(--ink)', color: '#fff', fontWeight: 800, fontSize: 14, cursor: busy || !code.trim() ? 'not-allowed' : 'pointer', opacity: busy || !code.trim() ? 0.6 : 1 }}>
+            {busy ? <Spinner size={16} /> : 'Go'}
+          </button>
+        </div>
+        {error && <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--danger)', textAlign: 'left', fontWeight: 600 }}>{error}</div>}
+      </div>
+    </div>
+  );
+}
+
+const SECONDARY = [
+  { id: 'worker', t: "I'm a worker", icon: I.wallet, to: '/worker/login' },
+  { id: 'employer', t: "I'm an employer", icon: I.users, to: '/employer/onboarding' },
 ];
 
 export default function Launcher() {
   const navigate = useNavigate();
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(600px 360px at 50% -6%,#e3f6f2,transparent 60%),radial-gradient(500px 400px at 100% 100%,#fdeed6,transparent 55%),#f3f9fa', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 20px 40px' }}>
-      <img src="/logo-mark-t.png" alt="SwiftTip" style={{ height: 60, width: 'auto' }} onError={e => { e.target.style.display='none'; }} />
-      <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.8px', marginTop: 16, fontFamily: 'Inter, sans-serif' }}>SwiftTip</div>
-      <div style={{ color: '#6a8492', fontSize: 15, marginTop: 4, fontFamily: 'Inter, sans-serif' }}>Cashless tipping, made simple.</div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-wash)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 32px' }}>
+      <img src={stMark} alt="SwiftTip" style={{ height: 56, width: 56 }} />
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.7px', marginTop: 14, fontFamily: 'Inter, sans-serif' }}>SwiftTip</div>
+      <div style={{ color: '#6a8492', fontSize: 14, marginTop: 4, fontFamily: 'Inter, sans-serif' }}>Cashless tipping, made simple.</div>
 
-      <div style={{ width: '100%', maxWidth: 520, marginTop: 40 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.7px', textTransform: 'uppercase', color: '#93a8b3', marginBottom: 14, fontFamily: 'Inter, sans-serif' }}>Choose your space</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          {CARDS.map(c => {
-            const Ic = c.icon;
+      <div style={{ marginTop: 36 }}>
+        <TipHero />
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 420, marginTop: 36 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.7px', textTransform: 'uppercase', color: '#93a8b3', marginBottom: 12, fontFamily: 'Inter, sans-serif' }}>
+          Already use SwiftTip?
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {SECONDARY.map(s => {
+            const Ic = s.icon;
             return (
-              <button key={c.id} onClick={() => navigate(c.to)}
-                style={{ position: 'relative', overflow: 'hidden', border: 0, cursor: 'pointer', textAlign: 'left', borderRadius: 22, padding: 18, minHeight: 170, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', color: '#fff', background: c.grad, boxShadow: c.shadow, fontFamily: 'Inter, sans-serif' }}>
-                <span style={{ position: 'absolute', top: -28, right: -28, width: 110, height: 110, borderRadius: '50%', background: 'radial-gradient(circle at 32% 32%,rgba(255,255,255,0.38),transparent 70%)', pointerEvents: 'none' }} />
-                <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,0.22)', display: 'grid', placeItems: 'center' }}>
-                  <Ic size={24} color="#fff" />
+              <button key={s.id} onClick={() => navigate(s.to)}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #e7eef1', background: '#fff', borderRadius: 16, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', fontFamily: 'Inter, sans-serif' }}>
+                <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--mint)', display: 'grid', placeItems: 'center', flex: '0 0 auto' }}>
+                  <Ic size={19} color="var(--brand-text)" />
                 </div>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.3px' }}>{c.t}</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 500, color: 'rgba(255,255,255,0.9)', marginTop: 4, lineHeight: 1.35 }}>{c.s}</div>
-                </div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, color: '#102a43' }}>{s.t}</div>
+                <I.chevR size={17} color="#93a8b3" style={{ marginLeft: 'auto' }} />
               </button>
             );
           })}
         </div>
       </div>
-      <div style={{ marginTop: 40, fontSize: 12, color: '#6a8492', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+
+      <button onClick={() => navigate('/worker/login')} style={{ marginTop: 28, color: '#93a8b3', background: 0, border: 0, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12.5 }}>
+        Staff admin
+      </button>
+
+      <div style={{ marginTop: 16, fontSize: 12, color: '#6a8492', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
         Banking-grade security · POPIA compliant · 🇿🇦 Made for South Africa
       </div>
     </div>

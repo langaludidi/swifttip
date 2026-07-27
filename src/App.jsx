@@ -4,12 +4,12 @@ import { Spinner } from './components/ui.jsx';
 import { supabase, isDemo } from './services/supabase.js';
 import Launcher from './pages/Launcher.jsx';
 import TipPage from './pages/TipPage.jsx';
+import EmployerComingSoon from './pages/EmployerComingSoon.jsx';
 
 const WorkerFlow         = lazy(() => import('./flows/worker/WorkerFlow.jsx'));
 const WorkerOnboarding   = lazy(() => import('./flows/worker/onboarding/WorkerOnboarding.jsx'));
 const WorkerLogin        = lazy(() => import('./flows/worker/onboarding/WorkerLogin.jsx'));
 const EmployerFlow       = lazy(() => import('./flows/employer/EmployerFlow.jsx'));
-const EmployerOnboarding = lazy(() => import('./flows/employer/onboarding/EmployerOnboarding.jsx'));
 const AdminFlow          = lazy(() => import('./flows/admin/AdminFlow.jsx'));
 const AdminOnboarding    = lazy(() => import('./flows/admin/onboarding/AdminOnboarding.jsx'));
 
@@ -70,7 +70,7 @@ export default function App() {
           <Route path="/worker/onboarding" element={<WorkerOnboarding />} />
           <Route path="/worker/login" element={<WorkerLogin />} />
           <Route path="/worker/*" element={<WorkerFlow />} />
-          <Route path="/employer/onboarding" element={<EmployerOnboarding />} />
+          <Route path="/employer/onboarding" element={<EmployerComingSoon />} />
           <Route path="/employer/*" element={<RequireRole role="employer"><EmployerFlow /></RequireRole>} />
           <Route path="/admin/onboarding" element={<AdminOnboarding />} />
           <Route path="/admin/*" element={<RequireRole role="admin"><AdminFlow /></RequireRole>} />

@@ -1,8 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { I, Header, Avatar, Stars } from '../../components/ui.jsx';
+import { I, Header, Avatar } from '../../components/ui.jsx';
 import { invokeTip } from '../../services/tips.js';
 import { leaveCompliment } from '../../services/compliments.js';
 import { ScanScene, BuzzPhone, CustConfetti } from './CustomerArt.jsx';
+import stMarkQuiet from '../../assets/logo/ST-02.svg';
+
+// Small, quiet mark+wordmark for the public tip page header — the worker
+// stays the visual hero, so this stays understated (no spark: it renders
+// well under 32px here, and the spark-always-amber rule only applies above
+// that threshold).
+function TipPageBrand() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <img src={stMarkQuiet} alt="" width={16} height={16} />
+      <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-text)', letterSpacing: '-0.1px' }}>SwiftTip</span>
+    </div>
+  );
+}
 
 function toast(msg) { console.log('[toast]', msg); }
 
@@ -90,20 +104,23 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
 
   if (screen === 'profile') return (
     <>
-      <Header title="Worker Profile" onBack={() => go('scan')} />
+      <div style={{ display: 'flex', alignItems: 'center', padding: '16px 18px 2px' }}>
+        <button onClick={() => go('scan')} aria-label="Back"
+          style={{ background: 0, border: 0, cursor: 'pointer', padding: 6, marginLeft: -6, color: 'var(--muted)', display: 'grid', placeItems: 'center' }}>
+          <I.back size={18} />
+        </button>
+        <div style={{ flex: 1 }} />
+        <TipPageBrand />
+      </div>
       <div className="screen-body screen-anim">
         <div className="pad stack gap16">
           <div className="card" style={{ textAlign: 'center', padding: '26px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-              <Avatar name={w.name} color={w.color} size={92} />
+              <Avatar name={w.name} color={w.color === 'red' ? 'teal' : w.color} size={92} />
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px' }}>{w.name}</div>
             <div className="muted" style={{ fontSize: 14, marginTop: 3 }}>{w.role} · {data.employer}</div>
             <div style={{ margin: '12px 0' }}><span className="badge"><I.check size={12} stroke={3} /> Verified worker</span></div>
-            <div className="row" style={{ justifyContent: 'center', gap: 8 }}>
-              <Stars value={w.rating} /> <b style={{ fontSize: 16 }}>{w.rating}</b>
-              <span className="muted">· {w.tips} tips</span>
-            </div>
             <div className="divider" />
             <div className="muted" style={{ fontSize: 12, fontWeight: 600 }}>Station</div>
             <div style={{ fontWeight: 700, fontSize: 16, marginTop: 2 }}>{data.employer}</div>

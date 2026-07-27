@@ -23,7 +23,7 @@ function PendingTimeoutScreen({ onCheckAgain }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', fontFamily: 'Inter,sans-serif' }}>
       <div style={{ fontSize: 18, fontWeight: 700 }}>Still confirming with the bank</div>
       <div style={{ color: '#6a8492', fontSize: 14, maxWidth: 280 }}>This is taking longer than usual. If your payment went through, it'll land shortly — no need to pay again.</div>
-      <button onClick={onCheckAgain} style={{ color: 'var(--accent-600, #0a9d8d)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>Check again</button>
+      <button onClick={onCheckAgain} style={{ color: 'var(--brand-text, #037b7e)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>Check again</button>
     </div>
   );
 }
@@ -33,7 +33,7 @@ function FailedScreen({ onRetry }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center', fontFamily: 'Inter,sans-serif' }}>
       <div style={{ fontSize: 18, fontWeight: 700 }}>Payment didn't go through</div>
       <div style={{ color: '#6a8492', fontSize: 14, maxWidth: 280 }}>No charge was made. You can try again.</div>
-      <button onClick={onRetry} style={{ color: 'var(--accent-600, #0a9d8d)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>Try again</button>
+      <button onClick={onRetry} style={{ color: 'var(--brand-text, #037b7e)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>Try again</button>
     </div>
   );
 }
@@ -115,7 +115,7 @@ export default function TipPage() {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 14, fontFamily: 'Inter,sans-serif' }}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Worker not found</div>
-        <button onClick={() => navigate('/')} style={{ color: 'var(--accent-600)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>← Back</button>
+        <button onClick={() => navigate('/')} style={{ color: 'var(--brand-text)', background: 0, border: 0, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 }}>← Back</button>
       </div>
     );
   }
@@ -130,14 +130,20 @@ export default function TipPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f9fa' }}>
-      <CustomerFlow
-        screen={screen}
-        nav={nav}
-        data={data}
-        presetAmountCents={confirmed?.amountCents}
-        presetTipId={confirmed?.tipId}
-      />
+    <div style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', background: 'var(--bg-wash)' }}>
+      {/* Plain block wrapper, not a flex item — CustomerFlow returns a
+          fragment with multiple top-level siblings (header, screen-body)
+          for several screens, and those must stack vertically via normal
+          block flow, not become row-siblings of a flex parent. */}
+      <div style={{ width: '100%', maxWidth: 480 }}>
+        <CustomerFlow
+          screen={screen}
+          nav={nav}
+          data={data}
+          presetAmountCents={confirmed?.amountCents}
+          presetTipId={confirmed?.tipId}
+        />
+      </div>
     </div>
   );
 }
