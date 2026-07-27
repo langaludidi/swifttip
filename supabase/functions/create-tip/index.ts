@@ -28,10 +28,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY')!,
     );
 
-    // Worker must exist and be active
+    // Worker must exist, be approved, and be active. `active` is trigger-
+    // derived from `status` at the database level (0015 migration) so these
+    // two checks can never disagree — checked explicitly anyway so a
+    // suspended worker's rejection here is a visible, intentional guard, not
+    // an implicit side effect of a database trigger elsewhere.
     const { data: worker, error: workerErr } = await supabase
-      .from('workers').select('id, active').eq('id', worker_id).single();
-    if (workerErr || !worker?.active) return json({ error: 'worker not found or inactive' }, 404);
+      .from('workers').select('id, status, active').eq('id', worker_id).single();
+    if (workerErr || !worker || worker.status !== 'approved' || !worker.active) {
+      return json({ error: 'worker not found or inactive' }, 404);
+    }
 
     // Pending tip — settles ONLY via webhook after real payment
     const { data: tip, error: tipErr } = await supabase

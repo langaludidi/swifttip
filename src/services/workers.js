@@ -65,15 +65,6 @@ export async function getWorkerWallet(workerId) {
   return { balance_cents: data?.balance_cents ?? 0, error };
 }
 
-export async function setWorkerActive(workerId, active) {
-  if (isDemo) return { error: null };
-  const { error } = await supabase
-    .from('workers')
-    .update({ active })
-    .eq('id', workerId);
-  return { error };
-}
-
 function randomSlugSuffix() {
   return Math.random().toString(36).slice(2, 6);
 }

@@ -56,12 +56,14 @@ serve(async (req) => {
     const { worker_id, decision, rejection_reason } = await req.json();
     if (!worker_id) return json({ error: 'worker_id required' }, 400);
 
-    // DECIDE mode: approve or reject. All the actual mutation + audit logging
-    // happens atomically in decide_kyc() — this function never touches
-    // `active` or `status` directly.
+    // DECIDE mode: approve, reject, or suspend/reinstate (reinstate is also
+    // 'approved' — decide_kyc tells the two apart by the worker's current
+    // status). All the actual mutation + audit logging happens atomically in
+    // decide_kyc() — this function never touches `active` or `status`
+    // directly, and never decides which (from, to) pairs are legal.
     if (decision) {
-      if (decision !== 'approved' && decision !== 'rejected') {
-        return json({ error: "decision must be 'approved' or 'rejected'" }, 400);
+      if (decision !== 'approved' && decision !== 'rejected' && decision !== 'suspended') {
+        return json({ error: "decision must be 'approved', 'rejected', or 'suspended'" }, 400);
       }
       const { error } = await supabase.rpc('decide_kyc', {
         p_worker_id: worker_id,

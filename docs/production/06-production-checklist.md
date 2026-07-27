@@ -111,16 +111,21 @@ dedicated record. Add future findings here rather than as inline mentions only.
   Enrollment happened live before enforcement went on, in the correct order, with
   a proven break-glass path (a direct Postgres connection has no JWT/`aal`
   context at all — confirmed empirically, `auth.jwt()` returns `NULL` there).
-- **Admin-side integrity gap (open, narrowed by H2, not fully fixed).** An
-  *admin* account can still bypass `decide_kyc()` via a direct client `UPDATE`
-  on `workers` — no reason required on rejection, no `audit_logs` row written,
-  no status-transition validation. H2's `auth_role()` hardening means this now
-  also requires an `aal2` session (an `aal1` admin token can't reach it either,
-  same as the legitimate path) — a real narrowing, not nothing — but an `aal2`
-  admin session can still bypass `decide_kyc()` entirely via this path. Needs
-  trigger-level enforcement (reject any `active`/`status`/`reviewed_at`/
-  `rejection_reason` change on `workers` that didn't originate from `decide_kyc`'s
-  service-role context) — still open, tracked here.
+- **Admin-side integrity gap (open, narrowed by H2 and by `0015`, not fully
+  fixed).** An *admin* account can still bypass `decide_kyc()` via a direct
+  client `UPDATE` on `workers` — no reason required, no `audit_logs` row
+  written, no status-transition validation. H2's `auth_role()` hardening means
+  this now also requires an `aal2` session. `0015_worker_suspension_lifecycle.sql`
+  narrowed it further: `active` specifically can no longer be set independently
+  of `status` by *any* writer, including this bypass path — a `before insert or
+  update` trigger derives it from `status` unconditionally. What's still open:
+  an `aal2` admin session can still directly `UPDATE workers.status` itself
+  (e.g. straight to `'approved'`) without going through `decide_kyc`, skipping
+  the reason requirement and the audit row — `active` would still self-correct
+  via the trigger, but the status change and its lack of a paper trail would
+  stand. Full fix needs trigger-level enforcement rejecting any `status`/
+  `reviewed_at`/`rejection_reason` change on `workers` that didn't originate
+  from `decide_kyc`'s service-role context — still open, tracked here.
 
 ## High priority — Pilot #1 (Customer + Worker) — open items
 
@@ -199,16 +204,46 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
 - [ ] **Admin — payout queue calling `set-payout-status`**: `PayoutsScreen`'s
       approve/reject buttons only mutate local state. `set-payout-status` is fully
       implemented server-side — the UI needs to call it.
-- [ ] **Admin — worker management on live data**: `WorkersScreen` renders a hardcoded
-      mock list. The suspend/activate toggle calls the real `setWorkerActive` service,
-      but against fake ids — wire the list itself to real `workers` rows first.
-- [x] / [ ] **Admin — audit log**: **partially done.** `audit_logs` table exists
-      (migration `0010_kyc_review.sql`) and `decide_kyc()` writes a row on every
-      KYC approve/reject — that part is real and live-verified. **Not yet done:**
-      no logging for payout status changes or worker suspension (neither of
-      those admin actions exists as a real flow yet either — see the items
-      below). Distinct from `ledger_entries`, which tracks money, not admin
-      actions.
+- [x] **Admin — worker management on live data, plus suspend/reinstate lifecycle**
+      *(2026-07-28, migrations `0015_worker_suspension_lifecycle.sql` +
+      `0016_fix_worker_trigger_search_path.sql`)*. `WorkersScreen` now loads real
+      `workers` rows via `getWorkers({})` (was a hardcoded mock list) with proper
+      loading/error/empty states. `setWorkerActive` — the old reason-less direct
+      `active` toggle — is deleted entirely; grepped to confirm no other raw writer
+      of `active` exists anywhere in the codebase. In its place: `decide_kyc()`
+      gains two new transitions, `approved→suspended` and `suspended→approved`
+      (reinstatement), each requiring a non-empty reason and writing its own
+      `audit_logs` row (`kyc_suspended` / `kyc_reinstated`), exposed through
+      `review-kyc` (still aal2-gated, H2 unchanged) and a reason-prompt UI in
+      `WorkersScreen`. `workers.status` is treated as an unordered set — every
+      valid `(from, to)` pair is listed explicitly in `decide_kyc`, nothing
+      compares statuses with `</>`; `suspended→rejected` and
+      `draft/submitted→suspended` are both explicitly rejected.
+      **The crux:** a `before insert or update` trigger
+      (`enforce_worker_active_matches_status`) now derives `workers.active` from
+      `workers.status` at the database level, for every writer, unconditionally
+      — `decide_kyc` no longer sets `active` itself at all. This closes the
+      `active`-specific half of the admin-side integrity gap below: even a raw
+      admin UPDATE via the "workers admin update" RLS policy can no longer set
+      `active` independently of `status`. `create-tip` additionally checks
+      `status === 'approved'` explicitly (belt-and-suspenders, not relying
+      solely on the trigger) so a suspended worker's rejection is a visible,
+      intentional guard. Verified live via
+      `tests/regression/worker-suspension.test.mjs` (7/7,
+      full suite 23/23): approve → real tip succeeds → suspend without reason
+      rejected (422) → suspend with reason succeeds → suspended worker invisible
+      to an anon/public read (RLS `active=true`, instant, no cache to expire) →
+      `create-tip` 404s server-side for the suspended worker → suspended→rejected
+      rejected as an invalid transition → reinstate without reason rejected →
+      reinstate with reason succeeds → worker visible and tippable again, each
+      step's `audit_logs` row checked. `get_advisors` run immediately after
+      deploying caught the new trigger function missing `search_path` (fixed in
+      `0016`) — the habit working as intended.
+- [x] **Admin — audit log**: `decide_kyc()` writes a row on every KYC
+      approve/reject/suspend/reinstate (verified live, see above). **Still not
+      done:** logging for payout status changes (`set-payout-status` doesn't
+      write `audit_logs` yet) — tracked separately, distinct from
+      `ledger_entries`, which tracks money, not admin actions.
 
 ## Deferred to pilot #2 — do not start without explicit kickoff
 

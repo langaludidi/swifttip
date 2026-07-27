@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { I, Header, Avatar, BottomNav } from '../../components/ui.jsx';
+import { I, Header, Avatar, BottomNav, Spinner } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
-import { setWorkerActive } from '../../services/workers.js';
+import { getWorkers } from '../../services/workers.js';
+import { decideKyc } from '../../services/kyc.js';
 import KycReviewScreen from './KycReviewScreen.jsx';
 import MfaEnrollScreen from './MfaEnrollScreen.jsx';
 
@@ -64,40 +65,108 @@ function DashScreen() {
   );
 }
 
-function WorkersScreen() {
-  const [workers, setWorkers] = useState([
-    { id: '1', name: 'Sipho Dlamini', role: 'Bartender', color: 'red', active: true, tips: 47 },
-    { id: '2', name: 'Thandi Nkosi', role: 'Waitress', color: 'purple', active: true, tips: 31 },
-    { id: '3', name: 'Lerato Mokoena', role: 'Hostess', color: 'teal', active: false, tips: 12 },
-  ]);
+// Suspend/reinstate are the only two actions this screen can take, and both
+// go through decide_kyc (via review-kyc) with a required reason — there is
+// no quick toggle anymore, because a reason-less flip is exactly what the
+// admin-side integrity gap looked like. Approve/reject for new submissions
+// stays KycReviewScreen's job; this list only ever acts on already-approved
+// or already-suspended workers.
+function WorkerActionRow({ worker, onChanged }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const toggle = async (id) => {
-    const w = workers.find(x => x.id === id);
-    await setWorkerActive(id, !w.active);
-    setWorkers(ws => ws.map(x => x.id === id ? { ...x, active: !x.active } : x));
+  const actionable = worker.status === 'approved' || worker.status === 'suspended';
+  const nextDecision = worker.status === 'approved' ? 'suspended' : 'approved';
+  const actionLabel = worker.status === 'approved' ? 'Suspend' : 'Reinstate';
+
+  const confirm = async () => {
+    if (!reason.trim()) { setError('A reason is required.'); return; }
+    setSubmitting(true); setError('');
+    const { error: err } = await decideKyc({ workerId: worker.id, decision: nextDecision, rejectionReason: reason.trim() });
+    setSubmitting(false);
+    if (err) { setError(err.message || 'Could not submit'); return; }
+    setOpen(false);
+    setReason('');
+    onChanged();
   };
 
   return (
-    <>
-      <Header title="Workers" sub={`${workers.length} registered`} />
-      <div className="screen-body screen-anim">
-        <div className="pad stack gap12">
-          {workers.map(w => (
-            <div key={w.id} className="list-card">
-              <Avatar name={w.name} color={w.color} size={44} />
-              <div className="lc-main">
-                <div className="lc-title">{w.name}</div>
-                <div className="lc-sub">{w.role} · {w.tips} tips</div>
-              </div>
-              <button onClick={() => toggle(w.id)}
-                style={{ padding: '7px 14px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12.5,
-                  background: w.active ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
-                  color: w.active ? 'var(--danger)' : 'var(--success)' }}>
-                {w.active ? 'Suspend' : 'Activate'}
-              </button>
-            </div>
-          ))}
+    <div className="list-card" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+      <div className="row" style={{ alignItems: 'center' }}>
+        <Avatar name={worker.display_name || 'Worker'} color="teal" size={44} />
+        <div className="lc-main">
+          <div className="lc-title">{worker.display_name || 'Worker'}</div>
+          <div className="lc-sub">
+            {worker.job_title || 'Staff'}{worker.station ? ` · ${worker.station}` : ''} · {worker.status}
+          </div>
         </div>
+        {actionable && (
+          <button onClick={() => { setOpen(o => !o); setError(''); }}
+            style={{ padding: '7px 14px', borderRadius: 9, border: 0, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12.5,
+              background: worker.status === 'approved' ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+              color: worker.status === 'approved' ? 'var(--danger)' : 'var(--success)' }}>
+            {actionLabel}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="stack gap8" style={{ marginTop: 10 }}>
+          <textarea className="input" rows={2} style={{ resize: 'none', fontFamily: 'var(--font)' }}
+            placeholder={`Reason to ${actionLabel.toLowerCase()} this worker`}
+            value={reason} onChange={e => setReason(e.target.value)} />
+          {error && <div style={{ color: 'var(--danger)', fontSize: 12.5, fontWeight: 600 }}>{error}</div>}
+          <div className="row gap8">
+            <button className={'btn btn-sm ' + (submitting ? 'btn-disabled' : 'btn-primary')} disabled={submitting} onClick={confirm}>
+              {submitting ? 'Submitting…' : `Confirm ${actionLabel.toLowerCase()}`}
+            </button>
+            <button className="btn btn-sm btn-ghost" disabled={submitting} onClick={() => { setOpen(false); setReason(''); setError(''); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkersScreen() {
+  const [workers, setWorkers] = useState(null); // null = loading
+  const [error, setError] = useState('');
+
+  const load = () => {
+    setWorkers(null);
+    setError('');
+    getWorkers({}).then(({ workers: rows, error: err }) => {
+      if (err) { setError(err.message || 'Could not load workers'); setWorkers([]); return; }
+      setWorkers(rows);
+    });
+  };
+
+  useEffect(load, []);
+
+  return (
+    <>
+      <Header title="Workers" sub={workers ? `${workers.length} registered` : undefined} />
+      <div className="screen-body screen-anim">
+        {workers === null ? (
+          <div className="center" style={{ padding: '60px 0' }}><Spinner size={30} /></div>
+        ) : error ? (
+          <div className="card center" style={{ padding: 24, margin: 16, textAlign: 'center' }}>
+            <div className="muted" style={{ marginBottom: 12 }}>{error}</div>
+            <button className="btn btn-ghost" onClick={load}>Try again</button>
+          </div>
+        ) : workers.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: 28, margin: 16 }}>
+            <I.users size={36} color="var(--muted-2)" />
+            <div style={{ marginTop: 12, fontWeight: 700 }}>No workers yet</div>
+          </div>
+        ) : (
+          <div className="pad stack gap12">
+            {workers.map(w => <WorkerActionRow key={w.id} worker={w} onChanged={load} />)}
+          </div>
+        )}
       </div>
     </>
   );
