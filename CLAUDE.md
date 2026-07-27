@@ -79,6 +79,28 @@ Explicitly excluded from MVP — do not build these: NFC tipping, customer accou
 advanced analytics, payroll integration, multi-country/multi-currency (ZAR only),
 native mobile apps, gamification.
 
+## Scope governance
+
+Full detail: `@docs/production/16-vision.md`. That document phases the long-range
+ambition (Phase 1–5) so the MVP doesn't have to carry it — GTM staging in
+`@docs/production/17-gtm.md` maps onto those same phases.
+
+**A proposed feature gets exactly one of four answers** (per `16-vision.md`, "How
+to use this document"): (1) it's MVP scope — see `01-mvp-scope.md`; (2) it's a
+later phase — parked in `16-vision.md`, revisit when the prior phase exits; (3)
+it's a standing rejection — cite the reason, don't re-litigate; (4) it's genuinely
+new — argue it into a phase, in writing, without touching the current phase's scope.
+
+**Four standing rejections** (`16-vision.md`, "Standing rejections" — these stay
+rejected regardless of who asks or which phase is live):
+- Surveillance-shaped features — performance scores from complaints/attendance,
+  manager-facing individual rankings, anything that makes SwiftTip the boss's
+  scorecard.
+- Customer tracking without accounts — "welcome back, you've tipped X three times"
+  requires remembering customers who chose not to be remembered.
+- Loyalty-gated tipping — the TotalEnergies pattern. Tipping stays ungated.
+- Charging workers — in any phase, for any reason.
+
 ## Definition of done
 
 A feature is complete only when **all** of the following are true — full detail and

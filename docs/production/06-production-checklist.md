@@ -187,6 +187,12 @@ needs an invite/role-grant system — see "Deferred to pilot #2" below for that 
 
 ## Deferred to pilot #2 — do not start without explicit kickoff
 
+- **Decided: employers never see individual tip data, aggregates only.** Per
+  `16-vision.md`'s standing rejections (no surveillance-shaped features, SwiftTip
+  is never "the boss's scorecard") and recorded in `17-gtm.md` §7. Binding on
+  every employer-facing dashboard/reporting item below — none of them should
+  expose a per-worker or per-transaction tip feed to an employer account, only
+  rollups.
 - [ ] **Employer — login screen**: build employer sign-in (mirror `WorkerLogin`).
       Only an onboarding/signup flow exists today.
 - [ ] **Employer — payouts view on real data**: wire the Payouts screen to actual
@@ -256,6 +262,17 @@ Separate from MVP feature scope above — these are operational/infrastructure i
 that must be verified before any real person outside the team uses the app, even
 if every feature above were done:
 
+- [ ] **Baseline worker earnings measurement — week-one task once the pilot site is
+      chosen.** Record each participating worker's pre-SwiftTip daily/weekly tip
+      earnings before launch — the before/after comparison that is the pilot's
+      actual evidence (`17-gtm.md` GTM-0 exit gate, GTM-1 evidence-to-capture) is
+      worthless without a real "before" baseline captured in time. Do this in the
+      same week the site is confirmed, not the week of launch.
+- [ ] **QR-swap / misassignment is a security control, not just UX** — a customer
+      must be able to tell the QR they scanned actually belongs to the worker they
+      saw. Tip-page photo prominence (large, unmistakable photo of the worker being
+      tipped) and tamper-evident badge printing are the two controls; both must be
+      verified before pilot, not treated as cosmetic (`17-gtm.md` GTM-0 exit gate).
 - [ ] **Rate limiting on `create-tip`**: currently unauthenticated by design (customers
       have no account) with no rate limit — nothing stops a script from hammering it.
 - [ ] **Rate limiting on signup**: currently only bounded by Supabase Auth's own
@@ -304,6 +321,18 @@ reference cases for what each definition-of-done point actually catches:
 - **Audit records**: `settle_tip()` and `request-payout` correctly write to
   `ledger_entries` on every balance change — this is the pattern to match when
   adding new money-moving actions.
+
+## Known drift (intentional, tracked)
+
+- **Logo SVGs recolored in-repo, `.ai` master not yet updated (2026-07-23).**
+  `src/assets/logo/ST-01.svg` and `ST-02.svg` came from the design handoff with
+  near-miss colors (`#24b0a5`/`#218d81`/`#f0ab27`) instead of the exact token
+  hexes. Rather than block Stage 2 (logo placement) on a re-export, the fills
+  were substituted in-repo to the exact tokens (`--brand #05b6b4`,
+  `--brand-deep #04a0a4`, `--gold #ff9f1c`) — each file has a comment recording
+  this. The `.ai` master still has the old near-miss colors. Re-export it with
+  the exact hexes above to close the drift; until then, anyone diffing the
+  master against the repo SVGs will see a mismatch that is expected, not a bug.
 
 ## Sign-off gate
 

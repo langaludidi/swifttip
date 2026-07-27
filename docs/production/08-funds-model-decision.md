@@ -284,6 +284,28 @@ every time.
    another entity." Has that registration happened, and does it gate any of the
    three options above from launching at all, independent of the funds-model
    question?
+9. **Who bears a chargeback or reversal, under each of the three funds models?**
+   Under Option A (split-at-source), does a customer chargeback claw back from
+   SwiftTip's share, the worker's already-disbursed share, or the PSP itself —
+   and can a PSP reverse funds already paid out to a worker's bank account after
+   the fact? Under Options B/C (custody), SwiftTip holds the funds at chargeback
+   time, but has already (Option C) or may have (Option B) disbursed to the
+   worker — does SwiftTip absorb the loss, or does it have (or need) a contractual
+   right to claw back from the worker? This bears directly on pilot pricing and
+   on the "100% goes to the worker" guarantee under discussion in
+   `15-competitive-lessons.md` and `17-gtm.md` — a guarantee that assumes no
+   clawback path reaches the worker.
+10. **Payout rails reaching unbanked workers** — eWallet or ATM-by-phone
+    disbursement (no bank account required at the receiving end), flagged as a
+    Phase 5 need in `16-vision.md`. Does Paystack support either rail for payout
+    in South Africa today, under any of the three options above, or is this only
+    reachable via a different/additional payment partner?
+11. **Tappy's claimed SARB approval** (flagged unverified in
+    `15-competitive-lessons.md`/`17-gtm.md`) — if that approval verifies as real,
+    what regulatory route did Tappy actually use to get it? Alongside NoCashPay's
+    claimed PASA-approved TPPP status (`15-competitive-lessons.md` item 1, which
+    prompted question 1 above), this is a second real-world data point for what's
+    actually achievable here — separate from whether SwiftTip should copy it.
 
 ## What's flagged as unverified, not just unresolved
 
