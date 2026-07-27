@@ -40,7 +40,15 @@ serve(async (req) => {
     // ask Paystack directly. Give the webhook a head start on the common,
     // fast success path before spending an API call on this.
     const ageMs = Date.now() - new Date(data.created_at).getTime();
-    if (status === 'pending' && ageMs > 4000) {
+    const VERIFY_AFTER_MS = 4000;
+    // Paystack reports 'abandoned' for ANY not-yet-completed transaction —
+    // including one a live customer is still actively typing card details
+    // into. Only 'failed' (an actual gateway decline) is a definite outcome
+    // worth surfacing immediately; 'abandoned' only becomes trustworthy once
+    // a real checkout session would plausibly have ended.
+    const ABANDONED_GRACE_MS = 15 * 60 * 1000;
+
+    if (status === 'pending' && ageMs > VERIFY_AFTER_MS) {
       try {
         const verifyRes = await fetch(
           `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
@@ -49,7 +57,12 @@ serve(async (req) => {
         const verify = await verifyRes.json();
         const gatewayStatus = verify?.data?.status; // 'success' | 'abandoned' | 'failed'
 
-        if (verifyRes.ok && (gatewayStatus === 'abandoned' || gatewayStatus === 'failed')) {
+        const shouldFail = verifyRes.ok && (
+          gatewayStatus === 'failed' ||
+          (gatewayStatus === 'abandoned' && ageMs > ABANDONED_GRACE_MS)
+        );
+
+        if (shouldFail) {
           // Guard on the row still being 'pending' so a webhook that settles
           // concurrently between our read and this write can never be
           // clobbered back to 'failed'.
@@ -66,6 +79,8 @@ serve(async (req) => {
         // stays exclusively `paystack-webhook`'s job — this function never
         // calls `settle_tip`, it only unblocks the failure path the webhook
         // can't ever report.
+        // gatewayStatus === 'abandoned' within the grace window: also leave
+        // as 'pending' — a live payer, not yet a failure.
       } catch {
         // Verify call itself failing (network, bad response) just means we
         // fall back to the DB's current status — never surface this as an

@@ -141,23 +141,44 @@ done above against real Supabase data — not once the UI looks right.
       `workers` row during onboarding. Currently always left `null`. Lower urgency
       than the items above — doesn't block a worker from being tipped or paid out.
 - [x] **Customer — declined card never resolves to a failure state (Tier 1 audit,
-      2026-07-18; fixed 2026-07-28).** `paystack-webhook` only handles
-      `charge.success` — Paystack sends no webhook event at all for a
-      failed/declined one-time charge (subscriptions get `invoice.payment_failed`;
-      one-time charges don't have an equivalent), so a declined card left the tip
-      stuck at `pending` forever. Fixed in `get-tip-status`: once the DB status is
-      still `pending` and the tip row is >4s old (gives the webhook's fast path a
-      head start before spending a Paystack API call), it calls Paystack's Verify
-      Transaction API (`GET /transaction/verify/:reference`, server-side, secret
-      key) and maps a `data.status` of `abandoned`/`failed` to `tips.status =
-      'failed'` via a `.eq('status','pending')`-guarded update — a webhook that
-      settles concurrently can never be clobbered back to `failed`. A `success`
-      verify result is deliberately left as `pending`: this function still never
-      calls `settle_tip` itself, settlement stays exclusively the webhook's job.
+      2026-07-18; fixed 2026-07-28, grace window added same day).**
+      `paystack-webhook` only handles `charge.success` — Paystack sends no webhook
+      event at all for a failed/declined one-time charge (subscriptions get
+      `invoice.payment_failed`; one-time charges don't have an equivalent), so a
+      declined card left the tip stuck at `pending` forever. Fixed in
+      `get-tip-status`: once the DB status is still `pending` and the tip row is
+      >4s old (gives the webhook's fast path a head start before spending a
+      Paystack API call), it calls Paystack's Verify Transaction API
+      (`GET /transaction/verify/:reference`, server-side, secret key).
+      `data.status` returns `success`/`abandoned`/`failed`, and these map
+      asymmetrically, not identically:
+      - `failed` (an actual gateway decline) → `tips.status = 'failed'`
+        immediately, via a `.eq('status','pending')`-guarded update — a webhook
+        that settles concurrently can never be clobbered back to `failed`.
+      - `abandoned` → **only** maps to `failed` once the tip is **>15 minutes**
+        old. Paystack reports `abandoned` for *any* not-yet-completed
+        transaction, including one a live customer is still actively typing
+        card details into — mapping it immediately (the first cut of this fix
+        did, for ~1 hour before catching it) would show "Payment didn't go
+        through" to a customer mid-checkout.
+      - `success` is deliberately left as `pending`: this function still never
+        calls `settle_tip` itself, settlement stays exclusively the webhook's job.
       No migration needed (`failed` was already a valid `tips.status` value).
       Verified live (2026-07-28) against a real, never-completed test-mode
-      Paystack checkout: the tip correctly flipped `pending` → `failed` in the
-      database, repeat polls stayed stable, and an unknown reference still 404s.
+      Paystack checkout: stayed `pending` a few seconds in, stayed `pending`
+      still within the 15-minute grace window, then correctly flipped to
+      `failed` once `created_at` was pushed past the window; an unknown
+      reference still 404s. Automated in
+      `tests/regression/get-tip-status.test.mjs` for the parts that don't
+      require a live Paystack call (404 on unknown reference, already-resolved
+      tips returned as-is); the Paystack-verify-driven mapping itself is
+      documented there as manually re-verify-by-hand only, matching this
+      suite's existing policy of not spending real Paystack API calls in a
+      freely re-runnable test (see `amount-bounds.test.mjs`). **Not yet tested
+      live**: an actual card decline (`failed`, distinct from `abandoned`) and
+      an actual successful payment end-to-end — both require completing a real
+      Paystack hosted-checkout page with a test card, which needs browser
+      automation not available in this session.
 
 ### Admin console (Tier 3) — minimal, ugly is fine, but blocking pilot #1
 
