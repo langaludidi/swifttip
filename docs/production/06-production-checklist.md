@@ -131,6 +131,82 @@ dedicated record. Add future findings here rather than as inline mentions only.
   admin-side integrity gap — not urgent, but the honest finish line for this
   item.
 
+- **Signup-while-logged-in identity contamination (found 2026-07-28 live, fixed
+  same day, migration `0017_workers_profile_id_unique.sql`).** A worker
+  onboarding attempt while a session was already active (e.g. an admin/owner
+  assisting onboarding on a shared device, per the pilot's assisted-onboarding
+  model) silently attached the new `workers` row to whoever was already logged
+  in, not the person filling in the form. Root cause: `supabase.auth.signUp()`
+  never errors for an already-registered email (by design, to avoid leaking
+  which emails exist) and never touches an existing session either way — it
+  silently returns a user object with an empty `identities` array, and the
+  calling code proceeded to `createWorker({ profileId: session.user.id, ... })`
+  using whatever session was already warm. `workers.profile_id` had no
+  uniqueness constraint, so this piled up silently instead of failing loudly —
+  **found 8 stray rows under one identity in the live database** by the time it
+  was noticed (the reported symptom, "No worker profile found," was actually
+  the *lucky* outcome: `useWorkerData`'s `.single()` failed because 5+ rows
+  matched. With exactly one prior stray row it would have silently shown that
+  admin a **different worker's real dashboard and balance** instead of an
+  error). Full data audit at the time found this contamination pattern
+  affected only the one identity (no other `profile_id` had duplicates), plus
+  one unrelated, pre-existing orphaned `auth.users` row with no `profiles` row
+  at all (`langa@lglstaffing.co.za`, created 2026-07-11, predates this bug —
+  flagged, not deleted, since removing a real auth identity wasn't confirmed).
+  Fixed in three places:
+  - `services/auth.js` `signUp()`: now calls `supabase.auth.signOut()` before
+    `supabase.auth.signUp()` unconditionally, and checks
+    `data.user.identities.length === 0` to detect the silent already-registered
+    case, surfacing `"This email already has an account — log in instead."`
+    instead of proceeding.
+  - `services/auth.js` `savePendingWorker`/`getPendingWorker`/`clearPendingWorker`:
+    were keyed by a single fixed `localStorage` key, not per email — the same
+    bug class on a shared device (worker A submits, worker B submits before A
+    confirms, B's pending fields silently overwrite A's, A confirms later and
+    gets no worker row). Now keyed by email.
+  - `workers.profile_id` gets a `UNIQUE` constraint (migration `0017`) — the
+    structural guardrail: one worker row per identity, enforced at the
+    database level regardless of any future application-code mistake.
+    `createWorker()` in `services/workers.js` had to be taught to tell a
+    `profile_id` collision apart from a `slug` collision (both raise Postgres
+    `23505`) — otherwise it would burn its 5-attempt slug-retry budget
+    pointlessly against a collision retrying can never fix, then fail with a
+    misleading "couldn't generate a unique link" message instead of the real
+    "this account already has a worker profile."
+  Paired gap also closed: `signOut()` existed but was never called from any
+  screen — added a visible sign-out control to the worker dashboard header, to
+  `NoProfileScreen` specifically (the exact screen this bug produces), and to
+  the Launcher whenever a session is active.
+  **Cleanup performed**: 7 stray draft rows deleted (empty wallets, no tips,
+  cascade-clean); 1 approved row kept as a test fixture (`sipho-dlam`).
+  **Verified live**: `tests/regression/worker-identity-integrity.test.mjs` —
+  signOut actually clears a session; the already-registered-email empty-
+  identities signal is real; a genuinely distinct identity never contaminates
+  or gets contaminated by another; a second attach attempt to an existing
+  `profile_id` fails immediately with `workers_profile_id_unique`, not a
+  pile-up. Full suite 27/27, build clean.
+  **Discovered in the process, not yet acted on:**
+  - Supabase's project-level email-send rate limit is real and low — a second
+    real `signUp()` call in quick succession during this session's own test
+    runs hit `over_email_send_rate_limit` (429). This is the exact risk
+    already listed, unverified, in the pre-pilot gate below — now empirically
+    confirmed, not just suspected.
+  - The live project's public `signUp()` endpoint rejects `@example.com`
+    addresses outright (stricter validation than the admin-create path) —
+    doesn't affect real users, just a fact worth knowing for future testing.
+  - `employers.owner_id` has the identical structural gap (no uniqueness
+    constraint) — not fixed, since employer self-service has no active
+    signup entry point today (`/employer/onboarding` renders
+    `EmployerComingSoon`). Worth the same fix before employer self-service
+    ever ships in pilot #2.
+  - **Auth-dashboard-only settings this session's tools cannot read or change**
+    (Management API, not exposed here) — worth a manual pass in the Supabase
+    dashboard (Authentication → Settings): confirm `Site URL` and redirect
+    URLs actually point at the correct production domain (directly relevant
+    to this bug's email-confirmation-link flow), and the three settings
+    already tracked separately below (password length floor, leaked-password
+    protection, CAPTCHA).
+
 ## High priority — Pilot #1 (Customer + Worker) — open items
 
 Live repair list, scoped to what's actually blocking pilot #1 per the recalibrated

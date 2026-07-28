@@ -40,7 +40,7 @@ export default function WorkerLogin() {
             if (newWorker && pending.bank?.trim() && pending.accNo?.trim()) {
               await addPayoutAccount({ workerId: newWorker.id, bank: pending.bank, accNo: pending.accNo, accountType: pending.accountType });
             }
-            clearPendingWorker();
+            clearPendingWorker(email);
           }
         }
       }

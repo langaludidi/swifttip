@@ -49,23 +49,32 @@ export async function getSession() {
 // Worker onboarding fields, held until email confirmation completes and the
 // worker's first sign-in can finish creating their `workers` row (no session
 // exists yet right after signUp() when email confirmation is required).
-const PENDING_WORKER_KEY = 'swifttip_pending_worker';
+//
+// Keyed by email, not a single fixed key — a fixed key is the same bug class
+// as the signup-while-logged-in issue: on a shared device (the pilot's
+// assisted-onboarding model), if worker A submits the form and then worker B
+// submits theirs before A confirms their email, a single shared key would
+// let B's pending fields silently overwrite A's. A would later confirm,
+// log in, and find no worker row was ever created for them — a stuck
+// orphaned account, not identity contamination, but the same root cause:
+// one piece of mutable state standing in for "the current onboarding
+// attempt" on a device that legitimately serves more than one person in
+// sequence.
+const PENDING_WORKER_PREFIX = 'swifttip_pending_worker:';
 
 export function savePendingWorker(fields) {
-  localStorage.setItem(PENDING_WORKER_KEY, JSON.stringify(fields));
+  localStorage.setItem(PENDING_WORKER_PREFIX + fields.email, JSON.stringify(fields));
 }
 
 export function getPendingWorker(email) {
   try {
-    const raw = localStorage.getItem(PENDING_WORKER_KEY);
-    if (!raw) return null;
-    const pending = JSON.parse(raw);
-    return pending?.email === email ? pending : null;
+    const raw = localStorage.getItem(PENDING_WORKER_PREFIX + email);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function clearPendingWorker() {
-  localStorage.removeItem(PENDING_WORKER_KEY);
+export function clearPendingWorker(email) {
+  localStorage.removeItem(PENDING_WORKER_PREFIX + email);
 }

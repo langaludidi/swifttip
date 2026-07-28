@@ -85,6 +85,14 @@ export async function createWorker({ profileId, displayName, slug, jobTitle, sta
       station: station || null,
     }).select('id, slug').single();
     if (!error) return { worker: data, error: null };
+    // A profile_id collision (workers_profile_id_unique) means this identity
+    // already has a worker row — a different problem than a slug collision,
+    // and retrying with a new slug can never fix it (profile_id never
+    // changes between attempts). Fail immediately with the real reason
+    // instead of burning the retry budget on a collision it can't resolve.
+    if (error.code === '23505' && /workers_profile_id_unique/.test(error.message ?? '')) {
+      return { worker: null, error: new Error('This account already has a worker profile.') };
+    }
     if (error.code !== '23505') return { worker: null, error };
     candidate = `${slug}-${randomSlugSuffix()}`;
   }
