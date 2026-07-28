@@ -5,6 +5,7 @@ import { SAMPLE } from '../../lib/data.js';
 import { useWorkerData } from '../../lib/hooks.js';
 import { useSession } from '../../App.jsx';
 import { requestPayout } from '../../services/payouts.js';
+import { signOut } from '../../services/auth.js';
 import KycScreen from './KycScreen.jsx';
 
 const STATUS_BANNER = {
@@ -22,7 +23,7 @@ const TABS = [
   { id: 'payout', label: 'Payout', icon: I.bank },
 ];
 
-function DashScreen({ data, nav }) {
+function DashScreen({ data, nav, onSignOut }) {
   const s = data.self;
   const recent = data.recent || [];
   const banner = s.status && STATUS_BANNER[s.status];
@@ -37,6 +38,12 @@ function DashScreen({ data, nav }) {
           </div>
           <button className="icon-btn" onClick={() => nav('__home')} aria-label="Home">
             <I.bell size={20} color="#fff" />
+          </button>
+          {/* Signing out is the paired fix to the signup-while-logged-in bug —
+              a worker on a shared/owner device must be able to end their own
+              session, not just start one. */}
+          <button className="icon-btn" onClick={onSignOut} aria-label="Sign out" style={{ marginLeft: 4 }}>
+            <I.logout size={20} color="#fff" />
           </button>
         </div>
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -242,11 +249,17 @@ function PayoutScreen({ data, nav }) {
 
 function NoProfileScreen() {
   const navigate = useNavigate();
+  // This is exactly the screen a session-contamination bug produces (the
+  // wrong account landing here with no worker row of its own) — a way out
+  // that doesn't require setting up a profile under the wrong identity is
+  // essential here specifically, not just a nice-to-have.
+  const handleSignOut = async () => { await signOut(); navigate('/'); };
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>No worker profile found</div>
       <div className="muted" style={{ maxWidth: 280 }}>We couldn't find a worker profile linked to this account. Finish setting one up to see your dashboard.</div>
       <button className="btn btn-primary" style={{ maxWidth: 260 }} onClick={() => navigate('/worker/onboarding')}>Set up my profile</button>
+      <button className="btn-link" onClick={handleSignOut}>Wrong account? Sign out</button>
     </div>
   );
 }
@@ -268,6 +281,8 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
     setScreen(s);
   };
 
+  const handleSignOut = async () => { await signOut(); nav('__home'); };
+
   if (data.noProfile) return <NoProfileScreen />;
 
   const screens = { dash: DashScreen, qr: QRScreen, history: HistoryScreen, payout: PayoutScreen, kyc: KycScreen };
@@ -275,7 +290,7 @@ export default function WorkerFlow({ screen: screenProp, nav: navProp, data: dat
 
   return (
     <div style={isStandalone ? { minHeight: '100vh', background: 'var(--bg)' } : { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Screen data={data} nav={nav} />
+      <Screen data={data} nav={nav} onSignOut={handleSignOut} />
       <BottomNav tabs={TABS} active={screen} onChange={nav} />
     </div>
   );

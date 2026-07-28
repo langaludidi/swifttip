@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { I, Spinner } from '../components/ui.jsx';
 import { getWorkerBySlug } from '../services/workers.js';
+import { signOut } from '../services/auth.js';
+import { useSession } from '../App.jsx';
 import stMark from '../assets/logo/ST-01.svg';
 
 // Customer-first: "Tip a worker" is the hero, not one of four equal cards.
@@ -73,6 +75,15 @@ const SECONDARY = [
 
 export default function Launcher() {
   const navigate = useNavigate();
+  const { session } = useSession();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await signOut();
+    setSigningOut(false);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-wash)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 20px 32px' }}>
       <img src={stMark} alt="SwiftTip" style={{ height: 56, width: 56 }} />
@@ -104,9 +115,23 @@ export default function Launcher() {
         </div>
       </div>
 
-      <button onClick={() => navigate('/worker/login')} style={{ marginTop: 28, color: '#93a8b3', background: 0, border: 0, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12.5 }}>
-        Staff admin
-      </button>
+      {/* A signed-in session must always have a visible way out here — the
+          launcher is the one screen everyone passes through, and it's what a
+          shared/owner device returns to between uses. Its absence is what let
+          an admin's warm session silently attach to another worker's signup. */}
+      {session ? (
+        <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'Inter, sans-serif' }}>
+          <span style={{ color: '#93a8b3', fontSize: 12.5 }}>Signed in as {session.user?.email}</span>
+          <button onClick={handleSignOut} disabled={signingOut}
+            style={{ color: 'var(--danger)', background: 0, border: 0, fontWeight: 700, cursor: signingOut ? 'not-allowed' : 'pointer', fontFamily: 'inherit', fontSize: 12.5 }}>
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => navigate('/worker/login')} style={{ marginTop: 28, color: '#93a8b3', background: 0, border: 0, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 12.5 }}>
+          Staff admin
+        </button>
+      )}
 
       <div style={{ marginTop: 16, fontSize: 12, color: '#6a8492', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
         Banking-grade security · POPIA compliant · 🇿🇦 Made for South Africa
