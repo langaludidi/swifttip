@@ -49,7 +49,7 @@ function WelcomeScreen({ next }) {
           <span className="badge" style={{ marginLeft: 'auto' }}>🇿🇦 South Africa</span>
         </div>
         <h2>Earn every tip — even when no one carries cash.</h2>
-        <p>Join thousands of service workers getting tipped instantly, straight to their bank.</p>
+        <p>Get tipped instantly, straight to your bank — no cash needed.</p>
         <button className="btn btn-primary" style={{ marginTop: 18 }} onClick={next}>
           Get started <I.chevR size={18} color="#fff" />
         </button>

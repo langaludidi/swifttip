@@ -57,13 +57,13 @@ actually done and someone can point to why it's true. A true, verifiable technic
 fact ("256-bit SSL", "Paystack handles your card details") is fine; a legal/
 regulatory compliance assertion is not, until it's earned.
 
-**Found in the same pass, not fixed — flagging, not a compliance claim but a
-similar "unearned claim" problem:** `WorkerOnboarding.jsx`'s intro copy says *"Join
-thousands of service workers getting tipped instantly"* — pilot #1 hasn't launched
-yet; there are no real tipped workers at all, let alone thousands. This is a
-marketing/copy decision, not a one-line removal like the above, so it wasn't changed
-without being asked — but it's the same category of problem and worth a deliberate
-call before pilot #1 goes live with real workers reading it.
+- [x] **Same category, fixed 2026-07-28 on explicit request:** `WorkerOnboarding.jsx`'s
+      intro copy said *"Join thousands of service workers getting tipped
+      instantly"* — pilot #1 hasn't launched; there are no real tipped workers at
+      all, let alone thousands. Not a compliance claim, but the same "unearned
+      claim" problem. Changed to *"Get tipped instantly, straight to your bank —
+      no cash needed"* — true regardless of how many workers have actually signed
+      up.
 
 ## Security findings (post-Sprint-1 criticals)
 
@@ -195,8 +195,13 @@ dedicated record. Add future findings here rather than as inline mentions only.
   error). Full data audit at the time found this contamination pattern
   affected only the one identity (no other `profile_id` had duplicates), plus
   one unrelated, pre-existing orphaned `auth.users` row with no `profiles` row
-  at all (`langa@lglstaffing.co.za`, created 2026-07-11, predates this bug —
-  flagged, not deleted, since removing a real auth identity wasn't confirmed).
+  at all (`langa@lglstaffing.co.za`, created 2026-07-11). Flagged rather than
+  deleted immediately — a new session on that account appeared *during this
+  same investigation* (2026-07-28 08:08:40 UTC), which was confirmed to be the
+  project owner testing something, not a live third party. Deleted 2026-07-28
+  via the Auth admin API (`auth.admin.deleteUser`, the same path
+  `tests/regression/lib.mjs`'s `deleteTestUser` uses — not a raw SQL delete)
+  once confirmed. `auth.users` and `profiles` counts are back in sync (2/2).
   Fixed in three places:
   - `services/auth.js` `signUp()`: now calls `supabase.auth.signOut()` before
     `supabase.auth.signUp()` unconditionally, and checks
