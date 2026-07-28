@@ -183,11 +183,23 @@ done above against real Supabase data — not once the UI looks right.
       tips returned as-is); the Paystack-verify-driven mapping itself is
       documented there as manually re-verify-by-hand only, matching this
       suite's existing policy of not spending real Paystack API calls in a
-      freely re-runnable test (see `amount-bounds.test.mjs`). **Not yet tested
-      live**: an actual card decline (`failed`, distinct from `abandoned`) and
-      an actual successful payment end-to-end — both require completing a real
-      Paystack hosted-checkout page with a test card, which needs browser
-      automation not available in this session.
+      freely re-runnable test (see `amount-bounds.test.mjs`).
+      **Full money-path now proven live end to end (2026-07-28), by hand from
+      a phone** (browser automation was blocked by Paystack checkout's
+      Cloudflare Turnstile — see the funds-model/deployment notes): a real
+      R12.00 tip paid with Paystack's success test card (`4084 0840 8408
+      4081`) reached `tips.status = 'settled'` with `settled_at` set, via the
+      real `paystack-webhook` → `settle_tip` path (confirmed via a real
+      `ledger_entries` credit row and `wallets.balance_cents` update, both
+      reversed afterward as test cleanup) — no PIN/OTP prompted. A real
+      R13.00 tip paid with Paystack's decline test card (`4084 0800 0000
+      5408`) stayed `pending` until polled, then `get-tip-status` correctly
+      flipped it to `tips.status = 'failed'` immediately (no 15-minute wait —
+      a genuine `failed` gateway status, not `abandoned`) — no PIN/OTP
+      prompted here either. This was the last unverified link in the pilot
+      #1 north-star journey (customer scans → pays → money reaches the
+      worker cleanly); it is now proven with real Paystack test-mode money
+      movement, not just logic-verified.
 
 ### Admin console (Tier 3) — minimal, ugly is fine, but blocking pilot #1
 
