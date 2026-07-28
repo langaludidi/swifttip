@@ -123,9 +123,13 @@ dedicated record. Add future findings here rather than as inline mentions only.
   (e.g. straight to `'approved'`) without going through `decide_kyc`, skipping
   the reason requirement and the audit row — `active` would still self-correct
   via the trigger, but the status change and its lack of a paper trail would
-  stand. Full fix needs trigger-level enforcement rejecting any `status`/
-  `reviewed_at`/`rejection_reason` change on `workers` that didn't originate
-  from `decide_kyc`'s service-role context — still open, tracked here.
+  stand. **Tracked follow-up (low priority — requires an already-authenticated
+  aal2 admin, i.e. someone who can approve workers through the legitimate path
+  anyway):** trigger-level enforcement rejecting any `status`/`reviewed_at`/
+  `rejection_reason` change on `workers` that didn't originate from
+  `decide_kyc`'s service-role context. This is the final closure step for the
+  admin-side integrity gap — not urgent, but the honest finish line for this
+  item.
 
 ## High priority — Pilot #1 (Customer + Worker) — open items
 
