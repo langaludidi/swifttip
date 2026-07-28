@@ -54,7 +54,7 @@ function WelcomeScreen({ next }) {
           Get started <I.chevR size={18} color="#fff" />
         </button>
         <button className="btn-link" onClick={() => navigate('/worker/login')}>I already have an account</button>
-        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>Banking-grade security · POPIA compliant</div>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>Secure payments via Paystack</div>
       </div>
     </div>
   );
@@ -336,7 +336,7 @@ function BankingScreen({ next, back, form, setForm }) {
           </div>
           <div className="trust-note">
             <span className="ic"><I.lock size={18} /></span>
-            <div><div className="tt">Bank-grade encryption</div><div className="ts">Encrypted at rest, never shared. POPIA &amp; PCI-DSS compliant.</div></div>
+            <div><div className="tt">Bank-grade encryption</div><div className="ts">Encrypted at rest, never shared.</div></div>
           </div>
         </div>
       </div>

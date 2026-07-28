@@ -134,7 +134,7 @@ export default function Launcher() {
       )}
 
       <div style={{ marginTop: 16, fontSize: 12, color: '#6a8492', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
-        Banking-grade security · POPIA compliant · 🇿🇦 Made for South Africa
+        Secure payments via Paystack · 🇿🇦 Made for South Africa
       </div>
     </div>
   );

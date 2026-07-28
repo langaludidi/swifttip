@@ -21,6 +21,50 @@ following are true:
    (tips settling, payouts requested/approved/paid) must leave a `ledger_entries`
    row or equivalent trail, not just mutate a balance.
 
+## Unearned compliance claims (the launcher-footer rule)
+
+CLAUDE.md's standing rules reference "the launcher-footer rule in the checklist" —
+this is that rule, written down for the first time. **"POPIA compliant" was live and
+public on `swifttip.vercel.app` with no POPIA compliance work actually done** (per
+`16-vision.md`, any data/identity feature is explicitly meant to be "reviewed by a
+POPIA/labour specialist before design begins" — that review hasn't happened). Fixed
+2026-07-28, all live/reachable instances:
+
+- [x] `Launcher.jsx` footer: `"Banking-grade security · POPIA compliant · 🇿🇦 Made
+      for South Africa"` → `"Secure payments via Paystack · 🇿🇦 Made for South
+      Africa"`.
+- [x] `CustomerFlow.jsx` tip-page trust badge (the actual payment screen — arguably
+      the more serious instance): `"Paid via Paystack · 256-bit SSL · POPIA
+      compliant"` → `"Paid via Paystack · 256-bit SSL"` (the SSL claim is a true,
+      verifiable technical fact about the connection; POPIA compliance is not).
+- [x] `WorkerOnboarding.jsx` (the real, live worker signup flow — used throughout
+      this session's own testing): two instances — the intro screen's `"Banking-grade
+      security · POPIA compliant"` → `"Secure payments via Paystack"`, and the
+      banking-details step's `"Encrypted at rest, never shared. POPIA & PCI-DSS
+      compliant."` → `"Encrypted at rest, never shared."` (PCI-DSS additionally
+      doesn't even apply here — it governs card data, and this step collects bank
+      account details, not card data; the app never touches card data at all,
+      Paystack's hosted checkout does).
+- [x] `EmployerOnboarding.jsx`: `"POPIA compliant · CIPC-verified businesses"` →
+      `"CIPC-verified businesses"`. This route is currently unreachable
+      (`/employer/onboarding` renders `EmployerComingSoon` instead — employer
+      self-service is deferred to pilot #2) but fixed anyway so it isn't a landmine
+      if that route is ever re-wired without this being remembered.
+
+**The rule going forward**: no compliance/certification claim (POPIA, PCI-DSS, or
+any future one) appears anywhere in the product until the underlying work is
+actually done and someone can point to why it's true. A true, verifiable technical
+fact ("256-bit SSL", "Paystack handles your card details") is fine; a legal/
+regulatory compliance assertion is not, until it's earned.
+
+**Found in the same pass, not fixed — flagging, not a compliance claim but a
+similar "unearned claim" problem:** `WorkerOnboarding.jsx`'s intro copy says *"Join
+thousands of service workers getting tipped instantly"* — pilot #1 hasn't launched
+yet; there are no real tipped workers at all, let alone thousands. This is a
+marketing/copy decision, not a one-line removal like the above, so it wasn't changed
+without being asked — but it's the same category of problem and worth a deliberate
+call before pilot #1 goes live with real workers reading it.
+
 ## Security findings (post-Sprint-1 criticals)
 
 Sprint 1 tracked C1–C4 inline in checklist context; this section is the first

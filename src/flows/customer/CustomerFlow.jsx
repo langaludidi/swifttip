@@ -183,7 +183,7 @@ export default function CustomerFlow({ screen, nav, data, presetAmountCents, pre
               onClick={goToCheckout}>
               Tip R{amt.toFixed(2)} to {w.name.split(' ')[0]}
             </button>
-            <div className="center muted" style={{ fontSize: 12.5 }}><I.lock size={13} /> Paid via Paystack · 256-bit SSL · POPIA compliant</div>
+            <div className="center muted" style={{ fontSize: 12.5 }}><I.lock size={13} /> Paid via Paystack · 256-bit SSL</div>
           </div>
         </div>
       </>

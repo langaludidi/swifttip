@@ -51,7 +51,7 @@ function WelcomeScreen({ next }) {
           Set up my business <I.chevR size={18} color="#fff" />
         </button>
         <button className="btn-link" onClick={() => {}}>I already have an account</button>
-        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>POPIA compliant · CIPC-verified businesses</div>
+        <div className="center muted" style={{ fontSize: 11.5, marginTop: 2 }}>CIPC-verified businesses</div>
       </div>
     </div>
   );
