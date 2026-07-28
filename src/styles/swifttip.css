@@ -44,10 +44,17 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-/* Every digit in the product — tips, balances, stats — gets a fixed width so
-   amounts don't jitter as they change. Set once at body level rather than
-   per-component so no monetary display can be missed. */
-body { font-variant-numeric: tabular-nums; }
+/* --font (Inter) was previously only applied via the .st-stage wrapper class,
+   never globally — the Stage 2 Launcher/TipPage rewrite dropped that wrapper
+   in favor of inline styles, and several elements (Launcher's "Tip a worker"
+   hero, its manual-code prompt, CustomerFlow's worker name/headers) never
+   got their own fontFamily override, so they fell through to the browser's
+   default serif. Setting it here makes Inter the actual default for every
+   element in the app, not something each component has to remember.
+   Every digit in the product — tips, balances, stats — also gets a fixed
+   width so amounts don't jitter as they change; set once here for the same
+   reason, so no monetary display can be missed. */
+body { font-family: var(--font); font-variant-numeric: tabular-nums; }
 
 /* ---------- App stage ---------- */
 .st-stage {
