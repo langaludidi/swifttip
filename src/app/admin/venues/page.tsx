@@ -27,7 +27,7 @@ export default async function AdminVenuesPage({
 
   if (access.mode === "live") {
     const supabase = await createSupabaseServerClient();
-    const { data } = await supabase.rpc("admin_get_venues", { p_status: null });
+    const { data } = await supabase.rpc("admin_get_venues", {});
     rows = (data ?? []) as Venue[];
   }
 
