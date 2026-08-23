@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/types/database";
 
 type CookieToSet = {
   name: string;
@@ -13,7 +14,7 @@ export async function createSupabaseServerClient() {
   if (!url || !key) throw new Error("Supabase MVP v3 project is not configured");
 
   const cookieStore = await cookies();
-  return createServerClient(url, key, {
+  return createServerClient<Database>(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
