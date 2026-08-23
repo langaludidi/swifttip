@@ -1,4 +1,4 @@
--- SwiftTip MVP v3 — make the repository legal drafts and database versions one controlled source.
+-- SwiftTip MVP v3 — make repository legal drafts and database versions one controlled source.
 -- All affected documents remain DRAFT and UNPUBLISHED.
 
 alter table public.terms_versions
@@ -12,30 +12,53 @@ alter table public.terms_versions drop constraint if exists terms_versions_sourc
 alter table public.terms_versions add constraint terms_versions_source_bytes_check
   check (source_bytes is null or source_bytes > 0);
 
--- Worker and Venue source texts differed only by an extra trailing newline in the seed.
+-- Worker and Venue drafts already contain the approved v0.1 text; their seed copies
+-- contained only wrapper-newline drift. Normalise exactly one trailing LF and no
+-- accidental leading LF, then attach the Git source fingerprint.
 update public.terms_versions
-set content_body = regexp_replace(content_body, E'\n+$', E'\n'),
-    content_hash = encode(extensions.digest(convert_to(regexp_replace(content_body, E'\n+$', E'\n'),'UTF8'),'sha256'),'hex'),
-    source_repository='langaludidi/swifttip',
-    source_path='docs/legal/WORKER_TERMS_DRAFT.md',
-    source_blob_sha='443e7ef12082f5d07c0a24a23a0587aa0660c074',
-    source_bytes=12894,
-    source_synced_at=now()
-where terms_type='worker_terms' and version_code='v0.1-draft' and review_status='draft' and published_at is null;
+set content_body = regexp_replace(regexp_replace(content_body, E'^\n+', ''), E'\n*$', E'\n'),
+    content_hash = encode(
+      extensions.digest(
+        convert_to(regexp_replace(regexp_replace(content_body, E'^\n+', ''), E'\n*$', E'\n'), 'UTF8'),
+        'sha256'
+      ),
+      'hex'
+    ),
+    source_repository = 'langaludidi/swifttip',
+    source_path = 'docs/legal/WORKER_TERMS_DRAFT.md',
+    source_blob_sha = '443e7ef12082f5d07c0a24a23a0587aa0660c074',
+    source_bytes = 12894,
+    source_synced_at = now()
+where terms_type = 'worker_terms'
+  and version_code = 'v0.1-draft'
+  and review_status = 'draft'
+  and published_at is null;
 
 update public.terms_versions
-set content_body = regexp_replace(content_body, E'\n+$', E'\n'),
-    content_hash = encode(extensions.digest(convert_to(regexp_replace(content_body, E'\n+$', E'\n'),'UTF8'),'sha256'),'hex'),
-    source_repository='langaludidi/swifttip',
-    source_path='docs/legal/VENUE_TERMS_DRAFT.md',
-    source_blob_sha='318acf8fbee87c291830ac239f2a7151793545d1',
-    source_bytes=12132,
-    source_synced_at=now()
-where terms_type='venue_terms' and version_code='v0.1-draft' and review_status='draft' and published_at is null;
+set content_body = regexp_replace(regexp_replace(content_body, E'^\n+', ''), E'\n*$', E'\n'),
+    content_hash = encode(
+      extensions.digest(
+        convert_to(regexp_replace(regexp_replace(content_body, E'^\n+', ''), E'\n*$', E'\n'), 'UTF8'),
+        'sha256'
+      ),
+      'hex'
+    ),
+    source_repository = 'langaludidi/swifttip',
+    source_path = 'docs/legal/VENUE_TERMS_DRAFT.md',
+    source_blob_sha = '318acf8fbee87c291830ac239f2a7151793545d1',
+    source_bytes = 12132,
+    source_synced_at = now()
+where terms_type = 'venue_terms'
+  and version_code = 'v0.1-draft'
+  and review_status = 'draft'
+  and published_at is null;
 
+-- Customer Transaction Terms: exact repository v0.1 bytes. The opening delimiter is
+-- immediately followed by '#', preventing the extra leading LF that caused the first
+-- synchronisation attempt to fail.
 do $$
-declare v_body text := $customer$
-# SwiftTip Customer Transaction Terms — Draft v0.1
+declare
+  v_body text := $customer$# SwiftTip Customer Transaction Terms — Draft v0.1
 
 **Status: DRAFT / NOT PUBLISHED / NOT IN FORCE**
 
@@ -247,19 +270,23 @@ This draft must not be approved for publication until the following are resolved
 $customer$;
 begin
   update public.terms_versions
-  set content_body=v_body,
-      content_hash=encode(extensions.digest(convert_to(v_body,'UTF8'),'sha256'),'hex'),
-      source_repository='langaludidi/swifttip',
-      source_path='docs/legal/CUSTOMER_TRANSACTION_TERMS_DRAFT.md',
-      source_blob_sha='6ca7982a52ccb1ebda47d9a70276da93465e0048',
-      source_bytes=10859,
-      source_synced_at=now()
-  where terms_type='customer_transaction_terms' and version_code='v0.1-draft' and review_status='draft' and published_at is null;
-end$$;
+  set content_body = v_body,
+      content_hash = encode(extensions.digest(convert_to(v_body, 'UTF8'), 'sha256'), 'hex'),
+      source_repository = 'langaludidi/swifttip',
+      source_path = 'docs/legal/CUSTOMER_TRANSACTION_TERMS_DRAFT.md',
+      source_blob_sha = '6ca7982a52ccb1ebda47d9a70276da93465e0048',
+      source_bytes = 10859,
+      source_synced_at = now()
+  where terms_type = 'customer_transaction_terms'
+    and version_code = 'v0.1-draft'
+    and review_status = 'draft'
+    and published_at is null;
+end $$;
 
+-- Privacy Notice: exact repository v0.1 bytes.
 do $$
-declare v_body text := $privacy$
-# SwiftTip Privacy Notice — Draft v0.1
+declare
+  v_body text := $privacy$# SwiftTip Privacy Notice — Draft v0.1
 
 **Status: DRAFT / NOT PUBLISHED / NOT IN FORCE**
 
@@ -563,24 +590,51 @@ This draft must not be approved for publication until the following are resolved
 $privacy$;
 begin
   update public.terms_versions
-  set content_body=v_body,
-      content_hash=encode(extensions.digest(convert_to(v_body,'UTF8'),'sha256'),'hex'),
-      source_repository='langaludidi/swifttip',
-      source_path='docs/legal/PRIVACY_NOTICE_DRAFT.md',
-      source_blob_sha='6ce7eaed8dfe0f565c6e15881be8bd53aeb0d1bf',
-      source_bytes=14023,
-      source_synced_at=now()
-  where terms_type='privacy_notice' and version_code='v0.1-draft' and review_status='draft' and published_at is null;
-end$$;
+  set content_body = v_body,
+      content_hash = encode(extensions.digest(convert_to(v_body, 'UTF8'), 'sha256'), 'hex'),
+      source_repository = 'langaludidi/swifttip',
+      source_path = 'docs/legal/PRIVACY_NOTICE_DRAFT.md',
+      source_blob_sha = '6ce7eaed8dfe0f565c6e15881be8bd53aeb0d1bf',
+      source_bytes = 14023,
+      source_synced_at = now()
+  where terms_type = 'privacy_notice'
+    and version_code = 'v0.1-draft'
+    and review_status = 'draft'
+    and published_at is null;
+end $$;
 
--- Fail the migration if the database copy does not exactly match the expected source byte lengths.
+-- Fail the migration if any controlled v0.1 source is missing, malformed, drifted or
+-- accidentally published. This keeps the repository and legal-version registry aligned.
 do $$
-declare v_bad integer;
+declare
+  v_bad integer;
 begin
   select count(*) into v_bad
   from public.terms_versions
-  where version_code='v0.1-draft'
-    and source_repository='langaludidi/swifttip'
-    and octet_length(content_body)<>source_bytes;
-  if v_bad<>0 then raise exception 'Legal source synchronisation byte-length verification failed for % document(s)',v_bad; end if;
-end$$;
+  where version_code = 'v0.1-draft'
+    and terms_type in ('worker_terms', 'venue_terms', 'customer_transaction_terms', 'privacy_notice')
+    and (
+      review_status <> 'draft'
+      or published_at is not null
+      or source_repository <> 'langaludidi/swifttip'
+      or source_path is null
+      or source_blob_sha is null
+      or source_bytes is null
+      or source_synced_at is null
+      or octet_length(content_body) <> source_bytes
+      or content_hash <> encode(extensions.digest(convert_to(content_body, 'UTF8'), 'sha256'), 'hex')
+    );
+
+  if v_bad <> 0 then
+    raise exception 'legal source synchronisation failed: % controlled drafts did not match their source fingerprints', v_bad;
+  end if;
+
+  if (
+    select count(*)
+    from public.terms_versions
+    where version_code = 'v0.1-draft'
+      and terms_type in ('worker_terms', 'venue_terms', 'customer_transaction_terms', 'privacy_notice')
+  ) <> 4 then
+    raise exception 'legal source synchronisation failed: expected exactly four controlled v0.1 drafts';
+  end if;
+end $$;
