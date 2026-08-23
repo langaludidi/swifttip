@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ci": "npm run typecheck && npm run test && npm run build"
+    "architecture:check": "node scripts/check-architecture.mjs",
+    "ci": "npm run architecture:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
