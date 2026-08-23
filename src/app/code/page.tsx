@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AppMark } from "@/components/AppMark";
+import { CustomerBottomNav } from "@/components/CustomerBottomNav";
 import { getServerConfig } from "@/lib/config";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
@@ -27,22 +29,25 @@ async function resolveWorkerCode(formData: FormData) {
 export default async function CodePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
   return (
-    <main className="flow-shell">
-      <div className="flow-page">
-        <header className="simple-header"><Link className="back-link" href="/">←</Link><strong>Worker code</strong><span style={{ width: 42 }} /></header>
-        <section className="tip-flow">
-          <span className="eyebrow">Tip a worker</span>
+    <main className="mobile-app-shell">
+      <div className="app-page customer-flow-page">
+        <header className="topbar"><Link className="back-link" href="/" aria-label="Back">←</Link><div className="brand-lockup"><AppMark size={34}/><div><strong>SwiftTip</strong><span className="brand-subline">Worker code</span></div></div><span style={{ width: 42 }} /></header>
+        <section className="tip-flow code-entry-flow">
+          <span className="eyebrow">Find the worker</span>
           <h1>Enter their SwiftTip code.</h1>
-          <p className="lead">Use the short code shown on the worker's SwiftTip QR card or screen. You'll confirm the worker before any payment step.</p>
+          <p className="lead">The short code appears with the worker’s SwiftTip QR. You’ll confirm the worker and Venue before choosing a gratuity.</p>
           {error && <p className="prototype-warning" role="alert">{error}</p>}
-          <form action={resolveWorkerCode} className="stack-actions" style={{ marginTop: 24 }}>
-            <label className="field-label" htmlFor="code">SwiftTip code</label>
-            <div className="custom-field"><input id="code" name="code" inputMode="text" autoCapitalize="characters" autoComplete="off" placeholder="T4K8P" maxLength={12} required /></div>
+          <form action={resolveWorkerCode} className="code-entry-card">
+            <label className="field-label" htmlFor="code">SwiftTip worker code</label>
+            <div className="code-input-shell"><span>ST</span><input id="code" name="code" inputMode="text" autoCapitalize="characters" autoComplete="off" placeholder="T4K8P" maxLength={12} required /></div>
             <button className="button button-primary button-large" type="submit">Find worker</button>
           </form>
-          <p className="fee-note">SwiftTip never uses a public searchable worker directory. A valid QR or code is required.</p>
+          <div className="privacy-inline"><span>◇</span><p>There is no public worker directory. A valid QR or worker code is required.</p></div>
+          <Link className="action-link centered-action" href="/scan">Scan the QR instead</Link>
+          <div className="nav-clearance" />
         </section>
       </div>
+      <CustomerBottomNav active="code" />
     </main>
   );
 }
