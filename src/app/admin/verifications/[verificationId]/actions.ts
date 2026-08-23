@@ -23,7 +23,7 @@ export async function decideVerification(formData: FormData) {
   const { error } = await supabase.rpc("admin_decide_worker_verification", {
     p_verification_id: verificationId.data,
     p_decision: decision.data,
-    p_reason: reason || null
+    p_reason: reason || undefined
   });
   if (error) redirect(`/admin/verifications/${verificationId.data}?error=${encodeURIComponent("The verification decision could not be recorded")}`);
 

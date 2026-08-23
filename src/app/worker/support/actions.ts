@@ -25,7 +25,7 @@ export async function createWorkerSupportCase(formData: FormData) {
     p_category: parsed.data.category,
     p_subject: parsed.data.subject,
     p_description: parsed.data.description,
-    p_tip_reference: parsed.data.tipReference || null
+    p_tip_reference: parsed.data.tipReference
   });
   if (error) redirect(`/worker/support?error=${encodeURIComponent(error.message.includes("Tip reference") ? "That transaction reference is not linked to your Worker profile." : "We could not open the support case.")}`);
   redirect(`/worker/support?created=${encodeURIComponent(String(data ?? ""))}`);

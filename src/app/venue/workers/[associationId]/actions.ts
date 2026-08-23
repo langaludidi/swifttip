@@ -9,7 +9,7 @@ const uuidSchema = z.string().uuid();
 export async function confirmAssociation(formData: FormData) {
   const associationId = uuidSchema.parse(String(formData.get("associationId") ?? ""));
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("decide_worker_venue_association", { p_association_id: associationId, p_decision: "confirm", p_reason: null });
+  const { error } = await supabase.rpc("decide_worker_venue_association", { p_association_id: associationId, p_decision: "confirm" });
   if (error) redirect(`/venue/workers/${associationId}?error=${encodeURIComponent("The Worker could not be confirmed.")}`);
   redirect(`/venue/workers/${associationId}?updated=confirmed`);
 }

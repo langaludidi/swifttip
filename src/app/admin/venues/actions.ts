@@ -18,11 +18,11 @@ export async function createVenue(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("admin_create_venue", {
     p_trading_name: name.data,
-    p_branch_name: String(formData.get("branchName") ?? "").trim() || null,
+    p_branch_name: String(formData.get("branchName") ?? "").trim(),
     p_venue_type: type.data,
-    p_city: String(formData.get("city") ?? "").trim() || null,
-    p_province: String(formData.get("province") ?? "").trim() || null,
-    p_public_location_label: String(formData.get("locationLabel") ?? "").trim() || null
+    p_city: String(formData.get("city") ?? "").trim() || undefined,
+    p_province: String(formData.get("province") ?? "").trim() || undefined,
+    p_public_location_label: String(formData.get("locationLabel") ?? "").trim() || undefined
   });
 
   if (error) redirect(`/admin/venues?error=${encodeURIComponent(error.message)}`);

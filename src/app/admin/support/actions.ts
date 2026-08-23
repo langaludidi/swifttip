@@ -9,7 +9,7 @@ const statusSchema = z.enum(["open","in_progress","awaiting_customer","awaiting_
 export async function updateSupportCase(formData: FormData) {
   const caseId = z.string().uuid().safeParse(String(formData.get("caseId") ?? ""));
   const status = statusSchema.safeParse(String(formData.get("status") ?? ""));
-  const reason = String(formData.get("reason") ?? "").trim().slice(0, 1000) || null;
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 1000) || undefined;
   if (!caseId.success || !status.success) redirect("/admin/support?error=Invalid%20support%20case%20update");
 
   const supabase = await createSupabaseServerClient();
