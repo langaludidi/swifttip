@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppMark } from "@/components/AppMark";
-import { BottomNav } from "@/components/BottomNav";
+import { WorkerBottomNav } from "@/components/WorkerBottomNav";
 import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { formatZar } from "@/lib/money";
@@ -71,7 +71,6 @@ export default async function WorkerPage() {
     const tomorrow = new Date(todayStart);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    // Keep the known zero-argument PostgREST inference workaround isolated here.
     const contextResult = (await supabase.rpc("get_worker_context")) as unknown as { data: WorkerContext[] | null; error: unknown };
     const [monthResult, todayResult, tipsResult] = await Promise.all([
       supabase.rpc("get_worker_summary", { p_from: monthStart.toISOString(), p_to: now.toISOString() }),
@@ -90,21 +89,38 @@ export default async function WorkerPage() {
 
   return (
     <main className="mobile-app-shell">
-      <div className="app-page">
-        <header className="topbar"><div className="brand-lockup"><AppMark size={38}/><strong>SwiftTip</strong></div><span className={active ? "status-chip success" : "status-chip warning"}>{active ? "✓ Ready" : "Action required"}</span></header>
-        {access.mode === "demo" && <p className="prototype-warning">Preview data only — live worker data requires the new MVP v3 database.</p>}
-        <section className="dashboard-title"><span className="eyebrow">Worker</span><h1>Good day, {context.display_name} 👋</h1><p className="lead">{active ? `Ready to receive tips${context.venue_name ? ` at ${context.venue_name}` : ""}.` : "Complete the outstanding activation steps before receiving new tips."}</p></section>
-        <div className="metric-grid" style={{ marginTop: 22 }}>
-          <article className="metric-card"><span>Today's gross tips</span><strong>{formatZar(Number(today.gross_gratuity_cents))}</strong><small>{Number(today.successful_tip_count)} tips</small></article>
-          <article className="metric-card"><span>This month</span><strong>{formatZar(Number(month.gross_gratuity_cents))}</strong><small>Gross tips</small></article>
-          <article className="metric-card"><span>Processing</span><strong>{formatZar(Number(month.processing_cents))}</strong><small>Awaiting settlement</small></article>
+      <div className="app-page worker-home-page">
+        <header className="topbar">
+          <div className="brand-lockup"><AppMark size={38}/><div><strong>SwiftTip</strong><span className="brand-subline">Worker</span></div></div>
+          <span className={active ? "status-chip success" : "status-chip warning"}>{active ? "✓ Ready" : "Action required"}</span>
+        </header>
+
+        {access.mode === "demo" && <p className="prototype-warning">Preview data only — live worker data requires the MVP v3 database connection.</p>}
+
+        <section className="dashboard-title worker-title">
+          <span className="eyebrow">Your gratuities</span>
+          <h1>Hi, {context.display_name}.</h1>
+          <p className="lead">{active ? `Your SwiftTip profile is ready${context.venue_name ? ` at ${context.venue_name}` : ""}.` : "Complete the outstanding activation steps before receiving new tips."}</p>
+        </section>
+
+        <section className="worker-earnings-hero">
+          <div><span className="hero-kicker">YOU EARNED TODAY</span><strong>{formatZar(Number(today.worker_net_cents))}</strong><small>{Number(today.successful_tip_count)} successful {Number(today.successful_tip_count) === 1 ? "tip" : "tips"}</small></div>
+          <Link href="/worker/transactions" className="earnings-link">View tips →</Link>
+        </section>
+
+        <div className="metric-grid worker-metrics" style={{ marginTop: 14 }}>
+          <article className="metric-card"><span>This month</span><strong>{formatZar(Number(month.worker_net_cents))}</strong><small>Your net gratuities</small></article>
+          <article className="metric-card"><span>Processing</span><strong>{formatZar(Number(month.processing_cents))}</strong><small>Settlement pending</small></article>
           <article className="metric-card"><span>Settled</span><strong>{formatZar(Number(month.settled_cents))}</strong><small>This month</small></article>
+          <article className="metric-card"><span>SwiftTip fee</span><strong>{formatZar(Number(month.worker_fee_cents))}</strong><small>On successful gratuities</small></article>
         </div>
+
         <section className="dashboard-section"><div className="section-heading"><h2>Recent tips</h2><Link className="action-link" href="/worker/transactions">View all</Link></div>{tips.length ? tips.map((tip) => <Link className="list-row" href={`/worker/transactions/${encodeURIComponent(tip.swifttip_reference)}`} key={tip.swifttip_reference}><div><strong>{formatZar(Number(tip.gross_gratuity_cents))}</strong><div className="meta">{localTime(tip.completed_at)}</div></div><span className={statusClass(tip.settlement_state)}>{statusLabel(tip.settlement_state)}</span></Link>) : <div className="empty-state"><strong>No tips yet</strong><p>Your SwiftTip transactions will appear here after a successful customer payment.</p></div>}</section>
-        <section className="dashboard-section"><h2>Your QR</h2><p className="lead">Your venue-context QR never contains banking details or a stored-value balance.</p><Link className="button button-primary" href="/worker/qr" style={{ marginTop: 15 }}>Show my QR</Link><Link className="action-link" href={qrHref} style={{ display: "inline-block", marginTop: 14 }}>Preview customer view</Link></section>
+
+        <section className="dashboard-section qr-callout"><div><span className="eyebrow">Ready when you are</span><h2>Show your SwiftTip QR</h2><p className="lead">Customers confirm your profile before choosing a gratuity amount.</p></div><Link className="button button-primary" href="/worker/qr">Open my QR</Link><Link className="action-link" href={qrHref}>Preview customer view</Link></section>
         <div className="nav-clearance"/>
       </div>
-      <BottomNav active="worker"/>
+      <WorkerBottomNav active="home"/>
     </main>
   );
 }
