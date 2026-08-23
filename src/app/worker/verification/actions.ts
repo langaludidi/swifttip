@@ -8,6 +8,7 @@ import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 const verificationIdSchema = z.string().uuid();
+const documentIdSchema = z.string().uuid();
 const allowedTypes = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const maximumBytes = 10 * 1024 * 1024;
 
@@ -38,7 +39,8 @@ export async function uploadVerificationEvidence(formData: FormData) {
   const bytes = Buffer.from(await file.arrayBuffer());
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   const path = `${context.worker_id}/${verificationId}/${randomUUID()}.${safeExtension(file)}`;
-  const { error: uploadError } = await supabase.storage.from("worker-verification").upload(path, bytes, {
+  const bucket = supabase.storage.from("worker-verification");
+  const { error: uploadError } = await bucket.upload(path, bytes, {
     contentType: file.type,
     upsert: false,
     cacheControl: "3600"
@@ -53,10 +55,44 @@ export async function uploadVerificationEvidence(formData: FormData) {
     p_file_size_bytes: file.size,
     p_sha256_hash: sha256
   });
-  if (registerError) redirect("/worker/verification?error=The%20file%20was%20uploaded%20but%20could%20not%20be%20registered.%20Please%20contact%20support");
+
+  if (registerError) {
+    // A Storage object that is not registered is not valid verification evidence.
+    // Best-effort cleanup prevents an orphan remaining in the Worker's private folder.
+    await bucket.remove([path]);
+    redirect("/worker/verification?error=We%20could%20not%20register%20that%20evidence.%20Please%20try%20again");
+  }
 
   revalidatePath("/worker/verification");
   redirect("/worker/verification?uploaded=1");
+}
+
+export async function removeVerificationEvidence(formData: FormData) {
+  const access = await requireWorkerSurface();
+  if (access.mode !== "live") redirect("/worker/verification?error=Evidence%20removal%20is%20not%20available%20in%20preview%20mode");
+
+  const parsed = documentIdSchema.safeParse(String(formData.get("documentId") ?? ""));
+  if (!parsed.success) redirect("/worker/verification?error=Evidence%20reference%20is%20invalid");
+
+  const supabase = await createSupabaseServerClient();
+  const { data: path, error: prepareError } = await supabase.rpc("prepare_worker_verification_document_removal", {
+    p_document_id: parsed.data
+  });
+  if (prepareError || typeof path !== "string" || !path) {
+    redirect("/worker/verification?error=That%20evidence%20cannot%20be%20removed%20in%20its%20current%20state");
+  }
+
+  // Finalisation is authoritative: it succeeds only if the exact bound Storage object
+  // no longer exists. Calling it even after a Storage error also repairs already-missing
+  // objects without falsely marking a still-present file as removed.
+  await supabase.storage.from("worker-verification").remove([path]);
+  const { error: finalizeError } = await supabase.rpc("finalize_worker_verification_document_removal", {
+    p_document_id: parsed.data
+  });
+  if (finalizeError) redirect("/worker/verification?error=We%20could%20not%20remove%20that%20evidence");
+
+  revalidatePath("/worker/verification");
+  redirect("/worker/verification?removed=1");
 }
 
 export async function submitVerification(formData: FormData) {
