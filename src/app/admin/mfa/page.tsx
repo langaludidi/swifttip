@@ -11,6 +11,12 @@ export default async function AdminMfaPage({ searchParams }: { searchParams: Pro
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/admin/login");
 
+  const { data: sessionAllowed } = await supabase.rpc("session_access_allowed", { p_surface: "admin" });
+  if (sessionAllowed !== true) {
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=Your%20Admin%20session%20expired.%20Sign%20in%20again");
+  }
+
   const { data: membership } = await supabase
     .from("admin_memberships")
     .select("admin_status,mfa_required,admin_role")
@@ -19,7 +25,7 @@ export default async function AdminMfaPage({ searchParams }: { searchParams: Pro
 
   if (!membership || membership.admin_status !== "active") {
     await supabase.auth.signOut();
-    redirect("/admin/login?error=This%20account%20is%20not%20authorised%20for%20SwiftTip%20Operations");
+    redirect("/admin/login?error=SwiftTip%20Operations%20access%20is%20unavailable%20for%20this%20account");
   }
 
   if (!membership.mfa_required) redirect("/admin");
@@ -54,10 +60,11 @@ export default async function AdminMfaPage({ searchParams }: { searchParams: Pro
                 <div className="otp-input-shell"><input id="mfa-code" name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="000000" pattern="[0-9]{6}" maxLength={6} required /></div>
                 <button className="button button-primary button-large" type="submit">Verify and enter Operations</button>
               </form>
+              <div className="privacy-inline" style={{ marginTop: 18 }}><span>!</span><p>Lost access to your authenticator? SwiftTip does not provide self-service MFA removal. Recovery requires the controlled Security Admin procedure and re-enrolment after existing sessions are revoked.</p></div>
             </section>
           ) : <AdminMfaEnrollment />}
 
-          <p className="auth-footnote">SwiftTip does not treat email verification as sufficient for privileged Admin actions. The database RPC layer independently requires AAL2 for protected Operations functions.</p>
+          <p className="auth-footnote">SwiftTip does not treat email verification as sufficient for privileged Admin actions. The database independently requires AAL2, and Admin sessions must be re-authenticated after their maximum session age.</p>
         </section>
       </div>
     </main>
