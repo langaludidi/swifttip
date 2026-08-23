@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppMark } from "@/components/AppMark";
-import { BottomNav } from "@/components/BottomNav";
+import { WorkerBottomNav } from "@/components/WorkerBottomNav";
 import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { submitVerification, uploadVerificationEvidence } from "./actions";
@@ -46,34 +46,40 @@ export default async function WorkerVerificationPage({ searchParams }: { searchP
     }
   }
 
-  const editable = !verification || ["not_started", "additional_info_required"].includes(verification.verification_status);
+  const status = verification?.verification_status ?? "not_started";
+  const editable = !verification || ["not_started", "additional_info_required"].includes(status);
   const canSubmit = Boolean(verification && editable && evidenceCount > 0);
+  const approved = status === "approved";
 
   return (
     <main className="mobile-app-shell">
-      <div className="app-page">
-        <header className="topbar"><div className="brand-lockup"><AppMark size={38}/><strong>SwiftTip</strong></div><Link className="action-link" href="/worker/profile">Profile</Link></header>
-        {access.mode === "demo" && <p className="prototype-warning">Preview only — document upload is disabled until the live Supabase environment is connected.</p>}
-        {params.error && <p className="prototype-warning" role="alert">{params.error}</p>}
-        {params.uploaded && <p className="status-chip success" style={{ display: "inline-flex", marginTop: 16 }}>Evidence uploaded</p>}
-        {params.submitted && <p className="status-chip success" style={{ display: "inline-flex", marginTop: 16 }}>Submitted for review</p>}
+      <div className="app-page worker-home-page">
+        <header className="topbar"><div className="brand-lockup"><AppMark size={38}/><div><strong>SwiftTip</strong><span className="brand-subline">Identity check</span></div></div><Link className="compact-link" href="/worker/onboarding">Back to setup</Link></header>
 
-        <section className="dashboard-title"><span className="eyebrow">Identity verification</span><h1>Confirm who you are.</h1><p className="lead">SwiftTip uses only the evidence needed to verify your Worker identity. Payment-provider KYC and banking verification are handled separately.</p></section>
+        {access.mode === "demo" && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Preview verification flow</strong><p>Document upload is disabled until the staging deployment is connected to Supabase.</p></div></div>}
+        {params.error && <div className="state-banner error" role="alert"><span className="state-icon">!</span><div className="state-copy"><strong>Action not completed</strong><p>{params.error}</p></div></div>}
+        {params.uploaded && <div className="state-banner success"><span className="state-icon">✓</span><div className="state-copy"><strong>Evidence uploaded</strong><p>You can add another file or submit the evidence for review.</p></div></div>}
+        {params.submitted && <div className="state-banner success"><span className="state-icon">✓</span><div className="state-copy"><strong>Submitted for review</strong><p>SwiftTip will update this page when the review is complete.</p></div></div>}
 
-        <section className="dashboard-section">
-          <div className="section-heading"><h2>Status</h2><span className={verification?.verification_status === "approved" ? "status-chip success" : "status-chip warning"}>{statusLabel(verification?.verification_status ?? "not_started")}</span></div>
-          <div className="list-row"><div><strong>Evidence files</strong><div className="meta">Private · JPG, PNG or PDF · max 10MB each</div></div><strong>{evidenceCount}</strong></div>
-          {verification?.decision_reason && <div className="prototype-warning"><strong>Reviewer note</strong><br/>{verification.decision_reason}</div>}
+        <section className="dashboard-title"><span className="eyebrow">Identity verification</span><h1>{approved ? "Your identity is verified." : "Confirm who you are."}</h1><p className="lead">SwiftTip reviews the minimum evidence needed to verify your Worker identity. Payment-provider KYC and banking verification remain separate.</p></section>
+
+        <section className="verification-status-hero">
+          <span className="eyebrow">Current status</span>
+          <h2>{statusLabel(status)}</h2>
+          <p>{approved ? "This SwiftTip identity gate is complete." : status === "additional_info_required" ? "A reviewer needs more information before a decision can be made." : ["submitted","under_review"].includes(status) ? "Your evidence is locked while the review is in progress." : "Upload clear evidence, then submit it for review."}</p>
+          <div className="evidence-count"><span>Private evidence files</span><strong>{evidenceCount}</strong></div>
         </section>
 
-        {editable && access.mode === "live" && <section className="dashboard-section"><h2>Add identity evidence</h2><p className="lead">Upload a clear identity document or supporting image. Files are stored in your private verification folder.</p><form action={uploadVerificationEvidence} className="stack-actions" style={{ marginTop: 18 }}><label className="field-label" htmlFor="evidence">Identity evidence</label><input id="evidence" name="evidence" type="file" accept="image/jpeg,image/png,application/pdf" required/><button className="button button-primary" type="submit">Upload evidence</button></form></section>}
+        {verification?.decision_reason && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Reviewer note</strong><p>{verification.decision_reason}</p></div></div>}
 
-        {canSubmit && access.mode === "live" && <section className="dashboard-section"><h2>Ready for review?</h2><p className="lead">After submission you cannot replace evidence unless a reviewer asks for more information.</p><form action={submitVerification}><input type="hidden" name="verificationId" value={verification!.id}/><button className="button button-primary" type="submit">Submit for review</button></form></section>}
+        {editable && access.mode === "live" && <section className="dashboard-section"><div className="section-heading"><div><span className="eyebrow">Evidence</span><h2>Add identity evidence</h2></div></div><p className="lead">Use a clear JPG, PNG or PDF. Each file is stored in your private verification folder and is not shown to the Venue or customers.</p><form action={uploadVerificationEvidence} className="stack-actions" style={{ marginTop: 18 }}><label className="file-drop" htmlFor="evidence"><strong>Choose a file</strong><p>JPG, PNG or PDF · maximum 10MB</p><input id="evidence" name="evidence" type="file" accept="image/jpeg,image/png,application/pdf" required/></label><button className="button button-secondary" type="submit">Upload evidence</button></form></section>}
 
-        {verification?.verification_status === "approved" && <section className="trust-card"><span className="trust-icon">✓</span><div><strong>Identity verified</strong><p>Your SwiftTip identity check is approved. Provider settlement readiness remains a separate activation gate.</p></div></section>}
+        {canSubmit && access.mode === "live" && <section className="dashboard-section"><span className="eyebrow">Ready for review</span><h2>Submit the evidence?</h2><div className="review-lock-note"><span>i</span><div>After submission, you cannot replace the files unless a reviewer asks for more information.</div></div><form action={submitVerification} style={{marginTop:16}}><input type="hidden" name="verificationId" value={verification!.id}/><button className="button button-primary button-large" style={{width:"100%"}} type="submit">Submit for review</button></form></section>}
+
+        {approved && <section className="trust-card"><span className="trust-icon">✓</span><div style={{flex:1}}><strong>Identity gate complete</strong><p>Your SwiftTip identity check is approved. Return to activation to see the remaining Venue, Settlement and terms checks.</p><Link className="action-link" href="/worker/onboarding" style={{display:"inline-block",marginTop:9}}>Continue activation →</Link></div></section>}
         <div className="nav-clearance"/>
       </div>
-      <BottomNav active="profile"/>
+      <WorkerBottomNav active="profile"/>
     </main>
   );
 }
