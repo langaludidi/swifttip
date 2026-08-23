@@ -11,10 +11,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "architecture:check": "node scripts/check-architecture.mjs",
+    "db-contracts:check": "node scripts/check-db-contracts.mjs",
+    "migration:safety": "node scripts/check-migration-safety.mjs",
     "provision:admin": "node scripts/provision-admin.mjs",
     "provision:worker": "node scripts/provision-worker.mjs",
     "recover:admin-mfa": "node scripts/recover-admin-mfa.mjs",
-    "ci": "npm run architecture:check && npm run typecheck && npm run test && npm run build"
+    "ci": "npm run architecture:check && npm run db-contracts:check && npm run migration:safety && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
