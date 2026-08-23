@@ -5,17 +5,31 @@ on:
   push:
     branches: [main, mvp-v3-greenfield-build]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm install --no-audit --no-fund
-      - run: npm run ci
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run SwiftTip resilience gates
+        run: npm run ci
         env:
           SWIFTTIP_ENV: development
           PAYMENTS_ENABLED: "false"
