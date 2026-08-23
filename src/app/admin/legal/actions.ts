@@ -18,12 +18,13 @@ export async function updateLegalDraft(formData:FormData){
   const parsedBody=body.safeParse(String(formData.get("contentBody")??""));
   if(!id.success||!parsedTitle.success||!parsedBody.success)redirect("/admin/legal?error=Invalid%20legal%20draft");
   const supabase=await createSupabaseServerClient();
+  const reviewNotes=String(formData.get("reviewNotes")??"").trim()||undefined;
   const {error}=await supabase.rpc("admin_update_legal_draft",{
     p_terms_version_id:id.data,
     p_title:parsedTitle.data,
     p_content_body:parsedBody.data,
     p_legal_blockers:blockersFrom(formData.get("blockers")),
-    p_review_notes:String(formData.get("reviewNotes")??"").trim()||null
+    p_review_notes:reviewNotes
   });
   if(error)redirect(route(id.data,`error=${encodeURIComponent(error.message)}`));
   redirect(route(id.data,"saved=1"));
@@ -32,7 +33,7 @@ export async function updateLegalDraft(formData:FormData){
 export async function submitLegalForReview(formData:FormData){
   const id=uuid.safeParse(String(formData.get("termsVersionId")??""));
   if(!id.success)redirect("/admin/legal?error=Invalid%20legal%20document");
-  const note=String(formData.get("reason")??"").trim()||null;
+  const note=String(formData.get("reason")??"").trim()||undefined;
   const supabase=await createSupabaseServerClient();
   const {error}=await supabase.rpc("admin_submit_legal_document_for_review",{p_terms_version_id:id.data,p_reason:note});
   if(error)redirect(route(id.data,`error=${encodeURIComponent(error.message)}`));
