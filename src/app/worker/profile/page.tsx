@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppMark } from "@/components/AppMark";
 import { WorkerBottomNav } from "@/components/WorkerBottomNav";
+import { signOutWorker } from "@/app/auth/actions";
 import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
@@ -41,7 +42,7 @@ export default async function WorkerProfilePage() {
 
     <section className="dashboard-section"><div className="section-heading"><div><span className="eyebrow">Settlement</span><h2>Your destination</h2></div><span className={chip(settlementDone)}>{label(context.settlement_readiness)}</span></div><div className="list-row"><div><strong>Provider settlement profile</strong><div className="meta">{context.masked_destination??"No verified destination yet"}</div></div></div><div className="privacy-inline"><span>✓</span><p>SwiftTip shows only masked provider information. There is no internal Worker wallet, balance or cash-out control.</p></div></section>
 
-    <section className="dashboard-section"><span className="eyebrow">Account</span><h2>Help and settings</h2><Link className="queue-row" href="/worker/support"><div><strong>Support</strong><div className="meta">Open and track an auditable support case</div></div><span>→</span></Link><Link className="queue-row" href="/worker/onboarding"><div><strong>Activation checklist</strong><div className="meta">See what is complete and what remains</div></div><span>→</span></Link><Link className="queue-row" href="/worker/verification"><div><strong>Identity verification</strong><div className="meta">Review your verification status</div></div><span>→</span></Link></section>
+    <section className="dashboard-section"><span className="eyebrow">Account</span><h2>Help and settings</h2><Link className="queue-row" href="/worker/support"><div><strong>Support</strong><div className="meta">Open and track an auditable support case</div></div><span>→</span></Link><Link className="queue-row" href="/worker/onboarding"><div><strong>Activation checklist</strong><div className="meta">See what is complete and what remains</div></div><span>→</span></Link><Link className="queue-row" href="/worker/verification"><div><strong>Identity verification</strong><div className="meta">Review your verification status</div></div><span>→</span></Link>{access.mode==="live"&&<form action={signOutWorker} className="account-signout"><button className="button button-secondary" type="submit">Sign out of Worker account</button></form>}</section>
 
     <div className="nav-clearance"/>
   </div><WorkerBottomNav active="profile"/></main>;
