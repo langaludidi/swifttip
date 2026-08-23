@@ -81,26 +81,29 @@ export default function ScanPage() {
     };
   }, []);
 
+  const status = state === "starting" ? "Starting camera…" : state === "scanning" ? "Looking for a SwiftTip QR…" : state === "unsupported" ? "QR scanning is not supported by this browser." : state === "denied" ? "Camera access is unavailable." : "That is not a recognised SwiftTip worker QR.";
+
   return (
-    <main className="flow-shell">
+    <main className="flow-shell customer-flow-page">
       <div className="flow-page">
         <header className="simple-header"><Link className="back-link" href="/">←</Link><strong>Scan worker QR</strong><span style={{ width: 42 }} /></header>
-        <section className="tip-flow" style={{ textAlign: "center" }}>
-          <span className="eyebrow">Customer</span>
-          <h1>Point your camera at the worker's SwiftTip QR.</h1>
-          <p className="lead">The camera is used only in your browser to read the QR. SwiftTip does not need a customer account.</p>
-          <div style={{ marginTop: 22, overflow: "hidden", borderRadius: 24, background: "#062f33", aspectRatio: "1 / 1", position: "relative" }}>
-            <video ref={videoRef} muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            <div aria-hidden="true" style={{ position: "absolute", inset: "16%", border: "3px solid white", borderRadius: 24, boxShadow: "0 0 0 999px rgba(0,0,0,.18)" }} />
+        <section className="tip-flow scan-flow">
+          <span className="eyebrow">Find the worker</span>
+          <h1>Scan their SwiftTip QR.</h1>
+          <p className="lead">Point your camera at the worker's QR. You will confirm who you are tipping before choosing an amount.</p>
+
+          <div className="scanner-shell">
+            <video ref={videoRef} muted playsInline className="scanner-video" />
+            <div className="scanner-dim" aria-hidden="true" />
+            <div className="scanner-frame" aria-hidden="true" />
           </div>
-          <p className="fee-note" role="status">
-            {state === "starting" && "Starting camera…"}
-            {state === "scanning" && "Looking for a SwiftTip QR…"}
-            {state === "unsupported" && "QR scanning isn't supported by this browser. Enter the worker code instead."}
-            {state === "denied" && "Camera access wasn't available. You can still enter the worker code."}
-            {state === "invalid" && "That QR isn't a recognised SwiftTip worker QR. Try again or enter the code."}
-          </p>
-          <Link className="button button-primary button-large" href="/code" style={{ marginTop: 16 }}>Enter worker code instead</Link>
+
+          <div className="scanner-status" role="status"><span className="scan-dot" aria-hidden="true"/><span>{status}</span></div>
+
+          {(state === "unsupported" || state === "denied" || state === "invalid") && <div className="state-banner warning" role="alert"><span className="state-icon">!</span><div className="state-copy"><strong>Use the worker code instead</strong><p>The code shown with the worker's SwiftTip QR reaches the same confirmation screen.</p></div></div>}
+
+          <Link className="button button-secondary button-large" href="/code" style={{ marginTop: 16 }}>Enter worker code</Link>
+          <p className="scanner-helper">Camera access is used to read the QR in your browser. SwiftTip does not require a customer account.</p>
         </section>
       </div>
     </main>
