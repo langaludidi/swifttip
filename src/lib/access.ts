@@ -31,9 +31,10 @@ export async function requireVenueSurface(): Promise<SurfaceAccess> {
   if (!config.databaseConfigured) redirect("/unavailable");
 
   const { supabase, user } = await getAuthenticatedUser();
-  if (!user) redirect("/unavailable");
-  const { data: memberships, error } = await supabase.from("venue_memberships").select("id").eq("user_id", user.id).eq("membership_status", "active").limit(1);
-  if (error || !memberships?.length) redirect("/unavailable");
+  if (!user) redirect("/venue/login");
+  const { data: memberships, error } = await supabase.from("venue_memberships").select("id,membership_status").eq("user_id", user.id).limit(10);
+  if (error) redirect("/unavailable");
+  if (!memberships?.some((membership) => membership.membership_status === "active")) redirect("/venue/onboarding");
   return { mode: "live", userId: user.id };
 }
 
