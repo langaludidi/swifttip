@@ -74,65 +74,24 @@ async function main() {
     userCreated = true;
   }
 
-  const { data: existingMembership, error: membershipReadError } = await admin
-    .from("admin_memberships")
-    .select("id,admin_role,admin_status,mfa_required")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (membershipReadError) throw membershipReadError;
-
-  if (existingMembership && !allowUpdate) {
-    fail(`an Admin membership already exists for ${email} (${existingMembership.admin_role}, ${existingMembership.admin_status}). Re-run with --allow-update only if this change is intentional`);
-  }
-
-  let membership;
-  if (existingMembership) {
-    const { data, error } = await admin
-      .from("admin_memberships")
-      .update({
-        admin_role: role,
-        admin_status: "active",
-        mfa_required: true,
-        revoked_at: null
-      })
-      .eq("id", existingMembership.id)
-      .select("id,user_id,admin_role,admin_status,mfa_required")
-      .single();
-    if (error) throw error;
-    membership = data;
-  } else {
-    const { data, error } = await admin
-      .from("admin_memberships")
-      .insert({
-        user_id: user.id,
-        admin_role: role,
-        admin_status: "active",
-        mfa_required: true,
-        granted_by: null
-      })
-      .select("id,user_id,admin_role,admin_status,mfa_required")
-      .single();
-    if (error) throw error;
-    membership = data;
-  }
-
-  const { error: auditError } = await admin.schema("audit").from("audit_events").insert({
-    actor_type: "system",
-    actor_role: "bootstrap_provisioner",
-    action: existingMembership ? "admin_membership.bootstrap_updated" : "admin_membership.bootstrap_created",
-    entity_type: "admin_membership",
-    entity_id: membership.id,
-    resulting_state: {
-      user_id: membership.user_id,
-      email,
-      admin_role: membership.admin_role,
-      admin_status: membership.admin_status,
-      mfa_required: membership.mfa_required,
-      auth_user_created: userCreated
-    },
-    reason: "Explicit one-time SwiftTip Admin provisioning command"
+  const { data, error } = await admin.rpc("bootstrap_admin_membership", {
+    p_user_id: user.id,
+    p_admin_role: role,
+    p_allow_update: allowUpdate
   });
-  if (auditError) throw auditError;
+
+  if (error) {
+    if (userCreated) {
+      const rollback = await admin.auth.admin.deleteUser(user.id);
+      if (rollback.error) {
+        throw new Error(`${error.message}. The newly created Auth user could not be rolled back automatically: ${rollback.error.message}`);
+      }
+    }
+    throw error;
+  }
+
+  const membership = data?.[0];
+  if (!membership) throw new Error("Admin membership provisioning returned no record");
 
   console.log("SwiftTip Admin provisioned successfully.");
   console.log(`Email: ${email}`);
