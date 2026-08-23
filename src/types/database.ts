@@ -1,6 +1,7 @@
-// SwiftTip MVP v3 — application-facing Supabase schema contracts.
-// Derived from the canonical bxtfcfuehqljedxwykfk schema after migration 0014.
-// Keep this file aligned with `supabase gen types` whenever migrations change.
+// SwiftTip MVP v3 — curated application-facing Supabase schema contracts.
+// This is NOT a freshly generated full schema. The last full baseline was migration 0014;
+// repository CI separately checks every referenced RPC name against migration history.
+// Regenerate this file with `supabase gen types` before pilot/live release and then type the Supabase clients with Database.
 
 export type Database = {
   __InternalSupabase: { PostgrestVersion: "14.15" };
