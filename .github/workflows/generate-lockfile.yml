@@ -1,0 +1,48 @@
+name: Generate npm lockfile
+
+on:
+  push:
+    branches: [mvp-v3-greenfield-build]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swifttip-lockfile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Stop when lockfile already exists
+        id: lock
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Generate lockfile without install scripts
+        if: steps.lock.outputs.exists == 'false'
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile
+        if: steps.lock.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "No lockfile change to commit."
+            exit 0
+          fi
+          git commit -m "build: add npm lockfile"
+          git push origin HEAD:mvp-v3-greenfield-build
