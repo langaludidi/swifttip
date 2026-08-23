@@ -29,7 +29,7 @@ async function requireActiveAdminForMfa() {
   return { supabase, membership };
 }
 
-export async function startAdminMfaEnrollment(_previousState: EnrollmentState): Promise<EnrollmentState> {
+export async function startAdminMfaEnrollment(_previousState: EnrollmentState, _formData: FormData): Promise<EnrollmentState> {
   const { supabase, membership } = await requireActiveAdminForMfa();
   if (!membership.mfa_required) redirect("/admin");
 
