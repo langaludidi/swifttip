@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./polish.css";
+import "./auth-polish.css";
 
 export const metadata: Metadata = {
   title: "SwiftTip",
