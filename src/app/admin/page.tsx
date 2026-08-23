@@ -42,8 +42,10 @@ export default async function AdminPage() {
 
   if (access.mode === "live") {
     const supabase = await createSupabaseServerClient();
-    const dashboardResult = await supabase.rpc("admin_get_dashboard");
-    if (dashboardResult.data?.[0]) dashboard = dashboardResult.data[0] as Dashboard;
+    // Supabase/PostgREST currently infers the awaited result of generated zero-argument
+    // RPCs as `never` in this build path. Keep the workaround scoped to this call only.
+    const dashboardResult = (await supabase.rpc("admin_get_dashboard")) as unknown as { data: Dashboard[] | null; error: unknown };
+    if (dashboardResult.data?.[0]) dashboard = dashboardResult.data[0];
     if (financialRole) {
       const transactionsResult = await supabase.rpc("admin_get_recent_transactions", { p_limit: 5 });
       transactions = (transactionsResult.data ?? []) as Transaction[];
