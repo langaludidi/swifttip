@@ -15,6 +15,7 @@ export async function GET() {
     environment: config.environment,
     hasSupabaseUrl: Boolean(config.NEXT_PUBLIC_SUPABASE_URL),
     hasSupabasePublishableKey: Boolean(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
+    supabaseConfigSource: config.supabaseConfigSource,
     databaseConfigured: config.databaseConfigured,
     paymentProviderConfigured: providerConfigured,
     paymentsEnabled: config.paymentsEnabled,
