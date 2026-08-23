@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
+import { admitAuthAttempt, authRetryMessage } from "@/lib/auth-security";
 
 type EnrollmentState = {
   error?: string;
@@ -15,6 +16,12 @@ async function requireActiveAdminForMfa() {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) redirect("/admin/login");
 
+  const { data: sessionAllowed } = await supabase.rpc("session_access_allowed", { p_surface: "admin" });
+  if (sessionAllowed !== true) {
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=Your%20Admin%20session%20expired.%20Sign%20in%20again");
+  }
+
   const { data: membership } = await supabase
     .from("admin_memberships")
     .select("admin_status,mfa_required")
@@ -23,7 +30,7 @@ async function requireActiveAdminForMfa() {
 
   if (!membership || membership.admin_status !== "active") {
     await supabase.auth.signOut();
-    redirect("/admin/login?error=This%20account%20is%20not%20authorised%20for%20SwiftTip%20Operations");
+    redirect("/admin/login?error=SwiftTip%20Operations%20access%20is%20unavailable%20for%20this%20account");
   }
 
   return { supabase, membership };
@@ -33,6 +40,9 @@ export async function startAdminMfaEnrollment(_previousState: EnrollmentState, _
   const { supabase, membership } = await requireActiveAdminForMfa();
   if (!membership.mfa_required) redirect("/admin");
 
+  const admission = await admitAuthAttempt("admin_mfa_enroll", "current-admin");
+  if (!admission.allowed) return { error: `Authenticator setup is temporarily limited. ${authRetryMessage(admission.retryAfterSeconds)}` };
+
   const { data: existing, error: listError } = await supabase.auth.mfa.listFactors();
   if (listError) return { error: "Authenticator status could not be checked. Please try again." };
 
@@ -40,9 +50,6 @@ export async function startAdminMfaEnrollment(_previousState: EnrollmentState, _
   const verified = totpFactors.find((factor) => factor.status === "verified");
   if (verified) return { error: "An authenticator is already enrolled. Enter its current code below." };
 
-  // An interrupted enrollment can leave an unverified factor behind. Supabase only
-  // requires AAL2 to remove verified factors, so stale unverified setup can be safely
-  // cleared before issuing a fresh QR code.
   for (const factor of totpFactors.filter((item) => item.status !== "verified")) {
     const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
     if (unenrollError) return { error: "A previous incomplete authenticator setup could not be cleared. Sign out and try again." };
@@ -51,19 +58,16 @@ export async function startAdminMfaEnrollment(_previousState: EnrollmentState, _
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "SwiftTip Admin" });
   if (error || !data?.totp) return { error: "Authenticator setup could not be started. Please try again." };
 
-  return {
-    factorId: data.id,
-    qrCode: data.totp.qr_code,
-    secret: data.totp.secret
-  };
+  return { factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret };
 }
 
 export async function completeAdminMfaEnrollment(formData: FormData) {
   const factorId = String(formData.get("factorId") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim();
-  if (!factorId || !/^\d{6}$/.test(code)) {
-    redirect(`/admin/mfa?error=${encodeURIComponent("Enter the 6-digit code from your authenticator app")}`);
-  }
+  if (!factorId || !/^\d{6}$/.test(code)) redirect(`/admin/mfa?error=${encodeURIComponent("Enter the 6-digit code from your authenticator app")}`);
+
+  const admission = await admitAuthAttempt("admin_mfa_verify", "current-admin");
+  if (!admission.allowed) redirect(`/admin/mfa?error=${encodeURIComponent(`Authenticator verification is temporarily limited. ${authRetryMessage(admission.retryAfterSeconds)}`)}`);
 
   const { supabase } = await requireActiveAdminForMfa();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
@@ -74,9 +78,10 @@ export async function completeAdminMfaEnrollment(formData: FormData) {
 export async function verifyAdminMfa(formData: FormData) {
   const factorId = String(formData.get("factorId") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim();
-  if (!factorId || !/^\d{6}$/.test(code)) {
-    redirect(`/admin/mfa?error=${encodeURIComponent("Enter the current 6-digit authenticator code")}`);
-  }
+  if (!factorId || !/^\d{6}$/.test(code)) redirect(`/admin/mfa?error=${encodeURIComponent("Enter the current 6-digit authenticator code")}`);
+
+  const admission = await admitAuthAttempt("admin_mfa_verify", "current-admin");
+  if (!admission.allowed) redirect(`/admin/mfa?error=${encodeURIComponent(`Authenticator verification is temporarily limited. ${authRetryMessage(admission.retryAfterSeconds)}`)}`);
 
   const { supabase } = await requireActiveAdminForMfa();
   const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -84,6 +89,6 @@ export async function verifyAdminMfa(formData: FormData) {
   if (!verified) redirect(`/admin/mfa?error=${encodeURIComponent("The selected authenticator is not available")}`);
 
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
-  if (error) redirect(`/admin/mfa?error=${encodeURIComponent("That authenticator code is invalid or expired")}`);
+  if (error) redirect(`/admin/mfa?error=${encodeURIComponent("That authenticator code could not be verified")}`);
   redirect("/admin");
 }
