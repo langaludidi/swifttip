@@ -13,6 +13,7 @@
     "architecture:check": "node scripts/check-architecture.mjs",
     "provision:admin": "node scripts/provision-admin.mjs",
     "provision:worker": "node scripts/provision-worker.mjs",
+    "recover:admin-mfa": "node scripts/recover-admin-mfa.mjs",
     "ci": "npm run architecture:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
