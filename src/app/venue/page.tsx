@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppMark } from "@/components/AppMark";
+import { signOutVenue } from "@/app/auth/actions";
 import { requireVenueSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { formatZar } from "@/lib/money";
@@ -70,7 +71,7 @@ export default async function VenuePage() {
     <main className="dashboard-shell venue-dashboard-shell">
       <header className="dashboard-topbar venue-topbar">
         <div className="brand-lockup"><AppMark size={40}/><div><strong>SwiftTip</strong><span className="brand-subline">Venue</span></div></div>
-        <Link className="compact-link" href="/">Public view</Link>
+        <div className="topbar-actions"><Link className="compact-link" href="/">Public view</Link>{access.mode === "live" && <form action={signOutVenue}><button className="compact-link compact-button" type="submit">Sign out</button></form>}</div>
       </header>
 
       {access.mode === "demo" && <p className="prototype-warning">Preview data only — live Venue access is membership-scoped in the MVP v3 database.</p>}
