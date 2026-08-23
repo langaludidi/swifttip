@@ -8,7 +8,7 @@ begin
   if not has_function_privilege('authenticated','public.get_my_notifications(integer)','EXECUTE') then raise exception 'Authenticated notification inbox unavailable'; end if;
   if has_function_privilege('authenticated','private.create_in_app_notification(uuid,text,text,text,text,uuid,text,text)','EXECUTE') then raise exception 'Authenticated users can create arbitrary notifications'; end if;
 
-  select count(*) into v_count from information_schema.triggers
+  select count(distinct trigger_name) into v_count from information_schema.triggers
   where trigger_name in (
     'notify_worker_verification_change_trigger',
     'notify_worker_venue_association_change_trigger',
