@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { getServerConfig } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const config = getServerConfig();
+  const providerConfigured = config.PAYMENT_PROVIDER !== "unconfigured";
+  const liveMoneyReady = config.databaseConfigured && providerConfigured && config.paymentsEnabled;
+
   return NextResponse.json({
+    ok: true,
     service: "swifttip-v3",
-    status: "ok",
-    environment: config.SWIFTTIP_ENV,
-    databaseConfigured: Boolean(config.NEXT_PUBLIC_SUPABASE_URL && config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
-    paymentProviderConfigured: config.PAYMENT_PROVIDER !== "unconfigured",
-    paymentsEnabled: config.paymentsEnabled
-  });
+    version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? "local",
+    environment: config.environment,
+    databaseConfigured: config.databaseConfigured,
+    paymentProviderConfigured: providerConfigured,
+    paymentsEnabled: config.paymentsEnabled,
+    liveMoneyReady
+  }, { headers: { "Cache-Control": "no-store" } });
 }
