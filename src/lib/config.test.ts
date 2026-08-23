@@ -17,17 +17,18 @@ afterEach(() => {
 });
 
 describe("SwiftTip runtime configuration", () => {
-  it("uses the canonical public Supabase fallback only in staging", () => {
+  it("fails closed in staging when explicit Supabase variables are absent", () => {
     clearSwiftTipEnv();
     process.env.SWIFTTIP_ENV = "staging";
 
     const config = getServerConfig();
 
     expect(config.environment).toBe("staging");
-    expect(config.databaseConfigured).toBe(true);
-    expect(config.supabaseConfigSource).toBe("staging_fallback");
-    expect(config.NEXT_PUBLIC_SUPABASE_URL).toBe("https://bxtfcfuehqljedxwykfk.supabase.co");
-    expect(Boolean(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)).toBe(true);
+    expect(config.databaseConfigured).toBe(false);
+    expect(config.supabaseConfigSource).toBe("none");
+    expect(config.NEXT_PUBLIC_SUPABASE_URL).toBeUndefined();
+    expect(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).toBeUndefined();
+    expect(config.demoMode).toBe(true);
     expect(config.paymentsEnabled).toBe(false);
   });
 
@@ -46,7 +47,7 @@ describe("SwiftTip runtime configuration", () => {
     expect(config.paymentsEnabled).toBe(false);
   });
 
-  it("prefers explicit environment configuration over the staging fallback", () => {
+  it("uses explicit Supabase environment configuration in staging", () => {
     clearSwiftTipEnv();
     process.env.SWIFTTIP_ENV = "staging";
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -58,11 +59,26 @@ describe("SwiftTip runtime configuration", () => {
     expect(config.supabaseConfigSource).toBe("environment");
     expect(config.NEXT_PUBLIC_SUPABASE_URL).toBe("https://example.supabase.co");
     expect(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY).toBe("sb_publishable_test");
+    expect(config.demoMode).toBe(false);
+  });
+
+  it("fails closed when only part of the Supabase configuration is present", () => {
+    clearSwiftTipEnv();
+    process.env.SWIFTTIP_ENV = "staging";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+
+    const config = getServerConfig();
+
+    expect(config.databaseConfigured).toBe(false);
+    expect(config.supabaseConfigSource).toBe("none");
+    expect(config.paymentsEnabled).toBe(false);
   });
 
   it("does not enable payments merely because the database is configured", () => {
     clearSwiftTipEnv();
     process.env.SWIFTTIP_ENV = "staging";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_test";
     process.env.PAYMENT_PROVIDER = "unconfigured";
 
     const config = getServerConfig();
