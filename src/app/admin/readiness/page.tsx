@@ -17,6 +17,11 @@ type Readiness = {
   active_workers: number;
   workers_awaiting_activation: number;
   workers_settlement_ready: number;
+  public_tip_intake_enabled: boolean;
+  public_tip_intake_ready: boolean;
+  public_tip_intake_control_reason: string | null;
+  max_tip_intents_per_endpoint_1m: number;
+  max_tip_intents_per_endpoint_15m: number;
 };
 
 type Pricing = {
@@ -46,7 +51,12 @@ const demoReadiness: Readiness = {
   active_venues: 0,
   active_workers: 0,
   workers_awaiting_activation: 0,
-  workers_settlement_ready: 0
+  workers_settlement_ready: 0,
+  public_tip_intake_enabled: false,
+  public_tip_intake_ready: false,
+  public_tip_intake_control_reason: "Pre-live default: public Tip intake disabled",
+  max_tip_intents_per_endpoint_1m: 120,
+  max_tip_intents_per_endpoint_15m: 600
 };
 
 const demoPricing: Pricing[] = [{ pricing_id:"demo", version_code:"v3-working-001", pricing_status:"draft", effective_from:null, worker_fee_bps:500, customer_fixed_fee_cents:100, customer_fee_bps:300, customer_fee_cap_cents:500, minimum_gratuity_cents:500, maximum_gratuity_cents:50000, high_value_threshold_cents:20000 }];
@@ -74,8 +84,10 @@ export default async function AdminReadinessPage() {
   const canManageLegal = ["operations_admin","super_admin"].includes(access.role);
 
   return <main className="dashboard-shell">
-    <header className="dashboard-topbar"><div><span className="eyebrow">Go-live control</span><h1>Commercial readiness</h1><p className="lead">A read-only view of the configuration that must exist before SwiftTip can responsibly activate live money.</p></div><Link className="action-link" href="/admin">Overview</Link></header>
+    <header className="dashboard-topbar"><div><span className="eyebrow">Go-live control</span><h1>Commercial readiness</h1><p className="lead">A read-only view of the independent gates that must be satisfied before SwiftTip can responsibly accept public Tip transactions.</p></div><Link className="action-link" href="/admin">Overview</Link></header>
     {access.mode === "demo" && <p className="prototype-warning">Preview data only. The live database projection is already implemented.</p>}
+
+    <section className="dashboard-section"><div className="section-heading"><h2>Runtime intake gate</h2>{readiness.public_tip_intake_ready ? <span className="status-chip success">Intake ready</span> : <span className="status-chip warning">Intake closed</span>}</div><p className="lead">This is a database-level kill switch. Completing pricing or legal work does not automatically open public Tip intake, and this page cannot enable it.</p><div className="metric-grid" style={{marginTop:18}}><article className="metric-card"><span>Kill switch</span><strong>{readiness.public_tip_intake_enabled ? "ON" : "OFF"}</strong><small>{readiness.public_tip_intake_enabled ? "Public intake explicitly enabled" : "Public intake explicitly disabled"}</small></article><article className="metric-card"><span>DB intake readiness</span><strong>{readiness.public_tip_intake_ready ? "YES" : "NO"}</strong><small>Switch + active pricing + Customer Terms</small></article><article className="metric-card"><span>1-minute ceiling</span><strong>{Number(readiness.max_tip_intents_per_endpoint_1m)}</strong><small>New Tip intents per Worker endpoint</small></article><article className="metric-card"><span>15-minute ceiling</span><strong>{Number(readiness.max_tip_intents_per_endpoint_15m)}</strong><small>Database safety ceiling</small></article></div>{readiness.public_tip_intake_control_reason && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Current control reason</strong><p>{readiness.public_tip_intake_control_reason}</p></div></div>}</section>
 
     <section className="dashboard-section"><div className="section-heading"><h2>Configuration gate</h2>{configReady ? <span className="status-chip success">Configuration ready</span> : <span className="status-chip warning">Not ready</span>}</div><div className="metric-grid" style={{marginTop:18}}><article className="metric-card"><span>Active pricing</span><strong>{Number(readiness.active_pricing_versions)}</strong><small>Exactly one required</small></article><article className="metric-card"><span>Draft pricing</span><strong>{Number(readiness.draft_pricing_versions)}</strong><small>Not used for charging</small></article><article className="metric-card"><span>Active Venues</span><strong>{Number(readiness.active_venues)}</strong></article><article className="metric-card"><span>Active Workers</span><strong>{Number(readiness.active_workers)}</strong></article></div></section>
 
@@ -87,6 +99,6 @@ export default async function AdminReadinessPage() {
 
     <section className="dashboard-section"><div className="section-heading"><h2>Pricing versions</h2><span className="status-chip warning">Read only</span></div>{pricing.length ? pricing.map(p => <div key={p.pricing_id} className="queue-row"><div><strong>{p.version_code}</strong><div className="meta">Worker {Number(p.worker_fee_bps)/100}% · Customer {formatZar(Number(p.customer_fixed_fee_cents))} + {Number(p.customer_fee_bps)/100}%{p.customer_fee_cap_cents != null ? ` capped at ${formatZar(Number(p.customer_fee_cap_cents))}` : ""}</div><div className="meta">Tip range {formatZar(Number(p.minimum_gratuity_cents))} – {formatZar(Number(p.maximum_gratuity_cents))} · High-value check from {formatZar(Number(p.high_value_threshold_cents))}</div></div><span className={p.pricing_status === "active" ? "status-chip success" : "status-chip warning"}>{p.pricing_status}</span></div>) : <div className="empty-state"><strong>No pricing versions</strong><p>Live charging cannot start without an approved active version.</p></div>}</section>
 
-    <section className="trust-card"><span className="trust-icon">✓</span><div><strong>No accidental activation controls on this page</strong><p>Pricing activation and legal publication remain intentionally absent. This screen can diagnose readiness but cannot manufacture it.</p></div></section>
+    <section className="trust-card"><span className="trust-icon">✓</span><div><strong>No accidental activation controls on this page</strong><p>Pricing activation, legal publication and public Tip intake activation remain intentionally absent. This screen can diagnose readiness but cannot manufacture it.</p></div></section>
   </main>;
 }
