@@ -42,7 +42,7 @@ export default async function AdminPage() {
 
   if (access.mode === "live") {
     const supabase = await createSupabaseServerClient();
-    const dashboardResult = await supabase.rpc("admin_get_dashboard", {});
+    const dashboardResult = await supabase.rpc("admin_get_dashboard");
     if (dashboardResult.data?.[0]) dashboard = dashboardResult.data[0] as Dashboard;
     if (financialRole) {
       const transactionsResult = await supabase.rpc("admin_get_recent_transactions", { p_limit: 5 });
