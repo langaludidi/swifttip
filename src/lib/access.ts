@@ -3,6 +3,8 @@ import { getServerConfig } from "@/lib/config";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 export type SurfaceAccess = { mode: "demo"; userId: null } | { mode: "live"; userId: string };
+export type AdminRole = "operations_admin" | "verification_admin" | "finance_admin" | "security_admin" | "super_admin";
+export type AdminSurfaceAccess = { mode: "demo"; userId: null; role: "super_admin" } | { mode: "live"; userId: string; role: AdminRole };
 
 async function getAuthenticatedUser() {
   const supabase = await createSupabaseServerClient();
@@ -35,9 +37,9 @@ export async function requireVenueSurface(): Promise<SurfaceAccess> {
   return { mode: "live", userId: user.id };
 }
 
-export async function requireAdminSurface(): Promise<SurfaceAccess> {
+export async function requireAdminSurface(): Promise<AdminSurfaceAccess> {
   const config = getServerConfig();
-  if (config.demoMode) return { mode: "demo", userId: null };
+  if (config.demoMode) return { mode: "demo", userId: null, role: "super_admin" };
   if (!config.databaseConfigured) redirect("/unavailable");
 
   const { supabase, user } = await getAuthenticatedUser();
@@ -49,5 +51,11 @@ export async function requireAdminSurface(): Promise<SurfaceAccess> {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal?.currentLevel !== "aal2") redirect("/unavailable?reason=mfa_required");
   }
-  return { mode: "live", userId: user.id };
+  return { mode: "live", userId: user.id, role: admin.admin_role as AdminRole };
+}
+
+export async function requireAdminRole(allowedRoles: AdminRole[]): Promise<AdminSurfaceAccess> {
+  const access = await requireAdminSurface();
+  if (access.mode === "live" && !allowedRoles.includes(access.role)) redirect("/unavailable");
+  return access;
 }
