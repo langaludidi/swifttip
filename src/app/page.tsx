@@ -8,7 +8,7 @@ export default function HomePage() {
       <div className="app-page customer-home-page">
         <header className="topbar">
           <div className="brand-lockup"><AppMark size={42}/><strong>SwiftTip</strong></div>
-          <div className="topbar-actions"><button className="icon-button" aria-label="Notifications">●</button><Link className="avatar" href="/worker">ST</Link></div>
+          <div className="topbar-actions"><Link className="avatar" href="/worker" aria-label="Worker access">ST</Link></div>
         </header>
 
         <section className="welcome-block">
@@ -24,8 +24,8 @@ export default function HomePage() {
           <h2>Who would you like to thank?</h2>
           <p>Confirm the worker before you pay.</p>
           <div className="hero-actions">
-            <Link className="button button-light button-large" href="/tip/T4K8P">⌗ <span>Scan worker QR</span></Link>
-            <Link className="button button-ghost-light" href="/tip/T4K8P">Enter worker code</Link>
+            <Link className="button button-light button-large" href="/scan">⌗ <span>Scan worker QR</span></Link>
+            <Link className="button button-ghost-light" href="/code">Enter worker code</Link>
           </div>
           <div className="hero-trust"><span>✓ Verified workers</span><span>◇ Transparent fees</span></div>
         </section>
