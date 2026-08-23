@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./polish.css";
 
 export const metadata: Metadata = {
   title: "SwiftTip",
-  description: "Tip verified workers simply, securely and transparently."
+  description: "Digital gratuities for verified workers with clear fees and private receipts."
 };
 
 export const viewport: Viewport = {
