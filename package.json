@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "architecture:check": "node scripts/check-architecture.mjs",
+    "provision:admin": "node scripts/provision-admin.mjs",
     "ci": "npm run architecture:check && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
