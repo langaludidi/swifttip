@@ -112,8 +112,8 @@ as $$
     coalesce(sum(ot.worker_net_cents), 0)::bigint,
     st.settled,
     st.processing
-  from own_tips ot
-  cross join settlement_totals st
+  from settlement_totals st
+  left join own_tips ot on true
   group by st.settled, st.processing;
 $$;
 revoke all on function public.get_worker_summary(timestamptz,timestamptz) from public;
