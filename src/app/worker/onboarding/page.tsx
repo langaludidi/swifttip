@@ -77,7 +77,7 @@ export default async function WorkerOnboardingPage({ searchParams }: { searchPar
       const stateResult = await supabase.rpc("get_worker_onboarding_state");
       state = ((stateResult.data ?? []) as OnboardingState[])[0] ?? null;
       if (state && !["verified", "pending"].includes(state.venue_association_status)) {
-        const venueResult = await supabase.rpc("list_worker_available_venues", { p_search: params.q?.trim() || null, p_limit: 20 });
+        const venueResult = await supabase.rpc("list_worker_available_venues", { p_search: params.q?.trim() || undefined, p_limit: 20 });
         venues = (venueResult.data ?? []) as Venue[];
       }
     }
