@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppMark } from "@/components/AppMark";
+import { signOutAdmin } from "@/app/auth/actions";
 import { formatZar } from "@/lib/money";
 import { requireAdminSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
@@ -33,7 +34,7 @@ export default async function AdminPage(){
   const totalAttention=Number(dashboard.settlement_exceptions)+Number(dashboard.reconciliation_exceptions)+Number(dashboard.pending_verifications)+Number(dashboard.open_disputes)+Number(dashboard.refund_requests);
 
   return <main className="dashboard-shell admin-shell-polished">
-    <header className="dashboard-topbar"><div className="brand-lockup"><AppMark size={42}/><div><strong>SwiftTip</strong><span className="brand-subline">Operations console</span></div></div><span className={access.mode==="demo"?"status-chip warning":"status-chip success"}>{access.mode==="demo"?"Preview data":access.role.replaceAll("_"," ")}</span></header>
+    <header className="dashboard-topbar"><div className="brand-lockup"><AppMark size={42}/><div><strong>SwiftTip</strong><span className="brand-subline">Operations console</span></div></div><div className="topbar-actions"><span className={access.mode==="demo"?"status-chip warning":"status-chip success"}>{access.mode==="demo"?"Preview data":access.role.replaceAll("_"," ")}</span>{access.mode==="live"&&<form action={signOutAdmin}><button className="compact-link compact-button" type="submit">Sign out</button></form>}</div></header>
 
     <div className="admin-hero"><section className="dashboard-title"><span className="eyebrow">Operations</span><h1>{totalAttention ? `${totalAttention} items need attention.` : "No urgent exceptions."}</h1><p className="lead">Resolve exceptions and verification work first. Commercial metrics stay visible without competing with operational risk.</p></section></div>
 
