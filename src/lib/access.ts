@@ -44,13 +44,13 @@ export async function requireAdminSurface(): Promise<AdminSurfaceAccess> {
   if (!config.databaseConfigured) redirect("/unavailable");
 
   const { supabase, user } = await getAuthenticatedUser();
-  if (!user) redirect("/unavailable");
+  if (!user) redirect("/admin/login");
   const { data: admin, error } = await supabase.from("admin_memberships").select("admin_role, admin_status, mfa_required").eq("user_id", user.id).maybeSingle();
   if (error || !admin || admin.admin_status !== "active") redirect("/unavailable");
 
   if (admin.mfa_required) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.currentLevel !== "aal2") redirect("/unavailable?reason=mfa_required");
+    if (aal?.currentLevel !== "aal2") redirect("/admin/mfa");
   }
   return { mode: "live", userId: user.id, role: admin.admin_role as AdminRole };
 }
