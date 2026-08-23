@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { I, Header, Avatar, Stars, BottomNav } from '../../components/ui.jsx';
-import RealQRCode from '../../components/RealQRCode.jsx';
+import { I, Header, Avatar, Stars, BottomNav, QRCode } from '../../components/ui.jsx';
 import { SAMPLE } from '../../lib/data.js';
 import { useWorkerData } from '../../lib/hooks.js';
 import { useSession } from '../../App.jsx';
@@ -76,48 +75,16 @@ function DashScreen({ data, nav }) {
   );
 }
 
-function QRScreen({ data }) {
+function QRScreen({ data, nav }) {
   const s = data.self;
   const slug = s.slug || s.name.toLowerCase().replace(/\s+/g, '-');
   const url = `${window.location.origin}/tip/${slug}`;
-  const qrRef = useRef(null);
   const [copied, setCopied] = useState(false);
-
   const copy = () => {
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const share = async () => {
-    if (!navigator.share) {
-      copy();
-      return;
-    }
-
-    try {
-      await navigator.share({
-        title: `Tip ${s.name} on SwiftTip`,
-        text: `Send a tip to ${s.name} with SwiftTip.`,
-        url,
-      });
-    } catch (error) {
-      if (error?.name !== 'AbortError') copy();
-    }
-  };
-
-  const download = () => {
-    const canvas = qrRef.current;
-    if (!canvas) return;
-
-    const link = document.createElement('a');
-    link.download = `swifttip-${slug}-qr.png`;
-    link.href = canvas.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <>
       <Header title="My QR Code" sub="Share to receive tips" />
@@ -125,7 +92,7 @@ function QRScreen({ data }) {
         <div className="pad stack gap16" style={{ alignItems: 'center' }}>
           <div className="card" style={{ width: '100%', textAlign: 'center', padding: '28px 22px' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
-              <RealQRCode ref={qrRef} value={url} size={200} />
+              <QRCode value={url} size={200} />
             </div>
             <div style={{ fontSize: 18, fontWeight: 800 }}>{s.name}</div>
             <div className="muted" style={{ fontSize: 14, marginTop: 3 }}>{s.role}</div>
@@ -135,11 +102,11 @@ function QRScreen({ data }) {
             <button className="btn btn-ghost" style={{ flex: 1 }} onClick={copy}>
               <I.copy size={18} color="var(--accent-600)" /> {copied ? 'Copied!' : 'Copy link'}
             </button>
-            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={share}>
+            <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => {}}>
               <I.share size={18} color="var(--accent-600)" /> Share
             </button>
           </div>
-          <button className="btn btn-ghost" onClick={download}>
+          <button className="btn btn-ghost" onClick={() => {}}>
             <I.download size={18} color="var(--accent-600)" /> Download QR image
           </button>
           <div className="card" style={{ width: '100%' }}>
