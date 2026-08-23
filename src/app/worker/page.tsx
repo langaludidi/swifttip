@@ -72,7 +72,7 @@ export default async function WorkerPage() {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const [contextResult, monthResult, todayResult, tipsResult] = await Promise.all([
-      supabase.rpc("get_worker_context", {}),
+      supabase.rpc("get_worker_context"),
       supabase.rpc("get_worker_summary", { p_from: monthStart.toISOString(), p_to: now.toISOString() }),
       supabase.rpc("get_worker_summary", { p_from: todayStart.toISOString(), p_to: tomorrow.toISOString() }),
       supabase.rpc("get_worker_recent_tips", { p_limit: 5 })
