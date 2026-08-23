@@ -13,6 +13,8 @@ export async function GET() {
     service: "swifttip-v3",
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ?? "local",
     environment: config.environment,
+    hasSupabaseUrl: Boolean(config.NEXT_PUBLIC_SUPABASE_URL),
+    hasSupabasePublishableKey: Boolean(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY),
     databaseConfigured: config.databaseConfigured,
     paymentProviderConfigured: providerConfigured,
     paymentsEnabled: config.paymentsEnabled,
