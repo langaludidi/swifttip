@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  HttpRequestError,
   classifySupabaseFailure,
   readJsonBody
 } from "./http-resilience";
@@ -21,7 +20,7 @@ describe("readJsonBody", () => {
       headers: { "content-type": "application/json", "content-length": "2048" },
       body: "{}"
     });
-    await expect(readJsonBody(request, 1024)).rejects.toMatchObject<HttpRequestError>({ status: 413, code: "PAYLOAD_TOO_LARGE" });
+    await expect(readJsonBody(request, 1024)).rejects.toMatchObject({ status: 413, code: "PAYLOAD_TOO_LARGE" });
   });
 
   it("rejects actual oversized payloads even without content-length", async () => {
@@ -30,7 +29,7 @@ describe("readJsonBody", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ value: "x".repeat(2048) })
     });
-    await expect(readJsonBody(request, 1024)).rejects.toMatchObject<HttpRequestError>({ status: 413, code: "PAYLOAD_TOO_LARGE" });
+    await expect(readJsonBody(request, 1024)).rejects.toMatchObject({ status: 413, code: "PAYLOAD_TOO_LARGE" });
   });
 
   it("rejects malformed JSON", async () => {
@@ -39,7 +38,7 @@ describe("readJsonBody", () => {
       headers: { "content-type": "application/json" },
       body: "{not-json"
     });
-    await expect(readJsonBody(request)).rejects.toMatchObject<HttpRequestError>({ status: 400, code: "INVALID_JSON" });
+    await expect(readJsonBody(request)).rejects.toMatchObject({ status: 400, code: "INVALID_JSON" });
   });
 
   it("rejects a non-JSON content type", async () => {
@@ -48,7 +47,7 @@ describe("readJsonBody", () => {
       headers: { "content-type": "text/plain" },
       body: "{}"
     });
-    await expect(readJsonBody(request)).rejects.toMatchObject<HttpRequestError>({ status: 415, code: "UNSUPPORTED_MEDIA_TYPE" });
+    await expect(readJsonBody(request)).rejects.toMatchObject({ status: 415, code: "UNSUPPORTED_MEDIA_TYPE" });
   });
 });
 
