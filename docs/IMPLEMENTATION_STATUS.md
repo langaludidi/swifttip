@@ -21,66 +21,40 @@ Greenfield branch: `mvp-v3-greenfield-build`
 
 ### Canonical database
 
-Migrations are applied through `mvp_v3_0028_in_app_notifications`.
+Migrations are applied through `mvp_v3_0034_legal_acl_hardening`.
 
-Implemented domains include:
-
-- Users / Workers.
-- Venues / Venue memberships.
-- Worker–Venue associations.
-- SwiftTip Worker verification.
-- Provider Settlement profiles.
-- Worker tipping endpoints.
-- Pricing versions.
-- Immutable legal/terms versions and acceptance evidence.
-- Pilot cohorts.
-- Tips and Payment Attempts.
-- Operative successful Payment Attempt designation.
-- Financial Allocations.
-- Settlements and Settlement events.
-- Refunds.
-- Disputes.
-- Provider fees and financial adjustments.
-- Reconciliation records.
-- Support cases.
-- Admin membership/RBAC.
-- Audit events.
-- In-app operational notifications.
+Implemented domains include Users/Workers, Venues/memberships, Worker–Venue associations, Worker verification, Provider Settlement profiles, tipping endpoints, Pricing Versions, legal/terms versions and acceptance evidence, Pilot cohorts, Tips/Payment Attempts, operative successful Payment Attempt designation, Financial Allocations, Settlements/events, Refunds, Disputes, provider fees/financial adjustments, reconciliation, support, Admin RBAC, audit events and in-app operational notifications.
 
 ### Financial integrity
 
-- Integer-cent ZAR economics.
+- Integer-cent ZAR economics and server-authoritative pricing.
 - Financial snapshots stored on the Tip.
-- Server-authoritative pricing.
 - Duplicate successful provider attempts can be preserved while only one becomes economically operative.
 - Payment success and Worker Settlement are distinct states.
 - No Wallet, withdrawal, cash-out, payout-request or payout-batch architecture.
-- Financial record deletion protections.
-- Completed Tip financial snapshot protections.
+- Financial record deletion and completed-Tip snapshot protections.
 - Provider costs stored separately from SwiftTip gross transaction revenue.
-- Refund and Dispute operations are visible but remain read-only until provider/policy mechanics are approved.
+- Refund and Dispute operations are visible but read-only until provider/policy mechanics are approved.
 
 ### Access control / security
 
 - RLS across canonical application-facing tables.
-- Worker-specific projections.
-- Venue-specific projections without KYC/banking exposure.
-- Admin role-specific RPCs.
-- Admin MFA/AAL2 required by privileged Admin functions.
-- Anonymous RPC exposure limited to intended customer entry/receipt/legal-reading paths.
+- Worker- and Venue-specific projections without KYC/banking leakage.
+- Admin role-specific RPCs with MFA/AAL2 for privileged Admin functions.
+- Anonymous RPC exposure limited to intended customer entry/receipt/effective-legal-reading paths.
+- Unpublished legal drafts are not directly readable or writable by `anon` or ordinary `authenticated` PostgREST roles.
+- Legal Admin access is through audited MFA/RBAC-gated RPCs only.
 - Private Worker verification evidence architecture.
 - Webhook/idempotency foundations.
 - Payment kill switch: `PAYMENTS_ENABLED=false` by default.
 
 ### Worker operating flow
 
-- Worker login/OTP screens.
-- Worker profile onboarding.
-- Identity-evidence upload and Verification Admin review.
+- Worker login/OTP, onboarding and identity-evidence workflow.
 - Venue discovery and Worker association request.
 - Database-enforced activation gates.
 - Worker terms must be published, reviewable and accepted before activation.
-- Worker dashboard, QR, transactions, transaction detail, profile and support.
+- Worker dashboard, QR, transactions, detail, profile and support.
 - In-app notifications for verification, Venue relationship, support and Settlement state changes.
 
 ### Venue operating flow
@@ -92,22 +66,46 @@ Implemented domains include:
 - Venue Worker confirmation/decline/end-association controls.
 - Venue dashboard exposes aggregate operational information only.
 
+### Legal document architecture
+
+Four controlled pre-live legal drafts are stored in both the repository and canonical database:
+
+- Worker Terms v0.1 draft.
+- Venue Terms v0.1 draft.
+- Customer Transaction Terms v0.1 draft.
+- Privacy Notice v0.1 draft.
+
+All four are:
+
+- `review_status = draft`;
+- `published_at = null`;
+- assigned a 2099 safety-placeholder effective date;
+- SHA-256 hashed using the canonical content body; and
+- accompanied by machine-readable publication blockers.
+
+The Admin Legal workspace supports:
+
+1. draft editing;
+2. submission for review;
+3. formal review findings/blockers;
+4. return to draft;
+5. approval only after blockers are cleared.
+
+Approval does **not** publish a document. There is no legal publication RPC or UI control.
+
+The commercial-readiness projection separately reports draft, under-review and approved-unpublished legal versions so drafting progress cannot be mistaken for legal go-live readiness.
+
 ### Admin / pilot operations
 
-- Operations dashboard.
-- Worker verification queue and evidence review.
+- Operations dashboard and Worker verification queue.
 - Venue register.
-- Draft-only pilot cohort setup and Venue assignment.
-- No pilot activation function or Start Pilot UI exists yet.
-- Settlement exception view.
-- Transaction and reconciliation detail.
-- Refund queue/detail, read-only.
-- Dispute queue/detail, read-only.
-- Support queue and triage.
-- Restricted audit trail.
-- Commercial readiness panel.
-- Evidence-based pilot scorecard.
-- P1 pilot operating runbook and kill-switch procedure.
+- Legal document register and controlled review workflow.
+- Draft-only Pilot cohort setup and Venue assignment; no Pilot activation action.
+- Settlement exception and transaction/reconciliation detail.
+- Refund and Dispute queue/detail, read-only.
+- Support triage and restricted audit trail.
+- Commercial readiness panel and evidence-based Pilot scorecard.
+- P1 Pilot operating runbook and kill-switch procedure.
 
 ### Verification
 
@@ -115,12 +113,11 @@ Database smoke suites cover:
 
 1. Canonical schema/RLS/forbidden-wallet assertions.
 2. Worker onboarding and operational controls.
-3. Venue/pilot/legal/receipt controls.
+3. Venue/Pilot/legal/receipt controls.
 4. In-app notification controls.
+5. Legal draft hash/publication/ACL controls.
 
-The current suites have been executed against the canonical Supabase project and pass after corrections.
-
-Vercel greenfield-branch builds are compiling successfully.
+All five suites have been executed against the canonical Supabase project and pass after corrections.
 
 ## Intentionally inactive
 
@@ -131,7 +128,7 @@ Current database state remains pre-live:
 - Active Workers: `0`.
 - Active Venues: `0`.
 - Active tipping endpoints: `0`.
-- Active pilot cohorts: `0`.
+- Active Pilot cohorts: `0`.
 - Live payment provider: not configured.
 - Real payments: disabled.
 
@@ -139,41 +136,33 @@ Current database state remains pre-live:
 
 ### Vercel staging connection
 
-The Preview deployment still requires the canonical Supabase public URL/publishable key to be attached as Vercel Preview environment variables. The connected Vercel integration cannot write environment variables directly.
+The Preview deployment still requires the canonical Supabase public URL/publishable key to be attached as Vercel Preview environment variables if not already configured. Environment secrets must remain server/environment controlled.
 
 ### Authentication
 
-- Configure/test real Worker SMS OTP delivery in the canonical Supabase project.
+- Configure/test real Worker SMS OTP delivery.
 - Confirm Venue email OTP template/behaviour.
-- Create controlled test identities for Worker, Venue user and Admin.
+- Create controlled Worker, Venue User and Admin test identities.
 - Enrol Admin MFA and verify AAL2 end to end.
 
 ### Legal/commercial
 
-- Draft and review Worker terms.
-- Draft and review Venue terms.
-- Draft and review customer transaction terms.
-- Draft and review privacy notice.
-- Store exact content, verify SHA-256 content hash and publish approved versions only.
-- Approve/activate a pricing version only after commercial/legal confirmation.
+The four drafts now exist. Remaining work is to review and resolve their recorded blockers, including:
+
+- SwiftTip legal entity and formal contacts;
+- Information Officer/privacy administration details;
+- final Pricing Version and fee treatment;
+- provider and funds-flow confirmation;
+- refunds/reversals/post-Settlement chargeback loss allocation;
+- tax/VAT/accounting treatment;
+- data-sharing/cross-border/retention controls; and
+- final liability, complaints and dispute clauses.
+
+No document should be published until those reviews are complete. Pricing remains inactive.
 
 ### Payment provider
 
-No provider-specific implementation may go live until the provider gate resolves:
-
-- category approval;
-- merchant-of-record/funds-flow position;
-- split-at-source mechanics;
-- Worker subaccount/KYC model;
-- Settlement destination and schedule;
-- customer service-fee treatment;
-- fee bearer and complete provider pricing;
-- signed webhooks/replay behaviour;
-- Refund mechanics and fee treatment;
-- failed Settlement process;
-- post-Settlement chargeback liability;
-- reconciliation evidence/API/reporting fields;
-- production credentials and contractual approval.
+No provider-specific implementation may go live until the provider gate resolves category approval, merchant/funds-flow position, split mechanics, Worker KYC/subaccount model, Settlement destination/schedule, Customer service-fee treatment, complete provider pricing, signed webhook behaviour, Refund mechanics, failed Settlement process, post-Settlement chargeback liability, reconciliation fields and production credentials/contractual approval.
 
 ## Repository note
 
