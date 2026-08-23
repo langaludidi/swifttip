@@ -24,7 +24,7 @@ export default async function VenueOnboardingPage({ searchParams }: { searchPara
   const params = await searchParams;
   const config = getServerConfig();
   let invitations: Invitation[] = [];
-  let demo = config.demoMode;
+  const demo = config.demoMode;
 
   if (demo) {
     invitations = [{ membership_id:"demo-membership",venue_id:"demo-venue",venue_name:"Example Service Station",branch_name:"Midrand",venue_type:"fuel_station",public_location_label:"Midrand",venue_status:"active",venue_role:"venue_admin",membership_status:"invited",venue_terms_version_id:null,venue_terms_version_code:null,venue_terms_published:false,venue_terms_accepted:false }];
@@ -59,7 +59,7 @@ export default async function VenueOnboardingPage({ searchParams }: { searchPara
         <div className="list-row"><strong>Venue terms</strong><span className={invite.venue_terms_accepted?"status-chip success":"status-chip warning"}>{!termsReady?"Not published":invite.venue_terms_accepted?"Accepted":`Review ${invite.venue_terms_version_code ?? "current version"}`}</span></div>
 
         {!termsReady && <p className="fee-note">No Venue terms are published yet, so SwiftTip deliberately prevents membership activation.</p>}
-        {termsReady && !invite.venue_terms_accepted && !demo && <div className="stack-actions" style={{marginTop:18}}><p className="fee-note">Acceptance is versioned and permanently recorded. The published terms must be available for review before this control is used.</p><form action={acceptVenueTerms}><input type="hidden" name="membershipId" value={invite.membership_id}/><button className="button button-secondary" type="submit">Accept current Venue terms</button></form></div>}
+        {termsReady && !invite.venue_terms_accepted && !demo && <div className="stack-actions" style={{marginTop:18}}><p className="fee-note">Acceptance is versioned and permanently recorded. Review the effective document before accepting it.</p><Link className="button button-secondary" href="/legal/venue-terms" target="_blank">Read Venue terms · {invite.venue_terms_version_code}</Link><form action={acceptVenueTerms}><input type="hidden" name="membershipId" value={invite.membership_id}/><button className="button button-primary" type="submit">I have reviewed and accept these Venue terms</button></form></div>}
         {canAcceptMembership && !demo && <form action={acceptVenueInvitation} style={{marginTop:18}}><input type="hidden" name="membershipId" value={invite.membership_id}/><button className="button button-primary button-large" type="submit">Accept invitation and enter Venue</button></form>}
       </section>;
     })}
