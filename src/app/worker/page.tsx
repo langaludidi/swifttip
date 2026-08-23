@@ -71,14 +71,15 @@ export default async function WorkerPage() {
     const tomorrow = new Date(todayStart);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [contextResult, monthResult, todayResult, tipsResult] = await Promise.all([
-      supabase.rpc("get_worker_context"),
+    // Keep the known zero-argument PostgREST inference workaround isolated here.
+    const contextResult = (await supabase.rpc("get_worker_context")) as unknown as { data: WorkerContext[] | null; error: unknown };
+    const [monthResult, todayResult, tipsResult] = await Promise.all([
       supabase.rpc("get_worker_summary", { p_from: monthStart.toISOString(), p_to: now.toISOString() }),
       supabase.rpc("get_worker_summary", { p_from: todayStart.toISOString(), p_to: tomorrow.toISOString() }),
       supabase.rpc("get_worker_recent_tips", { p_limit: 5 })
     ]);
 
-    if (contextResult.data?.[0]) context = contextResult.data[0] as WorkerContext;
+    if (contextResult.data?.[0]) context = contextResult.data[0];
     if (monthResult.data?.[0]) month = monthResult.data[0] as WorkerSummary;
     if (todayResult.data?.[0]) today = todayResult.data[0] as WorkerSummary;
     tips = (tipsResult.data ?? []) as WorkerTip[];
