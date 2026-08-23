@@ -6,299 +6,212 @@ Canonical Supabase project: `bxtfcfuehqljedxwykfk`
 
 Greenfield branch: `mvp-v3-greenfield-build`
 
-## Current position
+Current branch head at this status update: `31d7a7b87aec5eff22e4754dddeb3fda1e7698ca`.
 
-The MVP v3 control architecture, canonical database, core actor surfaces and pilot-operating workflows are substantially built. The system remains deliberately closed to public transaction intake and real money.
+## Executive position
 
-Current canonical database state:
+The MVP v3 control architecture, canonical database, core Customer/Worker/Venue/Admin surfaces and pre-pilot operating controls are substantially built. SwiftTip remains deliberately closed to public Tip intake and real money.
+
+The current release decision is **NOT READY FOR CONTROLLED IDENTITIES** until the current greenfield head has a trusted successful build and a greenfield Preview `/api/health` response proves that Supabase configuration comes from explicit Vercel Preview environment variables.
+
+## Closed commercial baseline
+
+The latest verified canonical baseline remains:
 
 - Auth users: `0`.
 - Workers: `0`.
 - Venues: `0`.
-- Tipping endpoints: `0`.
-- Active pricing versions: `0`.
-- Published legal/terms versions: `0`.
+- Active Worker tipping endpoints: `0`.
+- Active/effective Pricing Versions: `0`.
+- Effective published legal documents: `0`.
 - Active Pilot cohorts: `0`.
 - Public Tip intake switch: `OFF`.
 - Public Tip intake readiness: `false`.
-- Live payment provider: not configured.
-- Real payments: disabled.
+- Payment provider: `unconfigured`.
+- `PAYMENTS_ENABLED=false`.
+
+No application action is authorised to publish legal drafts, activate pricing, start a Pilot, enable public Tip intake or move real money.
 
 ## Application foundation
 
-- Next.js / TypeScript greenfield application.
-- Customer, Worker, Venue and Admin surfaces.
-- Approved customer-first mobile UI with a dominant **Tip a worker** action.
-- QR scanning and manual Worker-code entry.
-- Live Worker codes are canonical 8-character Crockford-style codes; the old `T4K8P` code is confined to true demo mode.
-- Server-authoritative Tip quotes and Tip creation contracts.
-- Anonymous Customer receipt/status architecture.
-- Browser payment return is non-authoritative and cannot declare Payment success.
-- Worker SMS OTP, Venue email OTP and Admin email OTP application flows; no universal or hard-coded OTP exists.
-- Explicit server-side sign-out for Worker, Venue and Admin sessions.
+Implemented application surfaces include:
 
-A Vercel build at commit `0dc28eb0479d149aa3259a16bb8615a9727831f5` successfully completed Next.js compile, lint/type checking, all application routes and serverless packaging. Later greenfield hardening commits remain on the same branch and continue to trigger Preview builds as Vercel quota permits.
+- Customer home, QR scan, manual code entry, Worker profile, Tip quote, Tip creation contract, anonymous receipt/status and provider-return boundary.
+- Worker SMS OTP, onboarding, verification evidence, Venue association, profile, QR, Tip history, support and Settlement-state views.
+- Venue email OTP, controlled invitation/onboarding, Worker association confirmation and aggregate Venue operating views.
+- Admin email OTP, membership enforcement, TOTP/AAL2, Venues, verification, legal review, draft Pilot setup, transactions, Settlement exceptions, Refunds, Disputes, support, audit and readiness.
+
+Customer payment return remains non-authoritative. Payment success and Worker Settlement are separate records and states.
 
 ## Canonical database
 
-Migrations are applied through:
+Canonical migrations are applied through:
 
-`mvp_v3_0042_runtime_readiness_projection`
+`mvp_v3_0047_admin_mfa_recovery_audit`
 
-Implemented domains include:
+The repository contains numbered migrations `0001` through `0047`.
 
-- Users / Workers.
-- Venues and Venue memberships.
-- Worker–Venue associations.
-- Worker verification and private evidence.
-- Provider Settlement profiles.
-- Worker tipping endpoints.
-- Pricing Versions.
-- Terms / Privacy versions and acceptance evidence.
-- Pilot cohorts.
-- Tips and Payment Attempts.
-- Operative successful Payment Attempt designation.
-- Financial Allocations.
-- Settlements and Settlement events.
-- Provider fees.
-- Refunds and Disputes.
-- Financial adjustments and reconciliation.
-- Support cases.
-- Admin RBAC and audit events.
-- In-app operational notifications.
-- Private runtime Tip-intake controls.
+The data/control model includes identity, Worker/Venue relationships, verification, private evidence storage, provider Settlement profiles, tipping endpoints, Pricing Versions, Terms/Privacy versions and acceptance evidence, Pilot cohorts, Tips, Payment Attempts, operative-success designation, Financial Allocations, Settlements, provider fees, Refunds, Disputes, reconciliation, support, Admin RBAC, audit, notifications and private runtime Tip-intake controls.
 
-## Financial integrity
+## Financial and custody boundary
 
-- Integer-cent ZAR economics and server-authoritative pricing.
-- Financial terms are snapshotted onto each Tip.
-- Multiple genuine provider-success attempts may be preserved, while exactly one becomes economically operative.
-- Duplicate provider success cannot create duplicate allocations.
-- Payment success and Worker Settlement remain separate states and records.
-- No SwiftTip Wallet, balance, withdrawal, cash-out, payout-request or payout-batch architecture exists.
-- Financial record deletion and completed-Tip snapshot protections are enforced.
-- Provider direct costs are stored separately from SwiftTip gross transaction revenue.
-- Refund and Dispute operational surfaces remain read-only until provider and policy mechanics are approved.
+SwiftTip v3 remains non-custodial by design:
 
-## Worker activation and customer entry
+- no Worker wallet;
+- no available balance;
+- no withdrawal/cash-out flow;
+- no payout-request/payout-batch architecture;
+- gratuity principal is not modelled as SwiftTip-owned funds;
+- duplicate provider successes cannot create duplicate economic allocations;
+- completed financial history is append/transition controlled rather than casually editable;
+- provider direct costs are separated from SwiftTip transaction revenue.
 
-Worker activation remains gate-driven. A Worker cannot activate unless the required identity verification, verified active Venue association, Settlement readiness and current published Worker Terms acceptance are satisfied.
+Provider-specific Refund, chargeback, Settlement and fee mechanics remain intentionally unimplemented until a provider is selected and approved.
 
-Migration `0039` closed a previously missing runtime step: successful Worker activation now issues the Worker’s customer-facing tipping endpoint.
+## Legal state
 
-Endpoint controls now include:
+Four v0.1 legal documents are synchronised between repository and canonical database:
 
-- 192-bit random public token represented as 48 lowercase hexadecimal characters.
-- 8-character human short code generated from a Crockford-style alphabet.
-- Exactly one active endpoint per Worker.
-- Endpoint issuance only after the full Worker activation gate succeeds.
-- A stale endpoint is disabled when the Worker’s verified Venue association changes.
-- Endpoint token and short code are not written into the audit event.
+- Worker Terms;
+- Venue Terms;
+- Customer Transaction Terms; and
+- Privacy Notice.
 
-Customer-facing endpoint resolution, profile lookup, quote and Tip creation require the Worker to have accepted the **current** effective published Worker Terms version.
+All remain **DRAFT / NOT PUBLISHED / NOT IN FORCE**. Approval and publication remain separate concepts and there is no legal-publish control in the application.
 
-## Legal integrity
-
-Four controlled pre-live legal drafts exist in both the repository and canonical database:
-
-- Worker Terms v0.1 draft.
-- Venue Terms v0.1 draft.
-- Customer Transaction Terms v0.1 draft.
-- Privacy Notice v0.1 draft.
-
-All remain:
-
-- `review_status = draft`;
-- `published_at = null`;
-- assigned future safety effective dates;
-- SHA-256 integrity checked;
-- linked to repository path, Git blob SHA and exact source-byte length; and
-- accompanied by machine-readable legal blockers.
-
-Migration `0035` transactionally verifies repository/database source synchronisation. Current exact source sizes are:
+Current exact repository source sizes remain:
 
 - Customer Transaction Terms: 10,859 bytes.
 - Privacy Notice: 14,023 bytes.
 - Venue Terms: 12,132 bytes.
 - Worker Terms: 12,894 bytes.
 
-Migration `0039` also enforces Terms acceptance validity at the table boundary: the document type must match the subject, and the document must already be published, effective and not retired at the acceptance time.
+## Worker activation and public endpoint controls
 
-Migration `0040` makes current published Terms an explicit customer-facing eligibility rule and requires `create_tip` to select only current published/effective Customer Transaction Terms.
+Worker activation is gate-driven and depends on the required identity verification, verified active Venue association, Settlement readiness and current published Worker Terms acceptance.
 
-Approval still does **not** publish a legal document. No legal publication control exists in the application.
+When legitimate activation eventually succeeds, endpoint controls provide:
 
-## Public Tip intake kill switch
+- one active endpoint per Worker;
+- 48 lowercase hexadecimal public-token characters (192 bits);
+- an 8-character Crockford-style short code;
+- stale-endpoint disablement when the verified Venue relationship changes; and
+- no endpoint token/code in audit events.
 
-Migration `0041` adds a private, canonical runtime kill switch. It defaults to **OFF**.
+Public endpoint resolution, profile lookup, quote and new Tip creation additionally depend on database runtime readiness and current Terms rules.
 
-Public code resolution, Worker tipping-profile access, quoting and new Tip creation all require database Tip-intake readiness. Readiness requires:
+## Public Tip-intake controls
 
-1. the explicit private runtime switch to be enabled;
+The private runtime switch defaults to `OFF`. New public Tip intake requires all of:
+
+1. the private runtime switch enabled;
 2. an active/effective Pricing Version; and
 3. current published/effective Customer Transaction Terms.
 
-Completing pricing or legal work therefore cannot accidentally open customer transactions.
+The Admin readiness surface is read-only and cannot enable the switch.
 
-The database currently reports:
+Database-side last-resort Tip-intent ceilings are:
 
-- `public_tip_intake_enabled = false`;
-- `public_tip_intake_ready = false`.
-
-There is intentionally **no activation button** yet. Migration `0042` exposes the state read-only through the MFA/RBAC-gated Admin Commercial Readiness screen.
-
-A database-side direct-RPC flood safety ceiling also applies to new Tip intents per Worker endpoint:
-
-- 120 per minute; and
+- 120 new Tip intents per Worker endpoint per minute; and
 - 600 per 15 minutes.
 
-Admission is serialised per endpoint using a transaction advisory lock, so concurrent calls cannot race the limit. These are last-resort database ceilings, not a substitute for future edge/server anti-abuse controls.
+Idempotent replay is evaluated before the kill-switch/velocity decision so an already-created Tip may be recovered safely without opening new intake.
 
-Idempotent replay is evaluated before the kill-switch/velocity check, so a client may still recover a Tip resource it already created if intake is subsequently closed.
-
-## Authentication and controlled identity provisioning
+## Authentication and controlled provisioning
 
 ### Admin
 
-- Admin sign-in is email OTP with `shouldCreateUser:false`.
-- Privileged accounts must therefore be pre-provisioned.
-- Active Admin membership is required after OTP verification.
-- MFA-required Admins are routed to `/admin/mfa`.
-- TOTP MFA is supported and Admin RPCs independently require AAL2.
-- Interrupted first-time MFA setup clears stale unverified TOTP factors before a new QR is issued.
-- Verified MFA factors are not silently removed.
-
-Migration `0036` adds service-role-only transactional Admin provisioning with audit evidence. Repository command:
-
-`npm run provision:admin -- --email <email> --role <role>`
-
-An existing privileged role cannot be silently changed without the explicit `--allow-update` flag.
+Admin login uses email OTP with `shouldCreateUser:false`. Active Admin membership is required. MFA-required Admins must reach AAL2 through TOTP before privileged Admin RPCs succeed. Service-role-only Admin bootstrap and MFA-recovery audit controls exist.
 
 ### Worker
 
-Public Worker self-registration remains closed. Worker OTP uses `shouldCreateUser:false`.
-
-Migration `0038` supports an auditable, service-role-only bootstrap of the Worker’s Auth phone identity. Repository command:
-
-`npm run provision:worker -- --phone <south-african-mobile>`
-
-The command does **not** create a Worker business record, approve verification, attach a Venue, create an endpoint or activate the Worker. The Worker must sign in by SMS OTP and complete the ordinary onboarding flow.
+Worker login uses SMS OTP with `shouldCreateUser:false`. Worker Auth bootstrap is service-role only and does not create a Worker business record, approve verification, attach a Venue, create an endpoint or activate the Worker.
 
 ### Venue
 
-Venue authentication can create the basic Auth identity, but authentication alone grants no Venue authority.
+Venue email OTP may create the basic Auth identity, but authentication alone grants no Venue authority. Operations/Super Admin must invite the exact Auth user to an active Venue. Venue permissions do not expose Worker KYC, bank/Settlement destination data or Settlement control.
 
-Migration `0037` and the Admin Venue UI allow Operations to invite a Venue user by email after that person has signed into SwiftTip once. The Venue must be active. Roles are:
+## Database verification suites
 
-- Venue Admin; or
-- View Only.
+The repository now uses a single ordered smoke-suite sequence:
 
-The action remains Operations/Super Admin + AAL2 controlled and does not expose Worker KYC, banking or Settlement controls.
+1. `001_schema_smoke.sql`
+2. `002_operational_controls_smoke.sql`
+3. `003_venue_pilot_receipt_controls.sql`
+4. `004_notification_controls.sql`
+5. `005_legal_draft_controls.sql`
+6. `006_admin_bootstrap_controls.sql`
+7. `007_identity_bootstrap_controls.sql`
+8. `008_tipping_endpoint_and_terms_controls.sql`
+9. `009_current_published_terms_eligibility.sql`
+10. `010_public_tip_intake_controls.sql`
+11. `011_client_privilege_hardening.sql`
+12. `012_verification_evidence_storage_hardening.sql`
+13. `013_verification_review_availability.sql`
+14. `014_actor_isolation_simulation.sql`
+15. `015_auth_session_abuse_controls.sql`
+16. `016_admin_mfa_recovery_controls.sql`
+17. `017_session_age_behaviour.sql`
+18. `018_pre_pilot_control_plane.sql`
 
-## Admin / Pilot operations
+`018_pre_pilot_control_plane.sql` is a filename/sequence correction of the already-executed non-mutating pre-pilot control-plane gate formerly named `013_pre_pilot_control_plane.sql`; the control itself is unchanged apart from its PASS label.
 
-Implemented Admin surfaces include:
+## Repository and build reproducibility
 
-- Operations dashboard.
-- Worker verification queue/detail.
-- Venue register and Venue member invitation.
-- Legal register and controlled review workflow.
-- Draft-only Pilot cohort setup and Venue assignment.
-- Transaction register/detail.
-- Settlement exceptions.
-- Refund queue/detail, read-only.
-- Dispute queue/detail, read-only.
-- Support triage.
-- Restricted audit trail.
-- Commercial readiness.
-- Pilot scorecard.
+The repository now contains `package-lock.json` and CI installs dependencies with `npm ci`.
 
-No Pilot activation action exists yet.
+`npm run ci` runs:
 
-The Commercial Readiness page now shows separately:
+- architecture invariants;
+- application-RPC/migration contract check;
+- generated Supabase type freshness;
+- migration safety;
+- TypeScript typecheck;
+- unit tests; and
+- Next.js production build.
 
-- pricing/legal configuration readiness;
-- published legal gates;
-- Worker/Venue readiness;
-- public Tip-intake switch state;
-- effective database intake readiness; and
-- database velocity ceilings.
+A fresh Vercel build of greenfield commit `347229016c5ed337eaa9ac438ec260800e13e69f` reached TypeScript validation and exposed a remaining optional Venue-status argument mismatch. That mismatch was fixed in `31d7a7b87aec5eff22e4754dddeb3fda1e7698ca`.
 
-It cannot enable any of those gates.
+Vercel then rate-limited the next build before it ran. Therefore the current branch head is **not yet build-proven**. A stale successful Preview is not release evidence for the current head.
 
-## Verification
+## Runtime environment gate
 
-Canonical database smoke suites now cover:
+The staging health contract requires:
 
-1. Schema/RLS/forbidden-wallet controls.
-2. Worker onboarding and operating controls.
-3. Venue/Pilot/legal/receipt controls.
-4. In-app notification controls.
-5. Legal draft hash/publication/ACL controls.
-6. Admin bootstrap privilege controls.
-7. Identity-bootstrap and Venue-email-invite privilege controls.
-8. Tipping-endpoint issuance and Terms-acceptance invariants.
-9. Current published-Terms eligibility across Customer tipping surfaces.
-10. Public Tip-intake kill switch, private runtime ACLs and velocity controls.
+- `environment=staging`;
+- `hasSupabaseUrl=true`;
+- `hasSupabasePublishableKey=true`;
+- `supabaseConfigSource=environment`;
+- `databaseConfigured=true`;
+- `paymentProviderConfigured=false` until provider approval;
+- `paymentsEnabled=false`; and
+- `liveMoneyReady=false`.
 
-Suites 006–010 have been executed directly against the canonical project during the current hardening pass and pass. Earlier suites were previously executed and passed after corrections.
+The user has changed/reviewed Vercel variables, but the current greenfield head has not yet reached a fresh READY Preview from which this can be verified. Earlier evidence showed `staging_fallback`; that earlier result must not be treated as the current state.
 
-Supabase security-advisor output continues to flag intentional `SECURITY DEFINER` RPC exposure. Anonymous Customer functions remain intentionally callable but are now constrained by high-entropy endpoint identifiers, current Terms rules, the database Tip-intake kill switch and Tip-creation velocity protection. Admin/Worker/Venue functions self-authorise internally through actor ownership or Admin role/AAL2 checks. `terms_versions` continues to use RLS with no direct client policy because controlled RPCs are the intended access path.
+Controlled identity testing remains gated on a current-head successful build plus current-head health evidence showing `supabaseConfigSource=environment`.
 
-## Staging and Production separation
+## Branch protection gate
 
-The greenfield branch Preview is connected to canonical Supabase using the staging-only public URL/publishable-key fallback. Production configuration remains fail-closed without explicit environment variables. No service-role credential is committed.
+The greenfield branch is currently unprotected. Do not enable required status checks until the exact GitHub CI check name has been observed on a successful current-head run. See `docs/BRANCH_PROTECTION_GATE.md`.
 
-A separate Vercel **production-target deployment was observed from the legacy branch `claude/nice-bardeen-we0hfg`**. That is not the greenfield MVP v3 branch. No greenfield merge or Production promotion was performed as part of this work.
+## Remaining controlled pre-pilot sequence
 
-The production legacy deployment must not be treated as evidence that MVP v3 is live or approved.
+1. Obtain one trusted current-head CI/build result.
+2. Obtain a READY greenfield Preview.
+3. Run `npm run prepilot:runtime -- https://<greenfield-preview>` and require PASS.
+4. Re-run `018_pre_pilot_control_plane.sql` if the canonical database has changed since its last PASS.
+5. Only then approve and provision controlled Admin/Worker/Venue test identities.
+6. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
 
-## Remaining external / manual gates
+## External gates that remain closed
 
-### Controlled identity testing
+Legal/commercial/provider work still requires final legal identity/contact inputs, privacy administration details, pricing/VAT/tax treatment, provider category/funds-flow approval, split mechanics, Worker KYC/subaccount model, Settlement destination/schedule, Customer service-fee treatment, complete provider pricing, webhook verification/replay, Refund/chargeback rules, failed Settlement handling, reconciliation data and production credentials.
 
-- Confirm actual Worker SMS OTP delivery in Supabase/Auth.
-- Confirm Venue/Admin email OTP template and delivery behaviour.
-- Provision controlled non-production Admin, Worker and Venue User test identities when approved identifiers are available.
-- Complete real Admin TOTP enrollment/AAL2 verification end to end.
+Fine-grained edge/server anti-abuse remains a pre-live requirement for public read-only enumeration and distributed traffic beyond the existing database Tip-intent ceilings.
 
-### Legal / commercial
+## Production separation
 
-Resolve the recorded legal blockers before publication, including:
+The live Production deployment currently belongs to the historical legacy branch `claude/nice-bardeen-we0hfg`. It must not be treated as evidence that MVP v3 is live or approved.
 
-- SwiftTip legal entity and formal contact details;
-- Information Officer/privacy administration details;
-- final Pricing Version and fee treatment;
-- provider and funds-flow confirmation;
-- Refund/reversal/post-Settlement chargeback allocation;
-- tax/VAT/accounting treatment;
-- data sharing, retention and cross-border controls; and
-- final liability, complaint and dispute clauses.
-
-Pricing remains inactive and all legal documents remain unpublished.
-
-### Payment provider
-
-No provider-specific implementation may go live until the provider gate resolves:
-
-- category/business-model approval;
-- merchant/funds-flow position;
-- split/routing mechanics;
-- Worker KYC/subaccount model;
-- Settlement destination and schedule;
-- treatment of the SwiftTip Customer service fee;
-- complete provider pricing;
-- webhook signature and replay behaviour;
-- Refund mechanics;
-- failed Settlement process;
-- post-Settlement chargeback liability;
-- reconciliation data; and
-- production credentials/contractual approval.
-
-### Anti-abuse
-
-Database-side Tip-intent velocity protection now exists. Fine-grained production anti-abuse at the edge/server layer remains a pre-live gate, particularly for read-only code/profile/quote enumeration and broader distributed traffic controls.
-
-## Repository note
-
-MVP v3 remains isolated on `mvp-v3-greenfield-build` in `langaludidi/swifttip`. The legacy codebase is historical reference only and is not an architectural dependency of MVP v3.
+MVP v3 remains isolated on `mvp-v3-greenfield-build`. No merge to, replacement of, or Production promotion from the legacy/default line is authorised by this status document.
