@@ -13,6 +13,18 @@ async function getAuthenticatedUser() {
   return { supabase, user: data.user };
 }
 
+async function requireFreshSurfaceSession(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  surface: "worker" | "venue" | "admin",
+  loginPath: string
+) {
+  const { data, error } = await supabase.rpc("session_access_allowed", { p_surface: surface });
+  if (error || data !== true) {
+    await supabase.auth.signOut();
+    redirect(`${loginPath}?error=${encodeURIComponent("Your SwiftTip session expired. Sign in again.")}`);
+  }
+}
+
 export async function requireWorkerSurface(): Promise<SurfaceAccess> {
   const config = getServerConfig();
   if (config.demoMode) return { mode: "demo", userId: null };
@@ -20,6 +32,7 @@ export async function requireWorkerSurface(): Promise<SurfaceAccess> {
 
   const { supabase, user } = await getAuthenticatedUser();
   if (!user) redirect("/worker/login");
+  await requireFreshSurfaceSession(supabase, "worker", "/worker/login");
   const { data: worker, error } = await supabase.from("workers").select("id, worker_status").eq("user_id", user.id).maybeSingle();
   if (error || !worker) redirect("/worker/onboarding");
   return { mode: "live", userId: user.id };
@@ -32,6 +45,7 @@ export async function requireVenueSurface(): Promise<SurfaceAccess> {
 
   const { supabase, user } = await getAuthenticatedUser();
   if (!user) redirect("/venue/login");
+  await requireFreshSurfaceSession(supabase, "venue", "/venue/login");
   const { data: memberships, error } = await supabase.from("venue_memberships").select("id,membership_status").eq("user_id", user.id).limit(10);
   if (error) redirect("/unavailable");
   if (!memberships?.some((membership) => membership.membership_status === "active")) redirect("/venue/onboarding");
@@ -45,6 +59,7 @@ export async function requireAdminSurface(): Promise<AdminSurfaceAccess> {
 
   const { supabase, user } = await getAuthenticatedUser();
   if (!user) redirect("/admin/login");
+  await requireFreshSurfaceSession(supabase, "admin", "/admin/login");
   const { data: admin, error } = await supabase.from("admin_memberships").select("admin_role, admin_status, mfa_required").eq("user_id", user.id).maybeSingle();
   if (error || !admin || admin.admin_status !== "active") redirect("/unavailable");
 
