@@ -19,7 +19,16 @@ export async function POST(request: Request) {
     if (error || !data?.length) {
       return NextResponse.json({ error: { code: "TIP_CREATION_FAILED", message: "We couldn't start this tip. Please try again." } }, { status: 409 });
     }
-    return NextResponse.json({ tip: data[0] }, { status: 201 });
+    const tip = data[0] as { swifttip_reference?: string };
+    let receiptToken: string | null = null;
+    if (tip.swifttip_reference) {
+      const receiptResult = await supabase.rpc("get_customer_receipt_access", {
+        p_reference: tip.swifttip_reference,
+        p_idempotency_key: body.idempotencyKey
+      });
+      receiptToken = ((receiptResult.data ?? []) as Array<{ receipt_token: string }>)[0]?.receipt_token ?? null;
+    }
+    return NextResponse.json({ tip, receiptToken }, { status: 201 });
   } catch {
     return NextResponse.json({ error: { code: "VALIDATION_ERROR", message: "Invalid tip request." } }, { status: 400 });
   }
