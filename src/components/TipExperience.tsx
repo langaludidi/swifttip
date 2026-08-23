@@ -89,7 +89,7 @@ export function TipExperience({ token }: { token: string }) {
   const startPayment = async () => {
     if (!quote || quoteState !== "ready") return;
     setStep("payment");
-    setRuntimeMessage("Creating a secure tip session…");
+    setRuntimeMessage("Creating your SwiftTip transaction…");
     try {
       const create = await fetch("/api/tips", {
         method: "POST",
@@ -98,13 +98,13 @@ export function TipExperience({ token }: { token: string }) {
       });
       const created = await create.json();
       if (!create.ok) {
-        setRuntimeMessage(created?.error?.message ?? "The secure tip session is not available yet.");
+        setRuntimeMessage(created?.error?.message ?? "The tip session is not available yet.");
         setStep("blocked");
         return;
       }
       const reference = created.tip?.swifttip_reference ?? created.tip?.swifttipReference;
       if (!reference) throw new Error("Missing canonical tip reference");
-      setRuntimeMessage("Preparing secure payment…");
+      setRuntimeMessage("Preparing the payment handoff…");
       const payment = await fetch(`/api/tips/${encodeURIComponent(reference)}/payments`, { method: "POST" });
       const paymentBody = await payment.json();
       if (!payment.ok) {
@@ -114,23 +114,37 @@ export function TipExperience({ token }: { token: string }) {
       }
       setRuntimeMessage("Payment provider handoff ready.");
     } catch {
-      setRuntimeMessage("The secure payment path is not available yet.");
+      setRuntimeMessage("The payment path is not available yet.");
       setStep("blocked");
     }
   };
 
-  if (profile === null) return <section className="tip-flow"><span className="eyebrow">SwiftTip</span><h1>Confirming this worker…</h1><p className="lead">Please wait while we verify the tipping endpoint.</p></section>;
-  if (!profile.available || !profile.worker || !profile.venue) return <section className="tip-flow"><span className="eyebrow">Unavailable</span><h1>This SwiftTip profile is currently unavailable.</h1><p className="lead">Please check the worker details or try again later.</p></section>;
+  if (profile === null) return <section className="tip-flow loading-state"><span className="eyebrow">Checking recipient</span><h1>Confirming this worker…</h1><p className="lead">We’re loading the worker profile linked to this SwiftTip code.</p></section>;
+  if (!profile.available || !profile.worker || !profile.venue) return <section className="tip-flow"><span className="eyebrow">Unavailable</span><h1>This worker profile can’t receive a tip right now.</h1><p className="lead">Check the QR or worker code and try again.</p></section>;
 
   return <>
-    <section className="worker-card"><div className="worker-photo">{initials}</div><div className="worker-meta"><strong>{workerName}</strong><span>{profile.worker.role}</span><span>{profile.venue.name}{profile.venue.location ? ` · ${profile.venue.location}` : ""}</span></div>{profile.verification?.verified && <span className="verified-chip">✓ Verified</span>}</section>
-    {step === "amount" && <section className="tip-flow"><span className="eyebrow">Your gratuity</span><h1>How much would you like to tip?</h1><p className="lead">You will see the complete amount before payment.</p><div className="amount-grid">{presets.map(v => <button key={v} className={amount===v && !custom ? "amount-button selected" : "amount-button"} onClick={() => {setAmount(v);setCustom("");}}>{formatZar(v).replace(",00","").replace(".00","")}</button>)}<button className={custom ? "amount-button other selected" : "amount-button other"} onClick={() => setCustom(custom || String(amount/100))}>Other amount</button></div>{custom !== "" && <div className="custom-field"><span>R</span><input aria-label="Custom tip amount" inputMode="decimal" value={custom} onChange={e=>setCustomAmount(e.target.value)}/></div>}{quoteState === "loading" && <p className="fee-note">Calculating the current SwiftTip price…</p>}{quoteState === "error" && <p className="prototype-warning" role="alert">This amount cannot be quoted right now. Check the amount and try again.</p>}{quote && quoteState === "ready" && <><MoneyBreakdown pricing={quote} workerName={workerName}/><p className="fee-note">The price shown here comes from the SwiftTip server. The browser does not authoritatively calculate the charge.</p></>}<button className="button button-primary button-large" disabled={!quote || quoteState !== "ready"} onClick={()=>setStep("confirm")}>Continue</button></section>}
-    {step === "confirm" && quote && <section className="tip-flow"><span className="eyebrow">Almost there</span><h1>Confirm your tip.</h1><MoneyBreakdown pricing={quote} workerName={workerName}/><div className="stack-actions"><button className="button button-primary button-large" onClick={startPayment}>Pay {formatZar(quote.customerTotalCents)}</button><button className="button button-secondary" onClick={()=>setStep("amount")}>Change amount</button></div></section>}
-    {step === "payment" && <section className="tip-flow"><span className="eyebrow">Secure payment</span><h1>Please wait…</h1><p className="lead">{runtimeMessage}</p></section>}
-    {step === "blocked" && <section className="tip-flow"><span className="eyebrow">Build safety gate</span><h1>Live payment remains disabled.</h1><p className="lead">{runtimeMessage}</p>{quote && <MoneyBreakdown pricing={quote} workerName={workerName}/>}<p className="prototype-warning">This is deliberate. SwiftTip will not fake payment success or enable real money before the new database, approved provider, signed webhooks, settlement evidence and reconciliation path are configured.</p><button className="button button-secondary" onClick={()=>setStep("confirm")}>Back to confirmation</button></section>}
+    <TipProgress step={step} />
+    <section className="worker-card polished-worker-card">
+      <div className="worker-photo">{profile.worker.photoUrl ? <img src={profile.worker.photoUrl} alt="" /> : initials}</div>
+      <div className="worker-meta"><span className="worker-card-label">You’re tipping</span><strong>{workerName}</strong><span>{profile.worker.role}</span><span>{profile.venue.name}{profile.venue.location ? ` · ${profile.venue.location}` : ""}</span></div>
+      {profile.verification?.verified && <span className="verified-chip">✓ Verified</span>}
+    </section>
+
+    {step === "amount" && <section className="tip-flow amount-step"><span className="eyebrow">Choose an amount</span><h1>How much would you like to give?</h1><p className="lead">Your gratuity is voluntary. You’ll review the complete total before payment.</p><div className="amount-grid polished-amount-grid">{presets.map(v => <button key={v} className={amount===v && !custom ? "amount-button selected" : "amount-button"} onClick={() => {setAmount(v);setCustom("");}}>{formatZar(v).replace(",00","").replace(".00","")}</button>)}<button className={custom ? "amount-button other selected" : "amount-button other"} onClick={() => setCustom(custom || String(amount/100))}>Other amount</button></div>{custom !== "" && <div className="custom-field polished-custom-field"><span>R</span><input aria-label="Custom tip amount" inputMode="decimal" value={custom} onChange={e=>setCustomAmount(e.target.value)} placeholder="0.00"/></div>}{quoteState === "loading" && <p className="fee-note quote-status">Updating total…</p>}{quoteState === "error" && <p className="prototype-warning" role="alert">This amount can’t be quoted right now. Check the amount and try again.</p>}{quote && quoteState === "ready" && <MoneyBreakdown pricing={quote} workerName={workerName}/>}<button className="button button-primary button-large sticky-primary" disabled={!quote || quoteState !== "ready"} onClick={()=>setStep("confirm")}>{quote ? `Review ${formatZar(quote.customerTotalCents)} total` : "Review total"}</button></section>}
+
+    {step === "confirm" && quote && <section className="tip-flow confirm-step"><span className="eyebrow">Review your tip</span><h1>Everything look right?</h1><div className="confirmation-recipient"><span className="worker-initial">{initials.slice(0,1)}</span><div><strong>{workerName}</strong><span>{profile.worker.role} · {profile.venue.name}</span></div></div><MoneyBreakdown pricing={quote} workerName={workerName}/><div className="confirmation-note"><span>✓</span><p>The amount below is the total you are authorising. Payment confirmation and worker settlement are recorded separately.</p></div><div className="stack-actions"><button className="button button-primary button-large" onClick={startPayment}>Continue to payment · {formatZar(quote.customerTotalCents)}</button><button className="button button-secondary" onClick={()=>setStep("amount")}>Change amount</button></div></section>}
+
+    {step === "payment" && <section className="tip-flow payment-wait"><span className="eyebrow">Payment</span><h1>Preparing the next step…</h1><p className="lead" aria-live="polite">{runtimeMessage}</p><div className="progress-pulse" aria-hidden="true" /></section>}
+
+    {step === "blocked" && <section className="tip-flow"><span className="eyebrow">Payments not active</span><h1>Live payment is still disabled.</h1><p className="lead">{runtimeMessage}</p>{quote && <MoneyBreakdown pricing={quote} workerName={workerName}/>}<p className="prototype-warning">This is deliberate. SwiftTip will not present a payment as successful until the approved provider, payment evidence, settlement and reconciliation controls are live.</p><button className="button button-secondary" onClick={()=>setStep("confirm")}>Back to review</button></section>}
   </>;
 }
 
+function TipProgress({ step }: { step: "amount" | "confirm" | "payment" | "blocked" }) {
+  const index = step === "amount" ? 1 : step === "confirm" ? 2 : 3;
+  return <div className="tip-progress" aria-label={`Tip progress, step ${index} of 3`}><span className={index >= 1 ? "active" : ""}>1</span><i className={index >= 2 ? "active" : ""}/><span className={index >= 2 ? "active" : ""}>2</span><i className={index >= 3 ? "active" : ""}/><span className={index >= 3 ? "active" : ""}>3</span><b>{index === 1 ? "Amount" : index === 2 ? "Review" : "Payment"}</b></div>;
+}
+
 function MoneyBreakdown({ pricing, workerName }: { pricing: Quote; workerName: string }) {
-  return <div className="money-breakdown"><div className="money-row"><span>Tip to {workerName}</span><strong>{formatZar(pricing.grossGratuityCents)}</strong></div><div className="money-row"><span>SwiftTip service fee</span><strong>{formatZar(pricing.customerFeeCents)}</strong></div><div className="money-row total"><span>Total to pay</span><strong>{formatZar(pricing.customerTotalCents)}</strong></div></div>;
+  return <div className="money-breakdown polished-money-breakdown"><div className="money-row"><span>Gratuity to {workerName}</span><strong>{formatZar(pricing.grossGratuityCents)}</strong></div><div className="money-row"><span>SwiftTip service fee</span><strong>{formatZar(pricing.customerFeeCents)}</strong></div><div className="money-row total"><span>Total to pay</span><strong>{formatZar(pricing.customerTotalCents)}</strong></div></div>;
 }
