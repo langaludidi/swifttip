@@ -7,11 +7,11 @@ import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 const uuid = z.string().uuid();
 const nameSchema = z.string().trim().min(3).max(160);
 
-function toIso(value: FormDataEntryValue | null) {
+function toIso(value: FormDataEntryValue | null): string | undefined {
   const raw = String(value ?? "").trim();
-  if (!raw) return null;
+  if (!raw) return undefined;
   const d = new Date(`${raw}T00:00:00+02:00`);
-  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
+  return Number.isFinite(d.getTime()) ? d.toISOString() : undefined;
 }
 
 export async function createDraftPilot(formData: FormData) {
