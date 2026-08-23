@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getServerConfig } from "@/lib/config";
+import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
 async function resolveWorkerCode(formData: FormData) {
   "use server";
@@ -7,7 +9,19 @@ async function resolveWorkerCode(formData: FormData) {
   if (!/^[A-Z0-9]{4,12}$/.test(code)) {
     redirect(`/code?error=${encodeURIComponent("Enter a valid SwiftTip worker code")}`);
   }
-  redirect(`/tip/${encodeURIComponent(code)}`);
+
+  const config = getServerConfig();
+  if (config.demoMode) {
+    if (code !== "T4K8P") redirect(`/code?error=${encodeURIComponent("Worker code not found in this preview")}`);
+    redirect("/tip/T4K8P");
+  }
+  if (!config.databaseConfigured) redirect("/unavailable");
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("resolve_short_code", { p_short_code: code });
+  const token = typeof data === "string" ? data : null;
+  if (error || !token) redirect(`/code?error=${encodeURIComponent("That SwiftTip worker code is unavailable")}`);
+  redirect(`/tip/${encodeURIComponent(token)}`);
 }
 
 export default async function CodePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
