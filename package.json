@@ -14,6 +14,7 @@
     "db-contracts:check": "node scripts/check-db-contracts.mjs",
     "schema-types:check": "node scripts/check-schema-type-freshness.mjs",
     "migration:safety": "node scripts/check-migration-safety.mjs",
+    "prepilot:runtime": "node scripts/check-prepilot-runtime.mjs",
     "provision:admin": "node scripts/provision-admin.mjs",
     "provision:worker": "node scripts/provision-worker.mjs",
     "recover:admin-mfa": "node scripts/recover-admin-mfa.mjs",
