@@ -14,6 +14,14 @@ type VenueWorker = {
   associated_at: string;
 };
 
+function initials(name: string) {
+  return name.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
+}
+
+function human(value: string) {
+  return value.replaceAll("_", " ").replace(/^./, char => char.toUpperCase());
+}
+
 export default async function VenueWorkerPage({ params, searchParams }: { params: Promise<{ associationId: string }>; searchParams: Promise<{ error?: string; updated?: string }> }) {
   const access = await requireVenueSurface();
   const { associationId } = await params;
@@ -34,41 +42,46 @@ export default async function VenueWorkerPage({ params, searchParams }: { params
 
   if (!worker) notFound();
   const canManage = access.mode === "live" && venueRole === "venue_admin";
+  const pending = worker.association_status === "pending";
 
   return (
-    <main className="flow-shell">
+    <main className="flow-shell customer-flow-page">
       <div className="flow-page">
-        <header className="simple-header"><Link className="back-link" href="/venue">←</Link><strong>Worker association</strong><span style={{ width: 42 }} /></header>
-        {access.mode === "demo" && <p className="prototype-warning">Preview only — Venue actions are disabled until the new MVP v3 database is connected.</p>}
-        {query.error && <p className="prototype-warning" role="alert">{query.error}</p>}
-        {query.updated && <p className="status-chip success" role="status">Association updated.</p>}
-        <section className="tip-flow">
-          <span className="eyebrow">Venue context only</span>
-          <h1>{worker.display_name}</h1>
-          <p className="lead">{worker.worker_role}</p>
-          <div className="dashboard-section" style={{ marginTop: 22 }}>
-            <div className="list-row"><strong>Venue association</strong><span className={worker.association_status === "verified" ? "status-chip success" : "status-chip warning"}>{worker.association_status}</span></div>
-            <div className="list-row"><strong>SwiftTip Worker status</strong><span className={worker.worker_status === "active" ? "status-chip success" : "status-chip warning"}>{worker.worker_status}</span></div>
-          </div>
-          <p className="fee-note">This screen intentionally does not expose identity documents, phone number, bank details, individual Tip totals or Settlement information.</p>
+        <header className="simple-header"><Link className="back-link" href="/venue">←</Link><strong>{pending ? "Confirm worker" : "Worker association"}</strong><span style={{ width: 42 }} /></header>
+        {access.mode === "demo" && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Preview decision</strong><p>Venue actions are disabled until the staging deployment is connected to the MVP v3 database.</p></div></div>}
+        {query.error && <div className="state-banner error" role="alert"><span className="state-icon">!</span><div className="state-copy"><strong>Action not completed</strong><p>{query.error}</p></div></div>}
+        {query.updated && <div className="state-banner success" role="status"><span className="state-icon">✓</span><div className="state-copy"><strong>Association updated</strong><p>The Worker relationship state has been saved.</p></div></div>}
 
-          {canManage && worker.association_status === "pending" && (
-            <div className="dashboard-section">
-              <h2>Confirm this Worker?</h2>
-              <p className="lead">Confirm only that this person currently works at this Venue in the role shown. This does not approve KYC or payment Settlement.</p>
-              <form action={confirmAssociation} className="stack-actions"><input type="hidden" name="associationId" value={worker.association_id}/><button className="button button-primary button-large" type="submit">Confirm Worker</button></form>
-              <form action={rejectAssociation} className="stack-actions" style={{ marginTop: 18 }}><input type="hidden" name="associationId" value={worker.association_id}/><label className="field-label" htmlFor="reject-reason">If you can't confirm this Worker</label><div className="custom-field"><input id="reject-reason" name="reason" placeholder="Reason" required minLength={3}/></div><button className="button button-secondary" type="submit">I can't confirm this Worker</button></form>
-            </div>
-          )}
-
-          {canManage && ["verified", "suspended"].includes(worker.association_status) && (
-            <div className="dashboard-section">
-              <h2>End Venue association</h2>
-              <p className="lead">This stops new SwiftTip Tips under this Venue. It does not globally suspend or delete the Worker, and historical transactions remain intact.</p>
-              <form action={endAssociation} className="stack-actions"><input type="hidden" name="associationId" value={worker.association_id}/><label className="field-label" htmlFor="end-reason">Reason</label><div className="custom-field"><input id="end-reason" name="reason" placeholder="Worker left Venue, role ended, etc." required minLength={3}/></div><button className="button button-secondary" type="submit">End Venue association</button></form>
-            </div>
-          )}
+        <section className="association-profile">
+          <span className="association-avatar">{initials(worker.display_name)}</span>
+          <div><span className="eyebrow">Worker requesting this Venue</span><h1>{worker.display_name}</h1><p>{worker.worker_role}</p></div>
         </section>
+
+        <section className="dashboard-section" style={{marginTop:16}}>
+          <div className="list-row"><div><strong>Venue relationship</strong><div className="meta">Whether this Worker currently works or lawfully provides the stated service here</div></div><span className={worker.association_status === "verified" ? "status-chip success" : "status-chip warning"}>{human(worker.association_status)}</span></div>
+          <div className="list-row"><div><strong>SwiftTip Worker profile</strong><div className="meta">Separate platform status</div></div><span className={worker.worker_status === "active" ? "status-chip success" : "status-chip warning"}>{human(worker.worker_status)}</span></div>
+        </section>
+
+        <div className="privacy-inline"><span>✓</span><p>This Venue screen does not expose identity documents, phone number, bank details, individual gratuity totals or Settlement information.</p></div>
+
+        {canManage && pending && (
+          <section className="decision-card">
+            <span className="eyebrow">One question only</span>
+            <h2>Does {worker.display_name} currently work here in this role?</h2>
+            <p>Confirming this relationship does not approve SwiftTip identity verification, Payment Provider KYC, banking details or Settlement.</p>
+            <form action={confirmAssociation} className="decision-primary"><input type="hidden" name="associationId" value={worker.association_id}/><button className="button button-primary button-large" style={{width:"100%"}} type="submit">Yes, confirm this Worker</button></form>
+            <form action={rejectAssociation} className="decision-secondary"><input type="hidden" name="associationId" value={worker.association_id}/><label className="field-label" htmlFor="reject-reason">If you cannot confirm the relationship</label><div className="custom-field"><input id="reject-reason" name="reason" placeholder="Brief reason" required minLength={3}/></div><button className="button button-secondary" style={{width:"100%"}} type="submit">No, I cannot confirm this Worker</button></form>
+          </section>
+        )}
+
+        {canManage && ["verified", "suspended"].includes(worker.association_status) && (
+          <section className="decision-card decision-danger">
+            <span className="eyebrow">Relationship change</span>
+            <h2>End this Venue association</h2>
+            <p>Use this only when the Worker no longer has the relevant relationship with this Venue. Historical transaction records remain intact and the Worker is not globally deleted.</p>
+            <form action={endAssociation} className="stack-actions" style={{marginTop:17}}><input type="hidden" name="associationId" value={worker.association_id}/><label className="field-label" htmlFor="end-reason">Reason</label><div className="custom-field"><input id="end-reason" name="reason" placeholder="Worker left Venue, role ended, etc." required minLength={3}/></div><button className="button button-secondary" type="submit">End Venue association</button></form>
+          </section>
+        )}
       </div>
     </main>
   );
