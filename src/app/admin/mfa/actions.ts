@@ -33,9 +33,20 @@ export async function startAdminMfaEnrollment(_previousState: EnrollmentState, _
   const { supabase, membership } = await requireActiveAdminForMfa();
   if (!membership.mfa_required) redirect("/admin");
 
-  const { data: existing } = await supabase.auth.mfa.listFactors();
-  const verified = existing?.totp?.find((factor) => factor.status === "verified");
+  const { data: existing, error: listError } = await supabase.auth.mfa.listFactors();
+  if (listError) return { error: "Authenticator status could not be checked. Please try again." };
+
+  const totpFactors = existing?.totp ?? [];
+  const verified = totpFactors.find((factor) => factor.status === "verified");
   if (verified) return { error: "An authenticator is already enrolled. Enter its current code below." };
+
+  // An interrupted enrollment can leave an unverified factor behind. Supabase only
+  // requires AAL2 to remove verified factors, so stale unverified setup can be safely
+  // cleared before issuing a fresh QR code.
+  for (const factor of totpFactors.filter((item) => item.status !== "verified")) {
+    const { error: unenrollError } = await supabase.auth.mfa.unenroll({ factorId: factor.id });
+    if (unenrollError) return { error: "A previous incomplete authenticator setup could not be cleared. Sign out and try again." };
+  }
 
   const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "SwiftTip Admin" });
   if (error || !data?.totp) return { error: "Authenticator setup could not be started. Please try again." };
