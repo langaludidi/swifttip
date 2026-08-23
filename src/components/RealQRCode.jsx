@@ -4,6 +4,8 @@ import { QRCodeCanvas } from 'qrcode.react';
 const RealQRCode = forwardRef(function RealQRCode({ value, size = 200 }, ref) {
   return (
     <div
+      role="img"
+      aria-label="SwiftTip tipping QR code"
       style={{
         width: size,
         height: size,
