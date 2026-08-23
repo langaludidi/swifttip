@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { AppMark } from "@/components/AppMark";
-import { BottomNav } from "@/components/BottomNav";
+import { WorkerBottomNav } from "@/components/WorkerBottomNav";
 import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
@@ -30,33 +30,39 @@ export default async function WorkerQrPage() {
   const proto = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   const tipUrl = context.public_token ? `${proto}://${host}/tip/${encodeURIComponent(context.public_token)}` : null;
   const qrDataUrl = tipUrl ? await QRCode.toDataURL(tipUrl, { width: 720, margin: 2, errorCorrectionLevel: "M" }) : null;
+  const active = Boolean(qrDataUrl && context.endpoint_status === "active");
 
   return (
     <main className="mobile-app-shell">
-      <div className="app-page">
-        <header className="topbar"><div className="brand-lockup"><AppMark size={38}/><strong>SwiftTip</strong></div><Link className="action-link" href="/worker">Done</Link></header>
-        {access.mode === "demo" && <p className="prototype-warning">Preview QR — the live QR is issued only after Worker activation.</p>}
-        <section className="dashboard-title" style={{ textAlign: "center" }}><span className="eyebrow">Your QR</span><h1>Let customers tip {context.display_name}.</h1><p className="lead">{context.worker_role ?? "Worker"}{context.venue_name ? ` · ${context.venue_name}` : ""}</p></section>
+      <div className="app-page worker-home-page">
+        <header className="topbar"><div className="brand-lockup"><AppMark size={38}/><div><strong>SwiftTip</strong><span className="brand-subline">Worker</span></div></div><Link className="compact-link" href="/worker">Done</Link></header>
+        {access.mode === "demo" && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Preview QR</strong><p>The live QR is issued only after Worker activation.</p></div></div>}
 
-        {qrDataUrl && context.endpoint_status === "active" ? (
-          <section className="dashboard-section" style={{ textAlign: "center" }}>
-            <div style={{ maxWidth: 320, margin: "0 auto", padding: 18, borderRadius: 28, background: "white", border: "1px solid #dce8e8" }}>
+        <section className="dashboard-title qr-page-title"><span className="eyebrow">Your tipping QR</span><h1>Make it easy to thank you.</h1><p className="lead">Show this screen or your printed SwiftTip QR to a customer.</p></section>
+
+        {active ? (
+          <section className="qr-id-card">
+            <div className="qr-code-frame">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrDataUrl} alt={`SwiftTip QR for ${context.display_name}`} style={{ width: "100%", height: "auto", display: "block" }} />
+              <img src={qrDataUrl!} alt={`SwiftTip QR for ${context.display_name}`} />
             </div>
-            <p style={{ marginTop: 16, fontWeight: 800, letterSpacing: ".08em" }}>SWIFTTIP CODE: {context.short_code ?? "—"}</p>
-            <p className="fee-note">The QR contains only the public SwiftTip tipping URL. It contains no banking, identity-document or Settlement information.</p>
+            <div className="qr-code-label">Worker code</div>
+            <div className="qr-short-code">{context.short_code ?? "—"}</div>
+            <div className="qr-person"><strong>{context.display_name}</strong><span>·</span><span>{context.worker_role ?? "Worker"}</span>{context.venue_name && <><span>·</span><span>{context.venue_name}</span></>}</div>
+
+            <div className="qr-safety-note"><span>✓</span><div><strong>Public tipping link only.</strong><br/>This QR does not contain your bank details, identity document or Settlement information.</div></div>
+
             <div className="stack-actions" style={{ marginTop: 18 }}>
-              <Link className="button button-primary button-large" href={tipUrl ?? "/worker"}>Preview customer view</Link>
-              <a className="button button-secondary" href={qrDataUrl} download={`SwiftTip-${context.display_name}-QR.png`}>Download QR</a>
+              <Link className="button button-primary button-large" href={tipUrl!}>Preview what customers see</Link>
+              <a className="button button-secondary" href={qrDataUrl!} download={`SwiftTip-${context.display_name}-QR.png`}>Save QR image</a>
             </div>
           </section>
         ) : (
-          <section className="dashboard-section"><div className="empty-state"><strong>Your QR is not active yet</strong><p>Complete the outstanding verification, Venue and Settlement-readiness steps first.</p><Link className="button button-primary" href="/worker/profile">Review profile</Link></div></section>
+          <section className="dashboard-section empty-state-polished"><span className="empty-icon">⌗</span><strong>Your QR is not active yet</strong><p>Finish the outstanding identity, Venue, Settlement-readiness and terms checks before customers can tip this profile.</p><Link className="button button-primary" href="/worker/onboarding">Continue activation</Link></section>
         )}
         <div className="nav-clearance"/>
       </div>
-      <BottomNav active="worker"/>
+      <WorkerBottomNav active="qr"/>
     </main>
   );
 }
