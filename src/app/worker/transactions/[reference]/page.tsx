@@ -67,35 +67,38 @@ export default async function WorkerTransactionDetailPage({ params }: { params: 
 
   if (!detail) notFound();
   const settledValue = detail.settlement_actual_cents ?? detail.settlement_expected_cents ?? detail.worker_net_cents;
+  const settled = detail.settlement_state === "succeeded";
+  const paymentReceived = detail.payment_state === "succeeded";
 
   return (
-    <main className="flow-shell">
+    <main className="flow-shell customer-flow-page">
       <div className="flow-page">
         <header className="simple-header"><Link className="back-link" href="/worker/transactions">←</Link><strong>Tip detail</strong><span style={{ width: 42 }} /></header>
-        {access.mode === "demo" && <p className="prototype-warning">Preview data only.</p>}
+        {access.mode === "demo" && <div className="state-banner warning"><span className="state-icon">i</span><div className="state-copy"><strong>Preview transaction</strong><p>This is example data only.</p></div></div>}
         <section className="tip-flow">
           <span className="eyebrow">{detail.swifttip_reference}</span>
-          <h1>{formatZar(Number(detail.gross_gratuity_cents))} tip</h1>
-          <p className="lead">{detail.venue_name}{detail.worker_role ? ` · ${detail.worker_role}` : ""}</p>
+          <h1>You receive {formatZar(Number(detail.worker_net_cents))}.</h1>
+          <p className="lead">From a {formatZar(Number(detail.gross_gratuity_cents))} gratuity at {detail.venue_name}{detail.worker_role ? ` · ${detail.worker_role}` : ""}.</p>
 
-          <div className="money-breakdown" style={{ marginTop: 24 }}>
-            <div className="money-row"><span>Gross tip</span><strong>{formatZar(Number(detail.gross_gratuity_cents))}</strong></div>
+          <div className="money-breakdown polished-money-breakdown" style={{ marginTop: 24 }}>
+            <div className="money-row"><span>Customer gratuity</span><strong>{formatZar(Number(detail.gross_gratuity_cents))}</strong></div>
             <div className="money-row"><span>SwiftTip success fee</span><strong>− {formatZar(Number(detail.worker_fee_cents))}</strong></div>
             <div className="money-row total"><span>Your amount</span><strong>{formatZar(Number(detail.worker_net_cents))}</strong></div>
           </div>
 
-          <div className="dashboard-section" style={{ marginTop: 22 }}>
-            <h2>Payment</h2>
-            <div className="list-row"><div><strong>{detail.payment_state === "succeeded" ? "Received" : "Processing"}</strong><div className="meta">{dateLabel(detail.payment_provider_completed_at ?? detail.completed_at)}</div></div><span className={detail.payment_state === "succeeded" ? "status-chip success" : "status-chip warning"}>{detail.payment_state ?? "pending"}</span></div>
-          </div>
+          <section className="dashboard-section">
+            <span className="eyebrow">1 · Customer payment</span>
+            <div className="list-row"><div><strong>{paymentReceived ? "Payment received" : "Payment processing"}</strong><div className="meta">{dateLabel(detail.payment_provider_completed_at ?? detail.completed_at)}</div></div><span className={paymentReceived ? "status-chip success" : "status-chip warning"}>{paymentReceived ? "Received" : "Processing"}</span></div>
+          </section>
 
-          <div className="dashboard-section">
-            <h2>Settlement</h2>
-            <div className="list-row"><div><strong>{settlementLabel(detail.settlement_state)}</strong><div className="meta">{detail.settlement_state === "succeeded" ? `${formatZar(Number(settledValue))} · ${dateLabel(detail.settlement_completed_at)}` : `Expected amount ${formatZar(Number(detail.worker_net_cents))}`}</div></div><span className={detail.settlement_state === "succeeded" ? "status-chip success" : "status-chip warning"}>{settlementLabel(detail.settlement_state)}</span></div>
-            {detail.settlement_provider_ref && <p className="fee-note">Settlement reference: {detail.settlement_provider_ref}</p>}
-          </div>
+          <section className="dashboard-section">
+            <span className="eyebrow">2 · Your Settlement</span>
+            <div className="list-row"><div><strong>{settlementLabel(detail.settlement_state)}</strong><div className="meta">{settled ? `${formatZar(Number(settledValue))} · ${dateLabel(detail.settlement_completed_at)}` : `Expected amount ${formatZar(Number(detail.worker_net_cents))}`}</div></div><span className={settled ? "status-chip success" : "status-chip warning"}>{settlementLabel(detail.settlement_state)}</span></div>
+            {detail.settlement_provider_ref && <div className="privacy-inline"><span>#</span><p>Settlement reference: <strong>{detail.settlement_provider_ref}</strong></p></div>}
+          </section>
 
-          <p className="fee-note">“Received” confirms the customer payment. “Settled” is shown only after authoritative provider Settlement evidence exists.</p>
+          <div className="privacy-inline"><span>i</span><p><strong>Received</strong> confirms the customer's payment. <strong>Settled</strong> is shown only after authoritative provider Settlement evidence exists.</p></div>
+          {!settled && <Link className="button button-secondary" href="/worker/support" style={{marginTop:16}}>Need help with this transaction?</Link>}
         </section>
       </div>
     </main>
