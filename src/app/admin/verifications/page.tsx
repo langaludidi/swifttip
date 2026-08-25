@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireAdminRole } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 
@@ -23,7 +24,8 @@ export default async function AdminVerificationsPage() {
 
   if (access.mode === "live") {
     const supabase = await createSupabaseServerClient();
-    const { data } = await supabase.rpc("admin_get_verification_queue", { p_limit: 100 });
+    const { data, error } = await supabase.rpc("admin_get_verification_queue", { p_limit: 100 });
+    if (error) redirect("/unavailable");
     queue = (data ?? []) as Verification[];
   }
 

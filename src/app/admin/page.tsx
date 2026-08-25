@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AppMark } from "@/components/AppMark";
 import { signOutAdmin } from "@/app/auth/actions";
 import { formatZar } from "@/lib/money";
@@ -16,19 +17,27 @@ function ControlTile({href,icon,title,meta}:{href:string;icon:string;title:strin
 
 export default async function AdminPage(){
   const access=await requireAdminSurface();
-  let dashboard=demoDashboard;
-  let transactions=demoTransactions;
+  let dashboard: Dashboard;
+  let transactions: Transaction[];
   const financialRole=["operations_admin","finance_admin","super_admin"].includes(access.role);
   const operationsRole=["operations_admin","super_admin"].includes(access.role);
   const supportRole=["operations_admin","super_admin"].includes(access.role);
   const verificationRole=["operations_admin","verification_admin","super_admin"].includes(access.role);
   const auditRole=["security_admin","super_admin"].includes(access.role);
 
-  if(access.mode==="live"){
+  if(access.mode==="demo"){
+    dashboard=demoDashboard;
+    transactions=demoTransactions;
+  }else{
     const supabase=await createSupabaseServerClient();
     const dashboardResult=(await supabase.rpc("admin_get_dashboard")) as unknown as {data:Dashboard[]|null;error:unknown};
-    if(dashboardResult.data?.[0])dashboard=dashboardResult.data[0];
-    if(financialRole){const txResult=await supabase.rpc("admin_get_recent_transactions",{p_limit:5});transactions=(txResult.data??[]) as Transaction[];}else transactions=[];
+    if(dashboardResult.error || !dashboardResult.data?.[0]) redirect("/unavailable");
+    dashboard=dashboardResult.data[0];
+    if(financialRole){
+      const txResult=await supabase.rpc("admin_get_recent_transactions",{p_limit:5});
+      if(txResult.error) redirect("/unavailable");
+      transactions=(txResult.data??[]) as Transaction[];
+    }else transactions=[];
   }
 
   const totalAttention=Number(dashboard.settlement_exceptions)+Number(dashboard.reconciliation_exceptions)+Number(dashboard.pending_verifications)+Number(dashboard.open_disputes)+Number(dashboard.refund_requests);

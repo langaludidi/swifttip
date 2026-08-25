@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { formatZar } from "@/lib/money";
 import { requireAdminRole } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
@@ -69,16 +70,22 @@ function yesNo(value: boolean) {
 
 export default async function AdminReadinessPage() {
   const access = await requireAdminRole(["operations_admin","finance_admin","super_admin"]);
-  let readiness = demoReadiness;
-  let pricing = demoPricing;
+  let readiness: Readiness;
+  let pricing: Pricing[];
 
-  if (access.mode === "live") {
+  if (access.mode === "demo") {
+    readiness = demoReadiness;
+    pricing = demoPricing;
+  } else {
     const supabase = await createSupabaseServerClient();
     const [readinessResult, pricingResult] = await Promise.all([
       (supabase.rpc as any)("admin_get_commercial_readiness"),
       supabase.rpc("admin_get_pricing_versions")
     ]);
-    readiness = ((readinessResult.data ?? []) as Readiness[])[0] ?? demoReadiness;
+    if (readinessResult.error || pricingResult.error) redirect("/unavailable");
+    const liveReadiness = ((readinessResult.data ?? []) as Readiness[])[0];
+    if (!liveReadiness) redirect("/unavailable");
+    readiness = liveReadiness;
     pricing = (pricingResult.data ?? []) as Pricing[];
   }
 

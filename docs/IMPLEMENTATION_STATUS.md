@@ -6,7 +6,7 @@ Canonical Supabase project: `bxtfcfuehqljedxwykfk`
 
 Greenfield branch: `mvp-v3-greenfield-build`
 
-Status evidence refreshed: **25 August 2026**. The completed source is synchronised to `mvp-v3-greenfield-build` at commit `3cfbcd83d8456bf7acc85d93219c028adf227ab1`.
+Status evidence refreshed: **25 August 2026**. The latest verified deployed source is `aefed44e2fec7a3ad232b9efa7330ecfbb0e7524`; the subsequent Admin hardening work remains subject to CI and Preview deployment verification.
 
 ## Executive position
 
@@ -125,6 +125,8 @@ Idempotent replay is evaluated before the kill-switch/velocity decision so an al
 
 Admin login uses email OTP with `shouldCreateUser:false`. Active Admin membership is required. MFA-required Admins must reach AAL2 through TOTP before privileged Admin RPCs succeed. Service-role-only Admin bootstrap and MFA-recovery audit controls exist.
 
+The application now refreshes cookie-backed Supabase sessions in Next.js middleware before protected Server Components read them. Live Admin dashboard and readiness reads fail closed to the unavailable surface if their canonical RPCs fail or return no readiness record; illustrative demo figures are never used as fallback data in live mode.
+
 ### Worker
 
 Worker login uses SMS OTP with `shouldCreateUser:false`. Worker Auth bootstrap is service-role only and does not create a Worker business record, approve verification, attach a Venue, create an endpoint or activate the Worker.
@@ -196,10 +198,11 @@ The greenfield branch remains unprotected, but the protection prerequisite is no
 
 ## Remaining controlled pre-pilot sequence
 
-1. Configure branch protection using the observed `CI / test` required-check context.
-2. When approved test people are available, provision controlled Admin/Worker/Venue test identities.
-3. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
-4. Resolve commercial pricing blockers through the controlled review workflow; approval must remain separate from activation.
+1. Enable Vercel Protection Bypass for Automation and verify the protected Preview `/api/health` contract.
+2. Configure branch protection using the observed `CI / test` required-check context.
+3. Complete the interactive Admin OTP/TOTP and Worker identity-review acceptance path with approved test people.
+4. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
+5. Resolve commercial pricing blockers through the controlled review workflow; approval must remain separate from activation.
 
 ## External gates that remain closed
 
