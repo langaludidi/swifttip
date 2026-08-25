@@ -16,6 +16,23 @@ export type TipPricing = {
   swifttipGrossRevenueCents: number;
 };
 
+export type DirectCostAssumptions = {
+  providerVariableBps: number;
+  providerFixedCents: number;
+  splitCostCents: number;
+  allocatedPayoutCostCents: number;
+  refundChargebackReserveBps: number;
+  supportReconciliationCostCents: number;
+};
+
+export type ContributionEstimate = {
+  providerVariableCostCents: number;
+  refundChargebackReserveCents: number;
+  totalDirectCostCents: number;
+  contributionCents: number;
+  contributionMarginBps: number | null;
+};
+
 export const WORKING_PRICING: PricingConfig = {
   workerFeeBps: 500,
   customerFixedFeeCents: 100,
@@ -50,6 +67,21 @@ export function calculateTipPricing(grossGratuityCents: number, config: PricingC
 export function contributionCents(pricing: TipPricing, providerDirectCostCents: number): number {
   if (!Number.isInteger(providerDirectCostCents) || providerDirectCostCents < 0) throw new Error("Provider cost must be a non-negative integer number of cents");
   return pricing.swifttipGrossRevenueCents - providerDirectCostCents;
+}
+
+export function estimateContribution(pricing: TipPricing, assumptions: DirectCostAssumptions): ContributionEstimate {
+  for (const value of Object.values(assumptions)) {
+    if (!Number.isInteger(value) || value < 0) throw new Error("Cost assumptions must be non-negative integers");
+  }
+  if (assumptions.providerVariableBps > 10_000 || assumptions.refundChargebackReserveBps > 10_000) {
+    throw new Error("Cost basis points cannot exceed 10000");
+  }
+  const providerVariableCostCents = percentageCents(pricing.customerTotalCents, assumptions.providerVariableBps);
+  const refundChargebackReserveCents = percentageCents(pricing.grossGratuityCents, assumptions.refundChargebackReserveBps);
+  const totalDirectCostCents = providerVariableCostCents + assumptions.providerFixedCents + assumptions.splitCostCents + assumptions.allocatedPayoutCostCents + refundChargebackReserveCents + assumptions.supportReconciliationCostCents;
+  const estimatedContributionCents = pricing.swifttipGrossRevenueCents - totalDirectCostCents;
+  const contributionMarginBps = pricing.swifttipGrossRevenueCents === 0 ? null : Math.round((estimatedContributionCents * 10_000) / pricing.swifttipGrossRevenueCents);
+  return { providerVariableCostCents, refundChargebackReserveCents, totalDirectCostCents, contributionCents: estimatedContributionCents, contributionMarginBps };
 }
 
 export function formatZar(cents: number): string {

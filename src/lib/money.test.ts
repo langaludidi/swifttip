@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateTipPricing, contributionCents, percentageCents, WORKING_PRICING } from "./money";
+import { calculateTipPricing, contributionCents, estimateContribution, percentageCents, WORKING_PRICING } from "./money";
 
 describe("SwiftTip money architecture", () => {
   it("uses deterministic half-up basis point rounding", () => {
@@ -32,6 +32,16 @@ describe("SwiftTip money architecture", () => {
   it("calculates contribution separately from gross revenue", () => {
     const p = calculateTipPricing(5000);
     expect(contributionCents(p, 290)).toBe(210);
+  });
+
+  it("estimates contribution from explicit provider and operating assumptions", () => {
+    const p = calculateTipPricing(5000);
+    expect(estimateContribution(p, {providerVariableBps:290,providerFixedCents:100,splitCostCents:25,allocatedPayoutCostCents:20,refundChargebackReserveBps:50,supportReconciliationCostCents:30})).toEqual({providerVariableCostCents:152,refundChargebackReserveCents:25,totalDirectCostCents:352,contributionCents:148,contributionMarginBps:2960});
+  });
+
+  it("rejects invalid contribution assumptions", () => {
+    const p = calculateTipPricing(5000);
+    expect(() => estimateContribution(p, {providerVariableBps:10001,providerFixedCents:0,splitCostCents:0,allocatedPayoutCostCents:0,refundChargebackReserveBps:0,supportReconciliationCostCents:0})).toThrow();
   });
 
   it("rejects amounts outside configured bounds", () => {
