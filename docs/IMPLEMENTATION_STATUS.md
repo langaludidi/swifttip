@@ -47,11 +47,11 @@ Customer payment return remains non-authoritative. Payment success and Worker Se
 
 Canonical migrations are applied through:
 
-`mvp_v3_0052_pricing_review_actor_indexes`
+`mvp_v3_0053_pricing_economics_assumptions`
 
-The repository contains numbered migrations `0001` through `0052`.
+The repository contains numbered migrations `0001` through `0053`.
 
-Migration `0051` adds a controlled pricing workflow (draft → under review → approved), role-restricted mutations, audit evidence, blocker enforcement and database guards that prohibit scheduling/activation without prior approval. Migration `0052` adds covering indexes for pricing review actors. Neither migration exposes pricing scheduling or activation.
+Migration `0051` adds a controlled pricing workflow (draft → under review → approved), role-restricted mutations, audit evidence, blocker enforcement and database guards that prohibit scheduling/activation without prior approval. Migration `0052` adds covering indexes for pricing review actors. Migration `0053` adds RLS-protected, audit-recorded provider-cost and operating-cost assumptions for deterministic contribution modelling. None exposes pricing scheduling or activation.
 
 The data/control model includes identity, Worker/Venue relationships, verification, private evidence storage, provider Settlement profiles, tipping endpoints, Pricing Versions, Terms/Privacy versions and acceptance evidence, Pilot cohorts, Tips, Payment Attempts, operative-success designation, Financial Allocations, Settlements, provider fees, Refunds, Disputes, reconciliation, support, Admin RBAC, audit, notifications and private runtime Tip-intake controls.
 
@@ -173,7 +173,7 @@ The repository now contains `package-lock.json` and CI installs dependencies wit
 - unit tests; and
 - Next.js production build.
 
-The complete local pipeline passes through migration `0052`: architecture invariants, 74 application RPC contracts, schema freshness, migration safety, TypeScript, 30 unit tests and the Next.js production build. GitHub Actions CI run `32838517355` passed on exact commit `3cfbcd83d8456bf7acc85d93219c028adf227ab1`; the observed required-check context is `CI / test`. Production deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` is READY and includes the controlled pricing administration routes.
+The application typecheck and 32 unit tests pass through migration `0053`; the Admin Pricing surface includes persisted economics assumptions and scenario contribution modelling. The observed required-check context remains `CI / test`. Production deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` is READY but predates migration `0053` and the persisted economics UI.
 
 ## Runtime environment gate
 

@@ -8,7 +8,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 |---|---|---|---|
 | PP-001 | Branch head identified | exact Git SHA | PASS — `mvp-v3-greenfield-build` synchronised at `3cfbcd83d8456bf7acc85d93219c028adf227ab1` |
 | PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — GitHub Actions run `32838517355`; exact-head `CI / test` succeeded through migration `0052`; 74 RPC contracts and 30 tests |
-| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0052` | PASS |
+| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0053` | PASS |
 | PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — verified on deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` |
 | PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — verified on deployed production alias; provider remains unconfigured |
 | PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS previously under former duplicate 013 filename; rerun after any DB change |
@@ -54,7 +54,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-072 | Venue Terms final | reviewed, approved, separately published | LEGAL BLOCKER |
 | PP-073 | Customer Terms final | reviewed, approved, separately published | LEGAL BLOCKER |
 | PP-074 | Privacy Notice final | reviewed, approved, separately published | LEGAL BLOCKER |
-| PP-075 | Pricing final | approved active/effective Pricing Version | CONTROLLED DRAFT — review workflow implemented; 8 blockers open; no approval, effective date or activation |
+| PP-075 | Pricing final | approved active/effective Pricing Version | CONTROLLED DRAFT — review workflow plus persisted economics assumptions implemented; 8 blockers open; no approval, effective date or activation |
 | PP-080 | Test cleanup complete | memberships/associations/endpoints/storage/Auth closed under constitution | NOT APPLICABLE YET |
 
 ## Evidence record template

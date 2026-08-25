@@ -96,3 +96,25 @@ export async function approvePricing(formData:FormData){
   if(error)redirect(route(id.data,`error=${encodeURIComponent(error.message)}`));
   redirect(route(id.data,"approved=1"));
 }
+
+export async function savePricingEconomics(formData:FormData){
+  const id=uuid.safeParse(String(formData.get("pricingVersionId")??""));
+  const providerVariable=bps.safeParse(integer(formData.get("providerVariableBps")));
+  const providerFixed=nonNegative.safeParse(integer(formData.get("providerFixedCents")));
+  const split=nonNegative.safeParse(integer(formData.get("splitCostCents")));
+  const payout=nonNegative.safeParse(integer(formData.get("allocatedPayoutCostCents")));
+  const reserve=bps.safeParse(integer(formData.get("refundChargebackReserveBps")));
+  const support=nonNegative.safeParse(integer(formData.get("supportReconciliationCostCents")));
+  if(!id.success||!providerVariable.success||!providerFixed.success||!split.success||!payout.success||!reserve.success||!support.success){
+    redirect("/admin/pricing?error=Invalid%20economics%20assumptions");
+  }
+  const supabase=await createSupabaseServerClient();
+  const {error}=await supabase.rpc("admin_save_pricing_economics",{
+    p_pricing_version_id:id.data,p_provider_variable_bps:providerVariable.data,p_provider_fixed_cents:providerFixed.data,
+    p_split_cost_cents:split.data,p_allocated_payout_cost_cents:payout.data,p_refund_chargeback_reserve_bps:reserve.data,
+    p_support_reconciliation_cost_cents:support.data,p_evidence_reference:String(formData.get("evidenceReference")??"").trim(),
+    p_assumption_notes:String(formData.get("assumptionNotes")??"").trim()
+  });
+  if(error)redirect(route(id.data,`error=${encodeURIComponent(error.message)}`));
+  redirect(route(id.data,"economics=1"));
+}

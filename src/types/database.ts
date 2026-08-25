@@ -1,5 +1,5 @@
 // AUTO-GENERATED FROM CANONICAL SUPABASE PROJECT bxtfcfuehqljedxwykfk.
-// Generated after migration mvp_v3_0052_pricing_review_actor_indexes on 2026-08-24.
+// Generated after migration mvp_v3_0053_pricing_economics_assumptions on 2026-08-25.
 // Do not hand-edit. Regenerate from the canonical project after every migration.
 
 export type Json =
@@ -357,6 +357,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_economics_assumptions: {
+        Row: {
+          allocated_payout_cost_cents: number
+          assumption_notes: string | null
+          evidence_reference: string | null
+          pricing_version_id: string
+          provider_fixed_cents: number
+          provider_variable_bps: number
+          refund_chargeback_reserve_bps: number
+          split_cost_cents: number
+          support_reconciliation_cost_cents: number
+          updated_at: string
+          updated_by_user_id: string | null
+        }
+        Insert: {
+          allocated_payout_cost_cents?: number
+          assumption_notes?: string | null
+          evidence_reference?: string | null
+          pricing_version_id: string
+          provider_fixed_cents?: number
+          provider_variable_bps?: number
+          refund_chargeback_reserve_bps?: number
+          split_cost_cents?: number
+          support_reconciliation_cost_cents?: number
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Update: {
+          allocated_payout_cost_cents?: number
+          assumption_notes?: string | null
+          evidence_reference?: string | null
+          pricing_version_id?: string
+          provider_fixed_cents?: number
+          provider_variable_bps?: number
+          refund_chargeback_reserve_bps?: number
+          split_cost_cents?: number
+          support_reconciliation_cost_cents?: number
+          updated_at?: string
+          updated_by_user_id?: string | null
+        }
+        Relationships: [{foreignKeyName:"pricing_economics_assumptions_pricing_version_id_fkey";columns:["pricing_version_id"];isOneToOne:true;referencedRelation:"pricing_versions";referencedColumns:["id"]}]
       }
       pricing_versions: {
         Row: {
@@ -1449,6 +1491,35 @@ export type Database = {
           workers_settlement_ready: number
         }[]
       }
+      admin_get_pricing_economics: {
+        Args: { p_pricing_version_id: string }
+        Returns: {
+          allocated_payout_cost_cents: number
+          assumption_notes: string | null
+          evidence_reference: string | null
+          pricing_version_id: string
+          provider_fixed_cents: number
+          provider_variable_bps: number
+          refund_chargeback_reserve_bps: number
+          split_cost_cents: number
+          support_reconciliation_cost_cents: number
+          updated_at: string
+        }[]
+      }
+      admin_save_pricing_economics: {
+        Args: {
+          p_allocated_payout_cost_cents: number
+          p_assumption_notes: string
+          p_evidence_reference: string
+          p_pricing_version_id: string
+          p_provider_fixed_cents: number
+          p_provider_variable_bps: number
+          p_refund_chargeback_reserve_bps: number
+          p_split_cost_cents: number
+          p_support_reconciliation_cost_cents: number
+        }
+        Returns: undefined
+      }
       admin_get_dashboard: {
         Args: never
         Returns: {
@@ -2476,4 +2547,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
