@@ -76,7 +76,10 @@ export async function uploadVerificationEvidence(formData: FormData) {
 
   if (registerError) {
     await bucket.remove([path]);
-    redirect("/worker/verification?error=We%20could%20not%20register%20that%20evidence.%20Please%20try%20again");
+    const message = String(registerError.message ?? "").includes("already registered for this verification")
+      ? "That exact file is already attached. Choose a different document if another file is needed"
+      : "We could not register that evidence. Please try again";
+    redirect(`/worker/verification?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath("/worker/verification");
