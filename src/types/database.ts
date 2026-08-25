@@ -1,5 +1,5 @@
 // AUTO-GENERATED FROM CANONICAL SUPABASE PROJECT bxtfcfuehqljedxwykfk.
-// Generated after migration mvp_v3_0054_verification_document_fingerprint_deduplication on 2026-08-25.
+// Generated after migration mvp_v3_0055_admin_bootstrap_ambiguity_fix on 2026-08-25.
 // Do not hand-edit. Regenerate from the canonical project after every migration.
 
 export type Json =
