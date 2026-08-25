@@ -16,14 +16,23 @@ export async function decideVerification(formData: FormData) {
   const verificationId = verificationIdSchema.safeParse(String(formData.get("verificationId") ?? ""));
   const decision = decisionSchema.safeParse(String(formData.get("decision") ?? ""));
   const reason = String(formData.get("reason") ?? "").trim();
+  const documentMatches = formData.get("documentMatches") === "yes";
+  const selfieMatches = formData.get("selfieMatches") === "yes";
+  const duplicateClear = formData.get("duplicateClear") === "yes";
   if (!verificationId.success || !decision.success) redirect("/admin/verifications?error=Invalid%20verification%20decision");
   if (decision.data !== "approve" && reason.length < 3) redirect(`/admin/verifications/${verificationId.data}?error=${encodeURIComponent("Add a clear reason for this decision")}`);
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.rpc("admin_decide_worker_verification", {
+  if (decision.data === "approve" && !(documentMatches && selfieMatches && duplicateClear)) {
+    redirect(`/admin/verifications/${verificationId.data}?error=${encodeURIComponent("Complete all Phase 1 reviewer confirmations before approval")}`);
+  }
+  const { error } = await (supabase.rpc as any)("admin_decide_worker_identity_verification", {
     p_verification_id: verificationId.data,
     p_decision: decision.data,
-    p_reason: reason || undefined
+    p_reason: reason || undefined,
+    p_document_matches: documentMatches,
+    p_selfie_matches: selfieMatches,
+    p_duplicate_clear: duplicateClear
   });
   if (error) redirect(`/admin/verifications/${verificationId.data}?error=${encodeURIComponent("The verification decision could not be recorded")}`);
 

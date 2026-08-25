@@ -1,6 +1,6 @@
 // AUTO-GENERATED FROM CANONICAL SUPABASE PROJECT bxtfcfuehqljedxwykfk.
-// Generated after migration mvp_v3_0047_admin_mfa_recovery_audit on 2026-08-23.
-// Do not hand-edit application contracts into this file; regenerate from Supabase after schema changes.
+// Generated after migration mvp_v3_0052_pricing_review_actor_indexes on 2026-08-24.
+// Do not hand-edit. Regenerate from the canonical project after every migration.
 
 export type Json =
   | string
@@ -360,7 +360,9 @@ export type Database = {
       }
       pricing_versions: {
         Row: {
+          approved_at: string | null
           approved_by: string | null
+          commercial_blockers: Json
           created_at: string
           created_by: string | null
           currency: string
@@ -374,11 +376,20 @@ export type Database = {
           maximum_gratuity_cents: number
           minimum_gratuity_cents: number
           pricing_status: string
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          submitted_by_user_id: string | null
+          submitted_for_review_at: string | null
+          updated_at: string
           version_code: string
           worker_fee_bps: number
         }
         Insert: {
+          approved_at?: string | null
           approved_by?: string | null
+          commercial_blockers?: Json
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -392,11 +403,20 @@ export type Database = {
           maximum_gratuity_cents: number
           minimum_gratuity_cents: number
           pricing_status?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          submitted_by_user_id?: string | null
+          submitted_for_review_at?: string | null
+          updated_at?: string
           version_code: string
           worker_fee_bps: number
         }
         Update: {
+          approved_at?: string | null
           approved_by?: string | null
+          commercial_blockers?: Json
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -410,6 +430,13 @@ export type Database = {
           maximum_gratuity_cents?: number
           minimum_gratuity_cents?: number
           pricing_status?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          submitted_by_user_id?: string | null
+          submitted_for_review_at?: string | null
+          updated_at?: string
           version_code?: string
           worker_fee_bps?: number
         }
@@ -1340,6 +1367,10 @@ export type Database = {
         Args: { p_reason: string; p_terms_version_id: string }
         Returns: undefined
       }
+      admin_approve_pricing: {
+        Args: { p_pricing_version_id: string; p_reason: string }
+        Returns: undefined
+      }
       admin_approve_venue: { Args: { p_venue_id: string }; Returns: undefined }
       admin_create_draft_pilot: {
         Args: {
@@ -1361,6 +1392,17 @@ export type Database = {
           p_venue_type: string
         }
         Returns: string
+      }
+      admin_decide_worker_identity_verification: {
+        Args: {
+          p_decision: string
+          p_document_matches?: boolean
+          p_duplicate_clear?: boolean
+          p_reason?: string
+          p_selfie_matches?: boolean
+          p_verification_id: string
+        }
+        Returns: undefined
       }
       admin_decide_worker_verification: {
         Args: {
@@ -1478,6 +1520,11 @@ export type Database = {
           review_notes: string
           review_status: string
           reviewed_at: string
+          source_blob_sha: string
+          source_bytes: number
+          source_path: string
+          source_repository: string
+          source_synced_at: string
           submitted_for_review_at: string
           terms_type: string
           terms_version_id: string
@@ -1544,9 +1591,11 @@ export type Database = {
           transactions_per_active_worker: number
         }[]
       }
-      admin_get_pricing_versions: {
-        Args: never
+      admin_get_pricing_version: {
+        Args: { p_pricing_version_id: string }
         Returns: {
+          approved_at: string
+          commercial_blockers: Json
           created_at: string
           currency: string
           customer_fee_bps: number
@@ -1559,6 +1608,36 @@ export type Database = {
           minimum_gratuity_cents: number
           pricing_id: string
           pricing_status: string
+          review_notes: string
+          review_status: string
+          reviewed_at: string
+          submitted_for_review_at: string
+          updated_at: string
+          version_code: string
+          worker_fee_bps: number
+        }[]
+      }
+      admin_get_pricing_versions: {
+        Args: never
+        Returns: {
+          approved_at: string
+          blocker_count: number
+          created_at: string
+          currency: string
+          customer_fee_bps: number
+          customer_fee_cap_cents: number
+          customer_fixed_fee_cents: number
+          effective_from: string
+          effective_until: string
+          high_value_threshold_cents: number
+          maximum_gratuity_cents: number
+          minimum_gratuity_cents: number
+          pricing_id: string
+          pricing_status: string
+          review_status: string
+          reviewed_at: string
+          submitted_for_review_at: string
+          updated_at: string
           version_code: string
           worker_fee_bps: number
         }[]
@@ -1702,6 +1781,55 @@ export type Database = {
           worker_role: string
         }[]
       }
+      admin_get_venue_detail: {
+        Args: { p_venue_id: string }
+        Returns: {
+          active_member_count: number
+          approved_at: string
+          branch_name: string
+          city: string
+          created_at: string
+          invited_member_count: number
+          legal_name: string
+          pending_worker_count: number
+          province: string
+          public_location_label: string
+          trading_name: string
+          venue_id: string
+          venue_status: string
+          venue_terms_published: boolean
+          venue_terms_version_code: string
+          venue_type: string
+          verified_worker_count: number
+        }[]
+      }
+      admin_get_venue_members: {
+        Args: { p_venue_id: string }
+        Returns: {
+          accepted_at: string
+          current_terms_accepted: boolean
+          invited_at: string
+          member_display_name: string
+          member_email: string
+          membership_id: string
+          membership_status: string
+          revoked_at: string
+          venue_role: string
+        }[]
+      }
+      admin_get_venue_worker_associations: {
+        Args: { p_venue_id: string }
+        Returns: {
+          association_id: string
+          association_status: string
+          confirmed_at: string
+          ended_at: string
+          requested_at: string
+          worker_display_name: string
+          worker_role: string
+          worker_status: string
+        }[]
+      }
       admin_get_venues: {
         Args: { p_status?: string }
         Returns: {
@@ -1725,10 +1853,15 @@ export type Database = {
           document_id: string
           document_type: string
           file_size_bytes: number
+          identity_consented_at: string
+          identity_document_type: string
+          identity_number_last4: string
           legal_first_name: string
           legal_last_name: string
           mime_type: string
           reviewed_at: string
+          selfie_capture_method: string
+          selfie_captured_at: string
           storage_object_available: boolean
           storage_path: string
           submitted_at: string
@@ -1768,6 +1901,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_record_pricing_review: {
+        Args: {
+          p_commercial_blockers: Json
+          p_pricing_version_id: string
+          p_review_notes: string
+        }
+        Returns: undefined
+      }
       admin_remove_pilot_venue: {
         Args: { p_pilot_cohort_id: string; p_venue_id: string }
         Returns: undefined
@@ -1776,8 +1917,20 @@ export type Database = {
         Args: { p_reason: string; p_terms_version_id: string }
         Returns: undefined
       }
+      admin_return_pricing_to_draft: {
+        Args: { p_pricing_version_id: string; p_reason: string }
+        Returns: undefined
+      }
+      admin_revoke_venue_membership: {
+        Args: { p_membership_id: string; p_reason: string }
+        Returns: undefined
+      }
       admin_submit_legal_document_for_review: {
         Args: { p_reason?: string; p_terms_version_id: string }
+        Returns: undefined
+      }
+      admin_submit_pricing_for_review: {
+        Args: { p_pricing_version_id: string; p_reason?: string }
         Returns: undefined
       }
       admin_update_legal_draft: {
@@ -1790,8 +1943,27 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_update_pricing_draft: {
+        Args: {
+          p_commercial_blockers: Json
+          p_customer_fee_bps: number
+          p_customer_fee_cap_cents: number
+          p_customer_fixed_fee_cents: number
+          p_high_value_threshold_cents: number
+          p_maximum_gratuity_cents: number
+          p_minimum_gratuity_cents: number
+          p_pricing_version_id: string
+          p_review_notes?: string
+          p_worker_fee_bps: number
+        }
+        Returns: undefined
+      }
       admin_update_support_case: {
         Args: { p_case_id: string; p_reason?: string; p_status: string }
+        Returns: undefined
+      }
+      attest_worker_live_selfie: {
+        Args: { p_capture_method: string; p_verification_id: string }
         Returns: undefined
       }
       auth_abuse_admit: {
@@ -1967,6 +2139,18 @@ export type Database = {
           worker_status: string
         }[]
       }
+      get_worker_identity_claim: {
+        Args: never
+        Returns: {
+          consent_version: string
+          consented_at: string
+          document_type: string
+          identity_number_last4: string
+          selfie_capture_attested: boolean
+          selfie_capture_method: string
+          selfie_captured_at: string
+        }[]
+      }
       get_worker_onboarding_state: {
         Args: never
         Returns: {
@@ -2111,6 +2295,16 @@ export type Database = {
         Returns: string
       }
       resolve_short_code: { Args: { p_short_code: string }; Returns: string }
+      save_worker_identity_claim: {
+        Args: {
+          p_consent_version: string
+          p_document_type: string
+          p_identity_number: string
+          p_legal_first_name: string
+          p_legal_last_name: string
+        }
+        Returns: undefined
+      }
       session_access_allowed: { Args: { p_surface: string }; Returns: boolean }
       start_worker_onboarding: {
         Args: {
@@ -2282,3 +2476,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

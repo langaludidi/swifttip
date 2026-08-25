@@ -6,13 +6,13 @@ Canonical Supabase project: `bxtfcfuehqljedxwykfk`
 
 Greenfield branch: `mvp-v3-greenfield-build`
 
-Current branch head at this status update: `31d7a7b87aec5eff22e4754dddeb3fda1e7698ca`.
+Status evidence refreshed: **24 August 2026**. The current workspace is not a Git checkout, so a new Git commit SHA cannot be claimed until the completed source is synchronised to `mvp-v3-greenfield-build`.
 
 ## Executive position
 
 The MVP v3 control architecture, canonical database, core Customer/Worker/Venue/Admin surfaces and pre-pilot operating controls are substantially built. SwiftTip remains deliberately closed to public Tip intake and real money.
 
-The current release decision is **NOT READY FOR CONTROLLED IDENTITIES** until the current greenfield head has a trusted successful build and a greenfield Preview `/api/health` response proves that Supabase configuration comes from explicit Vercel Preview environment variables.
+The deployed closed-state build is technically ready for controlled identity testing. Execution is deferred until approved test people are available; this does not block continued work on independent commercial, legal and operating controls.
 
 ## Closed commercial baseline
 
@@ -39,7 +39,7 @@ Implemented application surfaces include:
 - Customer home, QR scan, manual code entry, Worker profile, Tip quote, Tip creation contract, anonymous receipt/status and provider-return boundary.
 - Worker SMS OTP, onboarding, verification evidence, Venue association, profile, QR, Tip history, support and Settlement-state views.
 - Venue email OTP, controlled invitation/onboarding, Worker association confirmation and aggregate Venue operating views.
-- Admin email OTP, membership enforcement, TOTP/AAL2, Venues, verification, legal review, draft Pilot setup, transactions, Settlement exceptions, Refunds, Disputes, support, audit and readiness.
+- Admin email OTP, membership enforcement, TOTP/AAL2, Venues, verification, legal review, pricing governance, draft Pilot setup, transactions, Settlement exceptions, Refunds, Disputes, support, audit and readiness.
 
 Customer payment return remains non-authoritative. Payment success and Worker Settlement are separate records and states.
 
@@ -47,9 +47,11 @@ Customer payment return remains non-authoritative. Payment success and Worker Se
 
 Canonical migrations are applied through:
 
-`mvp_v3_0047_admin_mfa_recovery_audit`
+`mvp_v3_0052_pricing_review_actor_indexes`
 
-The repository contains numbered migrations `0001` through `0047`.
+The repository contains numbered migrations `0001` through `0052`.
+
+Migration `0051` adds a controlled pricing workflow (draft → under review → approved), role-restricted mutations, audit evidence, blocker enforcement and database guards that prohibit scheduling/activation without prior approval. Migration `0052` adds covering indexes for pricing review actors. Neither migration exposes pricing scheduling or activation.
 
 The data/control model includes identity, Worker/Venue relationships, verification, private evidence storage, provider Settlement profiles, tipping endpoints, Pricing Versions, Terms/Privacy versions and acceptance evidence, Pilot cohorts, Tips, Payment Attempts, operative-success designation, Financial Allocations, Settlements, provider fees, Refunds, Disputes, reconciliation, support, Admin RBAC, audit, notifications and private runtime Tip-intake controls.
 
@@ -153,6 +155,7 @@ The repository now uses a single ordered smoke-suite sequence:
 16. `016_admin_mfa_recovery_controls.sql`
 17. `017_session_age_behaviour.sql`
 18. `018_pre_pilot_control_plane.sql`
+19. `019_pricing_review_workflow.sql`
 
 `018_pre_pilot_control_plane.sql` is a filename/sequence correction of the already-executed non-mutating pre-pilot control-plane gate formerly named `013_pre_pilot_control_plane.sql`; the control itself is unchanged apart from its PASS label.
 
@@ -170,9 +173,7 @@ The repository now contains `package-lock.json` and CI installs dependencies wit
 - unit tests; and
 - Next.js production build.
 
-A fresh Vercel build of greenfield commit `347229016c5ed337eaa9ac438ec260800e13e69f` reached TypeScript validation and exposed a remaining optional Venue-status argument mismatch. That mismatch was fixed in `31d7a7b87aec5eff22e4754dddeb3fda1e7698ca`.
-
-Vercel then rate-limited the next build before it ran. Therefore the current branch head is **not yet build-proven**. A stale successful Preview is not release evidence for the current head.
+The complete local pipeline passes through migration `0052`: architecture invariants, 74 application RPC contracts, schema freshness, migration safety, TypeScript, 30 unit tests and the Next.js production build. Production deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` is READY and includes the controlled pricing administration routes.
 
 ## Runtime environment gate
 
@@ -187,9 +188,7 @@ The staging health contract requires:
 - `paymentsEnabled=false`; and
 - `liveMoneyReady=false`.
 
-The user has changed/reviewed Vercel variables, but the current greenfield head has not yet reached a fresh READY Preview from which this can be verified. Earlier evidence showed `staging_fallback`; that earlier result must not be treated as the current state.
-
-Controlled identity testing remains gated on a current-head successful build plus current-head health evidence showing `supabaseConfigSource=environment`.
+The production alias health response was verified on 24 August 2026 with `supabaseConfigSource=environment`, database configuration present, provider configuration absent, payments disabled and live-money readiness false.
 
 ## Branch protection gate
 
@@ -197,12 +196,11 @@ The greenfield branch is currently unprotected. Do not enable required status ch
 
 ## Remaining controlled pre-pilot sequence
 
-1. Obtain one trusted current-head CI/build result.
-2. Obtain a READY greenfield Preview.
-3. Run `npm run prepilot:runtime -- https://<greenfield-preview>` and require PASS.
-4. Re-run `018_pre_pilot_control_plane.sql` if the canonical database has changed since its last PASS.
-5. Only then approve and provision controlled Admin/Worker/Venue test identities.
-6. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
+1. Synchronise the completed workspace to the controlled GitHub branch and capture the exact commit SHA.
+2. Run the repository CI on that exact commit and make the observed check name eligible for branch protection.
+3. When approved test people are available, provision controlled Admin/Worker/Venue test identities.
+4. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
+5. Resolve commercial pricing blockers through the controlled review workflow; approval must remain separate from activation.
 
 ## External gates that remain closed
 
@@ -212,6 +210,6 @@ Fine-grained edge/server anti-abuse remains a pre-live requirement for public re
 
 ## Production separation
 
-The live Production deployment currently belongs to the historical legacy branch `claude/nice-bardeen-we0hfg`. It must not be treated as evidence that MVP v3 is live or approved.
+The `swifttip.vercel.app` alias now serves the manually deployed MVP v3 closed-state build. Its runtime environment remains `staging`, public Tip intake is disabled, no provider is configured and live money is not ready. A Vercel production target is deployment topology, not commercial authorisation.
 
-MVP v3 remains isolated on `mvp-v3-greenfield-build`. No merge to, replacement of, or Production promotion from the legacy/default line is authorised by this status document.
+GitHub source synchronisation to `mvp-v3-greenfield-build` remains outstanding because this workspace is not a Git checkout. Do not claim branch/commit parity until that sync is completed and verified.

@@ -54,6 +54,7 @@ export default async function AdminPage(){
         {supportRole&&<ControlTile href="/admin/support" icon="?" title="Support cases" meta="Operational triage and case status"/>}
         {financialRole&&<ControlTile href="/admin/settlements" icon="S" title="Settlement exceptions" meta={`${Number(dashboard.settlement_exceptions)} requiring review`}/>} 
         {financialRole&&<ControlTile href="/admin/transactions" icon="R" title="Transactions" meta="Canonical financial traceability"/>}
+        {financialRole&&<ControlTile href="/admin/pricing" icon="%" title="Pricing governance" meta="Draft, formal review and approval — no activation"/>}
         {financialRole&&<ControlTile href="/admin/refunds" icon="↺" title="Refunds" meta={`${Number(dashboard.refund_requests)} requiring or awaiting processing`}/>} 
         {financialRole&&<ControlTile href="/admin/disputes" icon="!" title="Disputes" meta={`${Number(dashboard.open_disputes)} open or evidence-stage cases`}/>} 
         {operationsRole&&<ControlTile href="/admin/legal" icon="§" title="Legal register" meta="Draft and review; publication is separate"/>}

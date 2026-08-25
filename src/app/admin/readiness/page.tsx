@@ -28,6 +28,8 @@ type Pricing = {
   pricing_id: string;
   version_code: string;
   pricing_status: string;
+  review_status: string;
+  blocker_count: number;
   effective_from: string | null;
   worker_fee_bps: number;
   customer_fixed_fee_cents: number;
@@ -59,7 +61,7 @@ const demoReadiness: Readiness = {
   max_tip_intents_per_endpoint_15m: 600
 };
 
-const demoPricing: Pricing[] = [{ pricing_id:"demo", version_code:"v3-working-001", pricing_status:"draft", effective_from:null, worker_fee_bps:500, customer_fixed_fee_cents:100, customer_fee_bps:300, customer_fee_cap_cents:500, minimum_gratuity_cents:500, maximum_gratuity_cents:50000, high_value_threshold_cents:20000 }];
+const demoPricing: Pricing[] = [{ pricing_id:"demo", version_code:"v3-working-001", pricing_status:"draft", review_status:"draft", blocker_count:8, effective_from:null, worker_fee_bps:500, customer_fixed_fee_cents:100, customer_fee_bps:300, customer_fee_cap_cents:500, minimum_gratuity_cents:500, maximum_gratuity_cents:50000, high_value_threshold_cents:20000 }];
 
 function yesNo(value: boolean) {
   return <span className={value ? "status-chip success" : "status-chip warning"}>{value ? "Published & effective" : "Not published"}</span>;
@@ -97,7 +99,7 @@ export default async function AdminReadinessPage() {
 
     <section className="dashboard-section"><h2>Worker activation</h2><div className="list-row"><div><strong>Awaiting activation</strong><div className="meta">Draft Worker profiles</div></div><strong>{Number(readiness.workers_awaiting_activation)}</strong></div><div className="list-row"><div><strong>Settlement ready</strong><div className="meta">Provider-confirmed settlement readiness</div></div><strong>{Number(readiness.workers_settlement_ready)}</strong></div></section>
 
-    <section className="dashboard-section"><div className="section-heading"><h2>Pricing versions</h2><span className="status-chip warning">Read only</span></div>{pricing.length ? pricing.map(p => <div key={p.pricing_id} className="queue-row"><div><strong>{p.version_code}</strong><div className="meta">Worker {Number(p.worker_fee_bps)/100}% · Customer {formatZar(Number(p.customer_fixed_fee_cents))} + {Number(p.customer_fee_bps)/100}%{p.customer_fee_cap_cents != null ? ` capped at ${formatZar(Number(p.customer_fee_cap_cents))}` : ""}</div><div className="meta">Tip range {formatZar(Number(p.minimum_gratuity_cents))} – {formatZar(Number(p.maximum_gratuity_cents))} · High-value check from {formatZar(Number(p.high_value_threshold_cents))}</div></div><span className={p.pricing_status === "active" ? "status-chip success" : "status-chip warning"}>{p.pricing_status}</span></div>) : <div className="empty-state"><strong>No pricing versions</strong><p>Live charging cannot start without an approved active version.</p></div>}</section>
+    <section className="dashboard-section"><div className="section-heading"><h2>Pricing versions</h2><Link className="action-link" href="/admin/pricing">Open governance</Link></div>{pricing.length ? pricing.map(p => <Link href={`/admin/pricing/${encodeURIComponent(p.pricing_id)}`} key={p.pricing_id} className="queue-row"><div><strong>{p.version_code}</strong><div className="meta">Worker {Number(p.worker_fee_bps)/100}% · Customer {formatZar(Number(p.customer_fixed_fee_cents))} + {Number(p.customer_fee_bps)/100}%{p.customer_fee_cap_cents != null ? ` capped at ${formatZar(Number(p.customer_fee_cap_cents))}` : ""}</div><div className="meta">Tip range {formatZar(Number(p.minimum_gratuity_cents))} – {formatZar(Number(p.maximum_gratuity_cents))} · {Number(p.blocker_count)} commercial blockers</div></div><div style={{textAlign:"right"}}><span className={p.pricing_status === "active" ? "status-chip success" : "status-chip warning"}>{p.pricing_status}</span><div className="meta" style={{marginTop:6}}>{p.review_status.replaceAll("_"," ")}</div></div></Link>) : <div className="empty-state"><strong>No pricing versions</strong><p>Live charging cannot start without an approved active version.</p></div>}</section>
 
     <section className="trust-card"><span className="trust-icon">✓</span><div><strong>No accidental activation controls on this page</strong><p>Pricing activation, legal publication and public Tip intake activation remain intentionally absent. This screen can diagnose readiness but cannot manufacture it.</p></div></section>
   </main>;

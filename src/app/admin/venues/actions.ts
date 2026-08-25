@@ -58,3 +58,20 @@ export async function inviteVenueMember(formData: FormData) {
   if (error) redirect(`/admin/venues?error=${encodeURIComponent(error.message)}`);
   redirect(`/admin/venues?invited=${encodeURIComponent(memberEmail.data.toLowerCase())}`);
 }
+
+export async function revokeVenueMembership(formData: FormData) {
+  const venueId = uuid.safeParse(String(formData.get("venueId") ?? ""));
+  const membershipId = uuid.safeParse(String(formData.get("membershipId") ?? ""));
+  const reason = z.string().trim().min(3).max(300).safeParse(String(formData.get("reason") ?? ""));
+  if (!venueId.success || !membershipId.success || !reason.success) {
+    redirect("/admin/venues?error=Enter%20a%20valid%20membership%20revocation%20reason");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await (supabase.rpc as any)("admin_revoke_venue_membership", {
+    p_membership_id: membershipId.data,
+    p_reason: reason.data
+  });
+  if (error) redirect(`/admin/venues/${venueId.data}?error=${encodeURIComponent(error.message)}`);
+  redirect(`/admin/venues/${venueId.data}?revoked=1`);
+}

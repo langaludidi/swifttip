@@ -11,6 +11,15 @@ const verificationIdSchema = z.string().uuid();
 const documentIdSchema = z.string().uuid();
 const allowedTypes = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const maximumBytes = 10 * 1024 * 1024;
+const maximumSelfieBytes = 5 * 1024 * 1024;
+
+const identityDetailsSchema = z.object({
+  legalFirstName: z.string().trim().min(2).max(80),
+  legalLastName: z.string().trim().min(2).max(80),
+  documentType: z.enum(["sa_smart_id", "sa_green_id", "passport"]),
+  identityNumber: z.string().trim().min(6).max(30),
+  consent: z.literal("yes")
+});
 
 function safeExtension(file: File) {
   if (file.type === "image/jpeg") return "jpg";
@@ -59,7 +68,7 @@ export async function uploadVerificationEvidence(formData: FormData) {
   const { error: registerError } = await supabase.rpc("register_worker_verification_document", {
     p_verification_id: verificationId,
     p_storage_path: path,
-    p_document_type: "identity_evidence",
+    p_document_type: "identity_document",
     p_mime_type: file.type,
     p_file_size_bytes: file.size,
     p_sha256_hash: sha256
@@ -72,6 +81,98 @@ export async function uploadVerificationEvidence(formData: FormData) {
 
   revalidatePath("/worker/verification");
   redirect("/worker/verification?uploaded=1");
+}
+
+export async function saveIdentityDetails(formData: FormData) {
+  const access = await requireWorkerSurface();
+  if (access.mode !== "live") redirect("/worker/verification?error=Identity%20details%20are%20not%20available%20in%20preview%20mode");
+
+  const parsed = identityDetailsSchema.safeParse({
+    legalFirstName: formData.get("legalFirstName"),
+    legalLastName: formData.get("legalLastName"),
+    documentType: formData.get("documentType"),
+    identityNumber: formData.get("identityNumber"),
+    consent: formData.get("consent")
+  });
+  if (!parsed.success) redirect("/worker/verification?error=Complete%20the%20identity%20details%20and%20consent%20before%20continuing");
+
+  const supabase = await createSupabaseServerClient();
+  const { error: startError } = await supabase.rpc("start_worker_verification", { p_verification_type: "identity" });
+  if (startError) redirect("/worker/verification?error=We%20could%20not%20start%20identity%20verification");
+  const { error } = await (supabase.rpc as any)("save_worker_identity_claim", {
+    p_legal_first_name: parsed.data.legalFirstName,
+    p_legal_last_name: parsed.data.legalLastName,
+    p_document_type: parsed.data.documentType,
+    p_identity_number: parsed.data.identityNumber,
+    p_consent_version: "identity-pilot-v1"
+  });
+  if (error) {
+    const message = String(error.message ?? "").includes("already connected")
+      ? "This identity is already connected to another SwiftTip Worker account"
+      : String(error.message ?? "").includes("valid 13-digit")
+        ? "Enter a valid 13-digit South African identity number"
+        : "We could not save those identity details";
+    redirect(`/worker/verification?error=${encodeURIComponent(message)}`);
+  }
+  revalidatePath("/worker/verification");
+  redirect("/worker/verification?details=1");
+}
+
+export async function uploadLiveSelfie(formData: FormData) {
+  const access = await requireWorkerSurface();
+  if (access.mode !== "live") redirect("/worker/verification?error=Live%20selfie%20capture%20is%20not%20available%20in%20preview%20mode");
+  const file = formData.get("selfie");
+  const captureMethod = String(formData.get("captureMethod") ?? "");
+  if (!(file instanceof File) || file.size === 0) redirect("/worker/verification?error=Capture%20a%20clear%20live%20selfie");
+  if (!["image/jpeg", "image/png"].includes(file.type)) redirect("/worker/verification?error=The%20selfie%20must%20be%20a%20JPG%20or%20PNG%20image");
+  if (file.size > maximumSelfieBytes) redirect("/worker/verification?error=The%20selfie%20must%20be%205MB%20or%20smaller");
+  if (!["browser_camera", "camera_file_fallback"].includes(captureMethod)) redirect("/worker/verification?error=The%20selfie%20capture%20method%20is%20invalid");
+
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (!signatureMatches(bytes, file.type)) redirect("/worker/verification?error=The%20selfie%20file%20is%20invalid");
+  const supabase = await createSupabaseServerClient();
+  const [{ data: verificationId, error: startError }, contextResult, claimResult] = await Promise.all([
+    supabase.rpc("start_worker_verification", { p_verification_type: "identity" }),
+    supabase.rpc("get_worker_context"),
+    (supabase.rpc as any)("get_worker_identity_claim")
+  ]);
+  const context = (contextResult.data as Array<{ worker_id: string }> | null)?.[0];
+  if (startError || !verificationId || !context?.worker_id) redirect("/worker/verification?error=We%20could%20not%20start%20verification");
+  if (claimResult.error || !claimResult.data?.length) redirect("/worker/verification?error=Save%20your%20identity%20details%20before%20capturing%20a%20selfie");
+
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  const path = `${context.worker_id}/${verificationId}/${randomUUID()}.${safeExtension(file)}`;
+  const bucket = supabase.storage.from("worker-verification");
+  const { error: uploadError } = await bucket.upload(path, bytes, { contentType: file.type, upsert: false, cacheControl: "3600" });
+  if (uploadError) redirect("/worker/verification?error=We%20could%20not%20upload%20the%20live%20selfie");
+  const { data: documentId, error: registerError } = await supabase.rpc("register_worker_verification_document", {
+    p_verification_id: verificationId,
+    p_storage_path: path,
+    p_document_type: "live_selfie",
+    p_mime_type: file.type,
+    p_file_size_bytes: file.size,
+    p_sha256_hash: sha256
+  });
+  if (registerError || !documentId) {
+    await bucket.remove([path]);
+    redirect("/worker/verification?error=We%20could%20not%20register%20the%20live%20selfie");
+  }
+  const { error: attestError } = await (supabase.rpc as any)("attest_worker_live_selfie", {
+    p_verification_id: verificationId,
+    p_capture_method: captureMethod
+  });
+  if (attestError) {
+    // Registration and attestation are separate calls because the Storage object
+    // must exist first. Roll both layers back when attestation fails so the
+    // one-selfie constraint never strands the Worker in an unretryable state.
+    await bucket.remove([path]);
+    await supabase.rpc("finalize_worker_verification_document_removal", {
+      p_document_id: documentId
+    });
+    redirect("/worker/verification?error=The%20live%20selfie%20could%20not%20be%20completed.%20Please%20try%20again");
+  }
+  revalidatePath("/worker/verification");
+  redirect("/worker/verification?selfie=1");
 }
 
 export async function removeVerificationEvidence(formData: FormData) {

@@ -6,11 +6,11 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 
 | ID | Control | Expected evidence | Current state |
 |---|---|---|---|
-| PP-001 | Branch head identified | exact Git SHA | PASS — `31d7a7b87aec5eff22e4754dddeb3fda1e7698ca` at latest status update |
-| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | BLOCKED — current head not yet build-proven because Vercel rate-limited before execution |
-| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0047` | IMPLEMENTED |
-| PP-004 | Staging Supabase config explicit | current greenfield `/api/health` says `supabaseConfigSource=environment` | UNVERIFIED — prior Preview showed fallback; variables were later reviewed/changed |
-| PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | CODED; current-head runtime verification pending |
+| PP-001 | Branch head identified | exact Git SHA | PENDING — completed workspace must be synchronised to `mvp-v3-greenfield-build`; no current Git SHA can be claimed from this non-Git workspace |
+| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — full pipeline green through migration `0052`; 74 RPC contracts and 30 tests |
+| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0052` | PASS |
+| PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — verified on deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` |
+| PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — verified on deployed production alias; provider remains unconfigured |
 | PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS previously under former duplicate 013 filename; rerun after any DB change |
 | PP-007 | Branch protection ready | required-check name observed on a successful CI run | NOT READY — branch currently unprotected |
 | PP-010 | Admin Auth identity controlled | approved test email + Auth user ID | NOT STARTED |
@@ -54,7 +54,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-072 | Venue Terms final | reviewed, approved, separately published | LEGAL BLOCKER |
 | PP-073 | Customer Terms final | reviewed, approved, separately published | LEGAL BLOCKER |
 | PP-074 | Privacy Notice final | reviewed, approved, separately published | LEGAL BLOCKER |
-| PP-075 | Pricing final | approved active/effective Pricing Version | COMMERCIAL BLOCKER |
+| PP-075 | Pricing final | approved active/effective Pricing Version | CONTROLLED DRAFT — review workflow implemented; 8 blockers open; no approval, effective date or activation |
 | PP-080 | Test cleanup complete | memberships/associations/endpoints/storage/Auth closed under constitution | NOT APPLICABLE YET |
 
 ## Evidence record template

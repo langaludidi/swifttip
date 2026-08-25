@@ -46,6 +46,8 @@ A Venue User must:
 
 The Venue is responsible for ensuring that persons acting as Venue Users are appropriately authorised by the Venue.
 
+Each person accepting these Terms or administering a Venue account represents that they have authority to bind the Venue or to perform the specific administrative action concerned. The Venue must promptly remove or ask SwiftTip to remove access when a Venue User leaves, changes role or is no longer authorised. Shared accounts and credential sharing are prohibited.
+
 ## 4. Worker confirmation
 
 The Venue’s principal Worker-related responsibility is narrow: confirm whether the person shown currently works at, is contracted to, or otherwise lawfully provides the relevant service at the Venue in the stated role.
@@ -60,6 +62,8 @@ The Venue is **not** responsible through SwiftTip for:
 - determining whether a Worker is an employee, contractor or other legal category.
 
 The Venue must not confirm a Worker it knows or reasonably believes does not have the stated current relationship with the Venue.
+
+Before confirming an association, the Venue User must compare the Worker name, profile image where available, stated role and other limited confirmation information shown by SwiftTip with information the Venue can reasonably verify. The Venue must reject or escalate a request where the person is unknown, the details materially conflict, or the request appears to impersonate another Worker. Confirmation does not transfer SwiftTip's identity-verification duty to the Venue.
 
 ## 5. Ending Worker associations
 
@@ -145,6 +149,8 @@ The Venue should cooperate reasonably with SwiftTip where a transaction, Worker 
 
 SwiftTip should not request unrelated employment or personal information merely because a support case exists.
 
+The Venue must promptly notify SwiftTip after discovering suspected account compromise, unauthorised access, QR substitution, false Worker association or loss of SwiftTip information. It must preserve relevant evidence, avoid altering audit records and take reasonable containment steps requested by SwiftTip. This cooperation does not require disclosure of information that is unrelated, legally privileged or unlawful to disclose.
+
 ## 12. Brand and materials
 
 SwiftTip may permit the Venue to display approved QR materials, Worker tipping identifiers, explanatory signage or SwiftTip branding.
@@ -186,6 +192,8 @@ The Venue must not request deletion of records that SwiftTip is legally required
 
 Each party must comply with applicable South African privacy and data-protection obligations for personal information for which it is responsible.
 
+The Venue must limit access to SwiftTip personal information to authorised persons with a genuine operational need, use it only for the permitted Venue functions, keep it reasonably secure, and not create or retain copies beyond what is necessary and lawful. Suspected compromise of personal information must be reported to SwiftTip without undue delay so that the parties can assess and meet their respective notification duties.
+
 The final allocation of responsible-party/operator roles for specific data exchanges must be confirmed before publication, particularly where a Payment Provider or external communications provider processes personal information.
 
 The SwiftTip Privacy Notice will describe SwiftTip’s own processing activities and data-subject rights.
@@ -209,6 +217,8 @@ The final limitation-of-liability, indemnity and third-party-service clauses req
 Venue Users may accept these Terms electronically on behalf of the Venue only if they are authorised to do so.
 
 SwiftTip records the exact version accepted, the relevant Venue membership, time of acceptance and audit evidence. The accepted version must be available for later review.
+
+The parties intend electronic records, notices and acceptance actions to have legal effect to the extent permitted by the Electronic Communications and Transactions Act 25 of 2002. A Venue must keep its authorised contact details current. This clause does not remove any signature, delivery or formality that applicable law requires for a particular notice or transaction.
 
 ## 19. Changes to these Terms
 
