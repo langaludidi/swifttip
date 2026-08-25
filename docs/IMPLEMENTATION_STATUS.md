@@ -6,7 +6,7 @@ Canonical Supabase project: `bxtfcfuehqljedxwykfk`
 
 Greenfield branch: `mvp-v3-greenfield-build`
 
-Status evidence refreshed: **24 August 2026**. The current workspace is not a Git checkout, so a new Git commit SHA cannot be claimed until the completed source is synchronised to `mvp-v3-greenfield-build`.
+Status evidence refreshed: **25 August 2026**. The completed source is synchronised to `mvp-v3-greenfield-build` at commit `3cfbcd83d8456bf7acc85d93219c028adf227ab1`.
 
 ## Executive position
 
@@ -173,7 +173,7 @@ The repository now contains `package-lock.json` and CI installs dependencies wit
 - unit tests; and
 - Next.js production build.
 
-The complete local pipeline passes through migration `0052`: architecture invariants, 74 application RPC contracts, schema freshness, migration safety, TypeScript, 30 unit tests and the Next.js production build. Production deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` is READY and includes the controlled pricing administration routes.
+The complete local pipeline passes through migration `0052`: architecture invariants, 74 application RPC contracts, schema freshness, migration safety, TypeScript, 30 unit tests and the Next.js production build. GitHub Actions CI run `32838517355` passed on exact commit `3cfbcd83d8456bf7acc85d93219c028adf227ab1`; the observed required-check context is `CI / test`. Production deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` is READY and includes the controlled pricing administration routes.
 
 ## Runtime environment gate
 
@@ -192,15 +192,14 @@ The production alias health response was verified on 24 August 2026 with `supaba
 
 ## Branch protection gate
 
-The greenfield branch is currently unprotected. Do not enable required status checks until the exact GitHub CI check name has been observed on a successful current-head run. See `docs/BRANCH_PROTECTION_GATE.md`.
+The greenfield branch remains unprotected, but the protection prerequisite is now satisfied: `CI / test` passed on the synchronised head. Branch protection may now be configured using that exact required-check context. See `docs/BRANCH_PROTECTION_GATE.md`.
 
 ## Remaining controlled pre-pilot sequence
 
-1. Synchronise the completed workspace to the controlled GitHub branch and capture the exact commit SHA.
-2. Run the repository CI on that exact commit and make the observed check name eligible for branch protection.
-3. When approved test people are available, provision controlled Admin/Worker/Venue test identities.
-4. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
-5. Resolve commercial pricing blockers through the controlled review workflow; approval must remain separate from activation.
+1. Configure branch protection using the observed `CI / test` required-check context.
+2. When approved test people are available, provision controlled Admin/Worker/Venue test identities.
+3. Execute `docs/CONTROLLED_IDENTITY_TEST_PACK.md` and record evidence in `docs/PRE_PILOT_EVIDENCE_MATRIX.md`.
+4. Resolve commercial pricing blockers through the controlled review workflow; approval must remain separate from activation.
 
 ## External gates that remain closed
 
@@ -212,4 +211,4 @@ Fine-grained edge/server anti-abuse remains a pre-live requirement for public re
 
 The `swifttip.vercel.app` alias now serves the manually deployed MVP v3 closed-state build. Its runtime environment remains `staging`, public Tip intake is disabled, no provider is configured and live money is not ready. A Vercel production target is deployment topology, not commercial authorisation.
 
-GitHub source synchronisation to `mvp-v3-greenfield-build` remains outstanding because this workspace is not a Git checkout. Do not claim branch/commit parity until that sync is completed and verified.
+GitHub source synchronisation is complete and verified at commit `3cfbcd83d8456bf7acc85d93219c028adf227ab1`. GitHub Actions CI and the deterministic lockfile workflow both passed on that exact head.

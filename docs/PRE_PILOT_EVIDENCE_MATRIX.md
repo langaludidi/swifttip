@@ -6,13 +6,13 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 
 | ID | Control | Expected evidence | Current state |
 |---|---|---|---|
-| PP-001 | Branch head identified | exact Git SHA | PENDING — completed workspace must be synchronised to `mvp-v3-greenfield-build`; no current Git SHA can be claimed from this non-Git workspace |
-| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — full pipeline green through migration `0052`; 74 RPC contracts and 30 tests |
+| PP-001 | Branch head identified | exact Git SHA | PASS — `mvp-v3-greenfield-build` synchronised at `3cfbcd83d8456bf7acc85d93219c028adf227ab1` |
+| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — GitHub Actions run `32838517355`; exact-head `CI / test` succeeded through migration `0052`; 74 RPC contracts and 30 tests |
 | PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0052` | PASS |
 | PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — verified on deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` |
 | PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — verified on deployed production alias; provider remains unconfigured |
 | PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS previously under former duplicate 013 filename; rerun after any DB change |
-| PP-007 | Branch protection ready | required-check name observed on a successful CI run | NOT READY — branch currently unprotected |
+| PP-007 | Branch protection ready | required-check name observed on a successful CI run | READY — exact required-check context observed as `CI / test`; branch configuration remains an owner action |
 | PP-010 | Admin Auth identity controlled | approved test email + Auth user ID | NOT STARTED |
 | PP-011 | Admin OTP works | successful + failed/expired OTP evidence | NOT STARTED |
 | PP-012 | Admin membership enforced | unauthorised authenticated identity denied | NOT STARTED |
