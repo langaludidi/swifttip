@@ -26,17 +26,17 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-025 | Venue role separation | Venue Admin vs View Only evidence | OPTIONAL / NOT STARTED |
 | PP-030 | Worker Auth bootstrap controlled | approved phone + Auth user ID + bootstrap audit | PASS — ID-WRK-01 bootstrap audit `a14a2c6b-5d5e-443e-9790-a8bbc8c32d42`; bootstrap itself created no Venue, endpoint or activation |
 | PP-031 | Worker SMS OTP works | actual delivery/sign-in evidence | IN PROGRESS — controlled Worker successfully reached onboarding; invalid-code evidence still required |
-| PP-032 | Worker onboarding | Worker ID + public/private identity projection check | IN PROGRESS — one Worker record exists; projection/privacy acceptance evidence remains pending |
+| PP-032 | Worker onboarding | Worker ID + public/private identity projection check | PASS — one Worker record exists; self-read resolves exactly that record, private identity/control tables remain inaccessible and the public profile contract excludes prohibited private fields (`020_worker_privacy_and_direct_write_boundary.sql`) |
 | PP-033 | Verification lifecycle | verification ID + approved evidence metadata + Admin decision | IN PROGRESS — one `not_started` verification has five registrations of one identical PDF; duplicate prevention is live, four legacy copies require controlled removal, identity claim/selfie/submission/Admin decision remain pending |
 | PP-034 | Venue association lifecycle | Worker request + Venue confirmation/rejection | NOT STARTED |
-| PP-035 | Venue privacy boundary | no Worker KYC/bank/Settlement-destination access | NOT STARTED |
+| PP-035 | Venue privacy boundary | no Worker KYC/bank/Settlement-destination access | IN PROGRESS — authenticated clients have no direct private identity/evidence/control-table access; exact Venue-role test remains pending until a controlled Venue identity exists |
 | PP-036 | Worker Terms gate | activation blocked until current Terms published/accepted | EXPECTED BLOCKED |
 | PP-037 | Settlement readiness gate | activation blocked until approved provider readiness | EXPECTED BLOCKED |
 | PP-038 | Worker sign-out/session expiry | session invalidated and re-auth required | NOT STARTED |
 | PP-040 | Worker activation gate | every missing condition independently blocks activation | NOT STARTED |
 | PP-041 | Endpoint issuance | exactly one active endpoint only after legitimate activation | BLOCKED by Terms/provider gates |
 | PP-050 | QR/short-code resolution | two-device QR + manual-code result | BLOCKED until legitimate endpoint exists |
-| PP-051 | Public projection privacy | no surname/phone/KYC/bank/internal fields | BLOCKED until legitimate endpoint exists |
+| PP-051 | Public projection privacy | no surname/phone/KYC/bank/internal fields | IN PROGRESS — RPC return contract excludes legal name, phone, email, identity, evidence-path and Settlement-destination fields; runtime value test remains blocked until a legitimate endpoint exists |
 | PP-052 | Server quotes | R10/R20/R50/R100 values captured | BLOCKED until legitimate endpoint/intake state permits controlled test |
 | PP-053 | Request resilience | invalid JSON=400, oversized=413, unsupported media=415, transient DB=503 | IMPLEMENTED; runtime execution pending |
 | PP-054 | Tip idempotency | replay returns same economic resource | BLOCKED until controlled Customer path can open |
@@ -65,6 +65,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 - Existing Worker evidence consists of five registrations with one distinct file fingerprint. No file was deleted during this checkpoint.
 - Interactive Admin OTP/TOTP, duplicate cleanup, identity details, live selfie, submission and Admin review remain deliberately pending.
 - Non-mutating test `019_admin_membership_pre_aal2.sql` passed: the Worker identity has no Admin visibility/role and the controlled Admin cannot execute a privileged RPC before a fresh AAL2 session.
+- Non-mutating test `020_worker_privacy_and_direct_write_boundary.sql` passed: Worker self-read, private-table denial, authoritative direct-write denial and the public-profile privacy contract are intact.
 
 ## Evidence record template
 
