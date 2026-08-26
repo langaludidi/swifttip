@@ -40,8 +40,8 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-052 | Server quotes | R10/R20/R50/R100 values captured | IN PROGRESS — anonymous quote attempts fail through the closed intake gate; positive R10/R20/R50/R100 values remain blocked until legitimate intake state (`022_public_customer_closed_boundary.sql`) |
 | PP-053 | Request resilience | invalid JSON=400, oversized=413, unsupported media=415, transient DB=503 | IMPLEMENTED; runtime execution pending |
 | PP-054 | Tip idempotency | replay returns same economic resource | BLOCKED until controlled Customer path can open; closed-boundary test confirms a valid-shaped request creates no Tip while intake is off |
-| PP-055 | Payment-disabled boundary | payment initiation fails closed while `PAYMENTS_ENABLED=false` | CODED; E2E pending |
-| PP-056 | Browser return non-authoritative | return query cannot create Payment success | CODED; E2E pending |
+| PP-055 | Payment-disabled boundary | payment initiation fails closed while `PAYMENTS_ENABLED=false` | PASS — route-level automated test returns HTTP 503 `PAYMENTS_DISABLED`; the independent provider-unconfigured gate also returns HTTP 503 (`payment-boundaries.test.tsx`) |
+| PP-056 | Browser return non-authoritative | return query cannot create Payment success | PASS — automated render with fabricated `status=success` and reference shows only the confirmation-required state and no success claim (`payment-boundaries.test.tsx`) |
 | PP-057 | Anonymous receipt boundary | opaque receipt token required | IN PROGRESS — invalid reference/key discloses no receipt token and an invalid opaque token discloses no receipt; positive receipt E2E remains blocked (`022_public_customer_closed_boundary.sql`) |
 | PP-060 | Provider category/funds flow | written provider approval | EXTERNAL BLOCKER |
 | PP-061 | Provider sandbox adapter | signed sandbox transaction trace | EXTERNAL BLOCKER |
@@ -69,6 +69,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 - Transaction-only test `021_worker_activation_negative_baseline.sql` passed: all four legitimate current blockers are reported, activation fails, Worker status remains draft and no endpoint is created.
 - Transaction-only test `022_public_customer_closed_boundary.sql` passed: anonymous invalid endpoint/profile lookups return nothing, quote and Tip creation fail through the closed intake gate, invalid receipt credentials disclose nothing, private runtime controls remain inaccessible and the Tip count is unchanged.
 - Migration `0056_create_tip_pgcrypto_resolution.sql` corrected the hardened `create_tip` function's access to Supabase-managed `pgcrypto`; the boundary test then reached the intended closed-intake rejection instead of failing earlier during request hashing.
+- Application test `payment-boundaries.test.tsx` proves payment initiation returns `PAYMENTS_DISABLED`, provider absence independently fails closed, and fabricated browser-return success parameters cannot render a successful Payment or Tip state.
 
 ## Evidence record template
 
