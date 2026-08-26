@@ -6,14 +6,14 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 
 | ID | Control | Expected evidence | Current state |
 |---|---|---|---|
-| PP-001 | Branch head identified | exact Git SHA | PASS — `mvp-v3-greenfield-build` synchronised at `3cfbcd83d8456bf7acc85d93219c028adf227ab1` |
-| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — GitHub Actions run `32838517355`; exact-head `CI / test` succeeded through migration `0052`; 74 RPC contracts and 30 tests |
-| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0053` | PASS |
-| PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — verified on deployment `dpl_GJm4kGnHQUoFaZuAH75jkAsmmynd` |
-| PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — verified on deployed production alias; provider remains unconfigured |
-| PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS previously under former duplicate 013 filename; rerun after any DB change |
+| PP-001 | Branch head identified | exact Git SHA | PASS — `mvp-v3-greenfield-build` synchronised at `1f813609c401a31239200ea219e0b151e135da4c` |
+| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — GitHub Actions run `32905799364`; exact-head `CI / test` succeeded through migration `0055`; 76 RPC contracts |
+| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0055` | PASS |
+| PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — HTTP 200 verified on deployment `dpl_J2LaZeqTvPwYcUgYgdGrNXXmtWzV` at exact head |
+| PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — exact-head Preview reports provider unconfigured and both payment gates false |
+| PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS — rerun against canonical database after migration `0055` on 26 August 2026 |
 | PP-007 | Branch protection ready | required-check name observed on a successful CI run | READY — exact required-check context observed as `CI / test`; branch configuration remains an owner action |
-| PP-010 | Admin Auth identity controlled | approved test email + Auth user ID | NOT STARTED |
+| PP-010 | Admin Auth identity controlled | approved test email + Auth user ID | PASS — ID-ADM-01 is an existing controlled email Auth identity with one active `super_admin` membership; MFA required; bootstrap audit `17e46214-152d-466f-b092-0b086a2ac359` |
 | PP-011 | Admin OTP works | successful + failed/expired OTP evidence | NOT STARTED |
 | PP-012 | Admin membership enforced | unauthorised authenticated identity denied | NOT STARTED |
 | PP-013 | Admin MFA/AAL2 works | TOTP enrol/challenge + privileged RPC before/after | NOT STARTED |
@@ -24,10 +24,10 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-023 | Venue invitation scoped | exact user + exact Venue membership ID | NOT STARTED |
 | PP-024 | Venue Terms gate | unpublished Terms cannot be treated as accepted/effective | EXPECTED BLOCKED |
 | PP-025 | Venue role separation | Venue Admin vs View Only evidence | OPTIONAL / NOT STARTED |
-| PP-030 | Worker Auth bootstrap controlled | approved phone + Auth user ID + bootstrap audit | NOT STARTED |
-| PP-031 | Worker SMS OTP works | actual delivery/sign-in evidence | NOT STARTED |
-| PP-032 | Worker onboarding | Worker ID + public/private identity projection check | NOT STARTED |
-| PP-033 | Verification lifecycle | verification ID + approved evidence metadata + Admin decision | NOT STARTED |
+| PP-030 | Worker Auth bootstrap controlled | approved phone + Auth user ID + bootstrap audit | PASS — ID-WRK-01 bootstrap audit `a14a2c6b-5d5e-443e-9790-a8bbc8c32d42`; bootstrap itself created no Venue, endpoint or activation |
+| PP-031 | Worker SMS OTP works | actual delivery/sign-in evidence | IN PROGRESS — controlled Worker successfully reached onboarding; invalid-code evidence still required |
+| PP-032 | Worker onboarding | Worker ID + public/private identity projection check | IN PROGRESS — one Worker record exists; projection/privacy acceptance evidence remains pending |
+| PP-033 | Verification lifecycle | verification ID + approved evidence metadata + Admin decision | IN PROGRESS — one `not_started` verification has five registrations of one identical PDF; duplicate prevention is live, four legacy copies require controlled removal, identity claim/selfie/submission/Admin decision remain pending |
 | PP-034 | Venue association lifecycle | Worker request + Venue confirmation/rejection | NOT STARTED |
 | PP-035 | Venue privacy boundary | no Worker KYC/bank/Settlement-destination access | NOT STARTED |
 | PP-036 | Worker Terms gate | activation blocked until current Terms published/accepted | EXPECTED BLOCKED |
@@ -56,6 +56,14 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-074 | Privacy Notice final | reviewed, approved, separately published | LEGAL BLOCKER |
 | PP-075 | Pricing final | approved active/effective Pricing Version | CONTROLLED DRAFT — review workflow plus persisted economics assumptions implemented; 8 blockers open; no approval, effective date or activation |
 | PP-080 | Test cleanup complete | memberships/associations/endpoints/storage/Auth closed under constitution | NOT APPLICABLE YET |
+
+## 26 August 2026 controlled checkpoint
+
+- Canonical identity layer: 2 Auth users, 1 active Admin membership, 1 Worker and 1 not-started identity verification.
+- Commercial layer: 0 Venues, 0 active endpoints, 0 active Pricing Versions, 0 effective published Terms and 0 active Pilots.
+- Runtime layer: Public Tip intake `false`; intake readiness `false`.
+- Existing Worker evidence consists of five registrations with one distinct file fingerprint. No file was deleted during this checkpoint.
+- Interactive Admin OTP/TOTP, duplicate cleanup, identity details, live selfie, submission and Admin review remain deliberately pending.
 
 ## Evidence record template
 
