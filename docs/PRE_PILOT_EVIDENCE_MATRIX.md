@@ -7,8 +7,8 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | ID | Control | Expected evidence | Current state |
 |---|---|---|---|
 | PP-001 | Branch head identified | exact Git SHA | PASS — `mvp-v3-greenfield-build` synchronised at `1f813609c401a31239200ea219e0b151e135da4c` |
-| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS — GitHub Actions run `32905799364`; exact-head `CI / test` succeeded through migration `0055`; 76 RPC contracts |
-| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0055` | PASS |
+| PP-002 | Current-head CI/build | `npm ci` + architecture + DB contract + schema freshness + migration safety + typecheck + tests + Next build | PASS through migration `0055`; exact-head CI for migration `0056` pending this evidence commit |
+| PP-003 | Generated DB types current | `src/types/database.ts` provenance migration equals repo migration `0056` | PASS — regenerated from the canonical project after the function-configuration migration; exposed schema shape is unchanged |
 | PP-004 | Staging Supabase config explicit | deployed `/api/health` says `supabaseConfigSource=environment` | PASS — HTTP 200 verified on deployment `dpl_J2LaZeqTvPwYcUgYgdGrNXXmtWzV` at exact head |
 | PP-005 | Payments disabled | `/api/health`: `paymentsEnabled=false`, `liveMoneyReady=false` | PASS — exact-head Preview reports provider unconfigured and both payment gates false |
 | PP-006 | Closed database control plane | `018_pre_pilot_control_plane.sql` | PASS — rerun against canonical database after migration `0055` on 26 August 2026 |
@@ -35,14 +35,14 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-038 | Worker sign-out/session expiry | session invalidated and re-auth required | NOT STARTED |
 | PP-040 | Worker activation gate | every missing condition independently blocks activation | IN PROGRESS — current baseline reports exactly identity verification, Venue confirmation, settlement readiness and unpublished Worker Terms; activation is rejected with Worker still draft and no endpoint (`021_worker_activation_negative_baseline.sql`). Independent one-gate-at-a-time cases remain pending controlled states |
 | PP-041 | Endpoint issuance | exactly one active endpoint only after legitimate activation | BLOCKED by Terms/provider gates |
-| PP-050 | QR/short-code resolution | two-device QR + manual-code result | BLOCKED until legitimate endpoint exists |
+| PP-050 | QR/short-code resolution | two-device QR + manual-code result | IN PROGRESS — anonymous invalid-code resolution returns no endpoint while intake is closed; positive two-device evidence remains blocked until a legitimate endpoint exists (`022_public_customer_closed_boundary.sql`) |
 | PP-051 | Public projection privacy | no surname/phone/KYC/bank/internal fields | IN PROGRESS — RPC return contract excludes legal name, phone, email, identity, evidence-path and Settlement-destination fields; runtime value test remains blocked until a legitimate endpoint exists |
-| PP-052 | Server quotes | R10/R20/R50/R100 values captured | BLOCKED until legitimate endpoint/intake state permits controlled test |
+| PP-052 | Server quotes | R10/R20/R50/R100 values captured | IN PROGRESS — anonymous quote attempts fail through the closed intake gate; positive R10/R20/R50/R100 values remain blocked until legitimate intake state (`022_public_customer_closed_boundary.sql`) |
 | PP-053 | Request resilience | invalid JSON=400, oversized=413, unsupported media=415, transient DB=503 | IMPLEMENTED; runtime execution pending |
-| PP-054 | Tip idempotency | replay returns same economic resource | BLOCKED until controlled Customer path can open |
+| PP-054 | Tip idempotency | replay returns same economic resource | BLOCKED until controlled Customer path can open; closed-boundary test confirms a valid-shaped request creates no Tip while intake is off |
 | PP-055 | Payment-disabled boundary | payment initiation fails closed while `PAYMENTS_ENABLED=false` | CODED; E2E pending |
 | PP-056 | Browser return non-authoritative | return query cannot create Payment success | CODED; E2E pending |
-| PP-057 | Anonymous receipt boundary | opaque receipt token required | CODED; E2E pending |
+| PP-057 | Anonymous receipt boundary | opaque receipt token required | IN PROGRESS — invalid reference/key discloses no receipt token and an invalid opaque token discloses no receipt; positive receipt E2E remains blocked (`022_public_customer_closed_boundary.sql`) |
 | PP-060 | Provider category/funds flow | written provider approval | EXTERNAL BLOCKER |
 | PP-061 | Provider sandbox adapter | signed sandbox transaction trace | EXTERNAL BLOCKER |
 | PP-062 | Webhook verification/replay | provider-specific signature/replay tests | EXTERNAL BLOCKER |
@@ -67,6 +67,8 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 - Non-mutating test `019_admin_membership_pre_aal2.sql` passed: the Worker identity has no Admin visibility/role and the controlled Admin cannot execute a privileged RPC before a fresh AAL2 session.
 - Non-mutating test `020_worker_privacy_and_direct_write_boundary.sql` passed: Worker self-read, private-table denial, authoritative direct-write denial and the public-profile privacy contract are intact.
 - Transaction-only test `021_worker_activation_negative_baseline.sql` passed: all four legitimate current blockers are reported, activation fails, Worker status remains draft and no endpoint is created.
+- Transaction-only test `022_public_customer_closed_boundary.sql` passed: anonymous invalid endpoint/profile lookups return nothing, quote and Tip creation fail through the closed intake gate, invalid receipt credentials disclose nothing, private runtime controls remain inaccessible and the Tip count is unchanged.
+- Migration `0056_create_tip_pgcrypto_resolution.sql` corrected the hardened `create_tip` function's access to Supabase-managed `pgcrypto`; the boundary test then reached the intended closed-intake rejection instead of failing earlier during request hashing.
 
 ## Evidence record template
 
