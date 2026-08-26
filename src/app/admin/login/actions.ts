@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
 import { admitAuthAttempt, authRetryMessage } from "@/lib/auth-security";
 
 const emailSchema = z.string().trim().email("Enter a valid email address").max(254);
+const adminCallbackUrl = "https://swifttip.vercel.app/auth/callback";
 
 export async function requestAdminOtp(formData: FormData) {
   const parsed = emailSchema.safeParse(String(formData.get("email") ?? ""));
@@ -16,11 +17,17 @@ export async function requestAdminOtp(formData: FormData) {
   if (admission.allowed) {
     const supabase = await createSupabaseServerClient();
     // Keep unknown, inactive and authorised Admin identities indistinguishable here.
-    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: adminCallbackUrl,
+      },
+    });
   }
 
   const notice = admission.allowed
-    ? "If this email is authorised for SwiftTip Operations, a one-time code has been sent."
+    ? "If this email is authorised for SwiftTip Operations, a one-time sign-in link has been sent."
     : `A code was requested recently. ${authRetryMessage(admission.retryAfterSeconds)}`;
   redirect(`/admin/login/verify?email=${encodeURIComponent(email)}&notice=${encodeURIComponent(notice)}`);
 }
