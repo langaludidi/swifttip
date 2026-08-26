@@ -15,8 +15,8 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-007 | Branch protection ready | required-check name observed on a successful CI run | READY — exact required-check context observed as `CI / test`; branch configuration remains an owner action |
 | PP-010 | Admin Auth identity controlled | approved test email + Auth user ID | PASS — ID-ADM-01 is an existing controlled email Auth identity with one active `super_admin` membership; MFA required; bootstrap audit `17e46214-152d-466f-b092-0b086a2ac359` |
 | PP-011 | Admin OTP works | successful + failed/expired OTP evidence | NOT STARTED |
-| PP-012 | Admin membership enforced | unauthorised authenticated identity denied | NOT STARTED |
-| PP-013 | Admin MFA/AAL2 works | TOTP enrol/challenge + privileged RPC before/after | NOT STARTED |
+| PP-012 | Admin membership enforced | unauthorised authenticated identity denied | PASS — non-Admin authenticated identity sees zero Admin membership rows and resolves no Admin role under RLS (`019_admin_membership_pre_aal2.sql`) |
+| PP-013 | Admin MFA/AAL2 works | TOTP enrol/challenge + privileged RPC before/after | IN PROGRESS — MFA requirement is true and the pre-AAL2 privileged-RPC boundary passed; real TOTP enrolment/challenge and post-AAL2 success remain pending |
 | PP-014 | Admin sign-out/session expiry | session invalidated and re-auth required | NOT STARTED |
 | PP-020 | Venue created pending | Venue ID + pending status | NOT STARTED |
 | PP-021 | Venue explicit approval | audit/status evidence | NOT STARTED |
@@ -64,6 +64,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 - Runtime layer: Public Tip intake `false`; intake readiness `false`.
 - Existing Worker evidence consists of five registrations with one distinct file fingerprint. No file was deleted during this checkpoint.
 - Interactive Admin OTP/TOTP, duplicate cleanup, identity details, live selfie, submission and Admin review remain deliberately pending.
+- Non-mutating test `019_admin_membership_pre_aal2.sql` passed: the Worker identity has no Admin visibility/role and the controlled Admin cannot execute a privileged RPC before a fresh AAL2 session.
 
 ## Evidence record template
 
