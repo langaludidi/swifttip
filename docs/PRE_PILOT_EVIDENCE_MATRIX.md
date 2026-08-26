@@ -33,7 +33,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 | PP-036 | Worker Terms gate | activation blocked until current Terms published/accepted | EXPECTED BLOCKED |
 | PP-037 | Settlement readiness gate | activation blocked until approved provider readiness | EXPECTED BLOCKED |
 | PP-038 | Worker sign-out/session expiry | session invalidated and re-auth required | NOT STARTED |
-| PP-040 | Worker activation gate | every missing condition independently blocks activation | NOT STARTED |
+| PP-040 | Worker activation gate | every missing condition independently blocks activation | IN PROGRESS — current baseline reports exactly identity verification, Venue confirmation, settlement readiness and unpublished Worker Terms; activation is rejected with Worker still draft and no endpoint (`021_worker_activation_negative_baseline.sql`). Independent one-gate-at-a-time cases remain pending controlled states |
 | PP-041 | Endpoint issuance | exactly one active endpoint only after legitimate activation | BLOCKED by Terms/provider gates |
 | PP-050 | QR/short-code resolution | two-device QR + manual-code result | BLOCKED until legitimate endpoint exists |
 | PP-051 | Public projection privacy | no surname/phone/KYC/bank/internal fields | IN PROGRESS — RPC return contract excludes legal name, phone, email, identity, evidence-path and Settlement-destination fields; runtime value test remains blocked until a legitimate endpoint exists |
@@ -66,6 +66,7 @@ Use with `PRE_PILOT_E2E_READINESS.md`, `CONTROLLED_IDENTITY_TEST_PACK.md` and `P
 - Interactive Admin OTP/TOTP, duplicate cleanup, identity details, live selfie, submission and Admin review remain deliberately pending.
 - Non-mutating test `019_admin_membership_pre_aal2.sql` passed: the Worker identity has no Admin visibility/role and the controlled Admin cannot execute a privileged RPC before a fresh AAL2 session.
 - Non-mutating test `020_worker_privacy_and_direct_write_boundary.sql` passed: Worker self-read, private-table denial, authoritative direct-write denial and the public-profile privacy contract are intact.
+- Transaction-only test `021_worker_activation_negative_baseline.sql` passed: all four legitimate current blockers are reported, activation fails, Worker status remains draft and no endpoint is created.
 
 ## Evidence record template
 
