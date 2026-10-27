@@ -1,0 +1,230 @@
+{
+  "formatVersion": 1,
+  "sourceCommit": "c636b82eef9dc546b6e3b64abf0b77f2efc657bf",
+  "migrations": [
+    {
+      "file": "supabase/migrations/0001_schemas.sql",
+      "sha256": "fc599c477c280d7c8c4698969ae1c7e009b18f30db787fcf66190fe58e2a22f6"
+    },
+    {
+      "file": "supabase/migrations/0002_identity_domain.sql",
+      "sha256": "c48278223aa4c3f63dd9af13824fa2a42de8502d44227cb0913d30b2c5d68e64"
+    },
+    {
+      "file": "supabase/migrations/0003_financial.sql",
+      "sha256": "5e7938bc098ebb66923bc23ac8f8686fc3c0bf63aac2999e69f5283209ddbf7f"
+    },
+    {
+      "file": "supabase/migrations/0004_helpers.sql",
+      "sha256": "5de22833801ca8d5f82d585b53bb8fdc80fec221863c8dc034f6e822d3ba0b9b"
+    },
+    {
+      "file": "supabase/migrations/0005_financial_functions.sql",
+      "sha256": "2e03dce9f8763f7247b10093ff8d16ad018eba99fcbdbc96fc616af31d60e33a"
+    },
+    {
+      "file": "supabase/migrations/0006_rls.sql",
+      "sha256": "08207405ec6093327b3167d3b8d18e6f202b5b2a843adf9b6a431c29a7c7c345"
+    },
+    {
+      "file": "supabase/migrations/0007_seed_working_config.sql",
+      "sha256": "66615cc1f5048b1e5919f35f1c4d18ac85b1e2994d8f59c6be672b7076f272f3"
+    },
+    {
+      "file": "supabase/migrations/0008_runtime_hardening.sql",
+      "sha256": "e7620ef2f3620ea080669d9595e4ac7338567541e02c8383e46d128bcde1dbde"
+    },
+    {
+      "file": "supabase/migrations/0009_surface_projections.sql",
+      "sha256": "117322683e47bdf91a8fc8e4e713c31971f958a707e3725543eefadc8a29644b"
+    },
+    {
+      "file": "supabase/migrations/0010_worker_financial_views.sql",
+      "sha256": "7b83ca324cf67968b9e19adcb143659dbe1a6e8481ef7ad7b68ab5c8242a6165"
+    },
+    {
+      "file": "supabase/migrations/0011_venue_association_actions.sql",
+      "sha256": "ecee835c54fa5487994fe750a8685954b436874fe07fbb4198711e01e76515dc"
+    },
+    {
+      "file": "supabase/migrations/0012_admin_projections.sql",
+      "sha256": "c647452e28fe62804e72f947d45ae48fc9764437dbe98a967f47025156750d2d"
+    },
+    {
+      "file": "supabase/migrations/0013_acl_and_payment_operability.sql",
+      "sha256": "de39bdb5c416fad1df232079b172d3e94e0ae62840527c1baf629cf7325f6582"
+    },
+    {
+      "file": "supabase/migrations/0014_rls_and_index_optimisation.sql",
+      "sha256": "ec063e5d4d72c67933459dbb6a246612809798b3592aafb7da6f3a882cafe4f3"
+    },
+    {
+      "file": "supabase/migrations/0015_worker_verification_workflow.sql",
+      "sha256": "3adbcfad504af59bb525e102acc13ce78bc42e858fc544b1172a381bac80242e"
+    },
+    {
+      "file": "supabase/migrations/0016_verification_review_projection.sql",
+      "sha256": "d8eb2d6ce0f63937990ed5f7bdea8ef3b739cbcb0df379386aec6a350c989b79"
+    },
+    {
+      "file": "supabase/migrations/0017_worker_onboarding_and_terms.sql",
+      "sha256": "2e24eb3855ef7cbbdf4f24b5499ebcd293ef4e58968a39443262ab3d524b12bc"
+    },
+    {
+      "file": "supabase/migrations/0018_worker_venue_discovery.sql",
+      "sha256": "cd2a768def1f3e74febf60fe6ef97b948e4bc267eb207a7dd1a2bb56034cfb93"
+    },
+    {
+      "file": "supabase/migrations/0019_admin_commercial_readiness.sql",
+      "sha256": "a4a995c757fd20beaa3617191ab52a5bdd39fb084fc99741a0d1693644145341"
+    },
+    {
+      "file": "supabase/migrations/0020_support_and_audit_projections.sql",
+      "sha256": "fdadbec96873c7b1d7823500dd755b03038ead17a660e32d575579c4dd8a213e"
+    },
+    {
+      "file": "supabase/migrations/0021_support_case_detail.sql",
+      "sha256": "c822ebcdb8e64de89a49d97d9b39ed24c60b1ebada527e5a7db10c2a10e99109"
+    },
+    {
+      "file": "supabase/migrations/0022_pilot_metrics.sql",
+      "sha256": "42456c5039c373e62c99a33e7ffa76378b05c3fde56663cee81e50381448f80f"
+    },
+    {
+      "file": "supabase/migrations/0023_venue_onboarding.sql",
+      "sha256": "cc690cecd500d44af2f5df0030ca3af1c07cd9a83cac5268451993d9ab031dc8"
+    },
+    {
+      "file": "supabase/migrations/0024_venue_and_pilot_admin.sql",
+      "sha256": "f1fa16f3ad6e944042cbcbe303ffbfedd6962aaf8abe77e7f8a000d548d95461"
+    },
+    {
+      "file": "supabase/migrations/0025_refund_dispute_projections.sql",
+      "sha256": "eff3338b9168f9db351e7d237048d1e912e073b0c58538ae536ab2158d72c193"
+    },
+    {
+      "file": "supabase/migrations/0026_customer_receipts.sql",
+      "sha256": "f0ce5c8c19181fa4d774584af111dc56efdb3fd7bde01a23fe2d2dd94333fc1d"
+    },
+    {
+      "file": "supabase/migrations/0027_terms_content_integrity.sql",
+      "sha256": "bb75c8eaa44ce38d988dfda287713a0577a26b4dcf96d341b74be63dfc378810"
+    },
+    {
+      "file": "supabase/migrations/0028_in_app_notifications.sql",
+      "sha256": "c438823719b5417a7d8dac26e4194207c9bb61161d5a19db53091579ba823b52"
+    },
+    {
+      "file": "supabase/migrations/0029_legal_draft_workflow.sql",
+      "sha256": "fb957983bf99a362428eb41e8777a17a0ddba4a0c7771f6ecefb9b7d97ac3557"
+    },
+    {
+      "file": "supabase/migrations/0030_legal_content_hash_hardening.sql",
+      "sha256": "0be2482ab7af4366df1a4d607894d1b540e7ab9e0f4b00f27e2f0956bba6379a"
+    },
+    {
+      "file": "supabase/migrations/0031_seed_worker_terms_draft.sql",
+      "sha256": "b786ffe78423cde7ba7e7a2d8f6d7b65c41da35b81d388b434ebc433de25c0e7"
+    },
+    {
+      "file": "supabase/migrations/0032_seed_remaining_legal_drafts.sql",
+      "sha256": "07b44bb41b16f766ee25065ee7586ebb74db25c7a87dabad147f7484ae5ed915"
+    },
+    {
+      "file": "supabase/migrations/0033_legal_readiness_projection.sql",
+      "sha256": "fd179c46ebb300d1ab7c1849485b30fb45eb574b6f74a7b171698c453585e8ca"
+    },
+    {
+      "file": "supabase/migrations/0034_legal_acl_hardening.sql",
+      "sha256": "e7152844107912ff09cc0c8ef18d9a3bf4cea6e6c8bb155eae34e377b21b7062"
+    },
+    {
+      "file": "supabase/migrations/0035_legal_source_synchronisation.sql",
+      "sha256": "233456c991d7d32a1aca1c72db3a3677087ec23423240b0daf5bf46e13ccd188"
+    },
+    {
+      "file": "supabase/migrations/0036_admin_bootstrap_provisioning.sql",
+      "sha256": "8ea084bad8e36dfcb37ea6e59c0c6f17d0791c2d61c9392559d4aa4def349b45"
+    },
+    {
+      "file": "supabase/migrations/0037_venue_member_invite_by_email.sql",
+      "sha256": "aebce902925b083bb024c04a1aa12997131d10c3aeca284dd3d42e35fcc3d3fe"
+    },
+    {
+      "file": "supabase/migrations/0038_worker_auth_bootstrap_audit.sql",
+      "sha256": "42f534d32cfbc273d50faefc10a02ae2ef19250919e835ffa57ab29e7e806b46"
+    },
+    {
+      "file": "supabase/migrations/0039_tipping_endpoint_issuance_and_terms_guard.sql",
+      "sha256": "d58ad519ac47e92563febf1cf83ec7d13a6c46ed105dd47739a74d5830d2f31e"
+    },
+    {
+      "file": "supabase/migrations/0040_current_published_terms_eligibility.sql",
+      "sha256": "2a0aad55c2569ade0e7b99e1f4d3ada3d3ad9ab7d4dc2d362ab0cf6683e9696d"
+    },
+    {
+      "file": "supabase/migrations/0041_public_tip_intake_controls.sql",
+      "sha256": "23fbb8f169d30f9e7d0cf3c78d5717fc7b59ca8f3bc71c7ce07a7cac106e0ae5"
+    },
+    {
+      "file": "supabase/migrations/0042_runtime_readiness_projection.sql",
+      "sha256": "d7aa9f0f31703b8c23e43bdd188a4759270125091fed2e64357fdf213860cd84"
+    },
+    {
+      "file": "supabase/migrations/0043_authenticated_dml_surface_hardening.sql",
+      "sha256": "c6f3dde17467c6a90b325aae40fccf26c9bea218be400c2cec63b212ac4053ec"
+    },
+    {
+      "file": "supabase/migrations/0044_verification_evidence_storage_hardening.sql",
+      "sha256": "276da46e67544938acaecfbbc0784be370d67ec54d35937ad1adc72d20d143d7"
+    },
+    {
+      "file": "supabase/migrations/0045_verification_review_evidence_availability.sql",
+      "sha256": "e8433c37e1c31990cf1fddb3880fd8c0d285e79fbbfff69a0c7b70f76a3db893"
+    },
+    {
+      "file": "supabase/migrations/0046_auth_session_abuse_hardening.sql",
+      "sha256": "b68860fc1c36de73266620433bf426c7b9eb4bd72ebe611be458eb8e0164bcc7"
+    },
+    {
+      "file": "supabase/migrations/0047_admin_mfa_recovery_audit.sql",
+      "sha256": "a15bbdacbca44c6d3cc2f0277aeb2d49a68e8a6e9ecffa6307953ad50f702906"
+    },
+    {
+      "file": "supabase/migrations/0048_phase_one_identity_ownership_gate.sql",
+      "sha256": "591cc5636848e2c891b2887ce617a8ef4259f648fbdfaa580dd3901ee97c06bb"
+    },
+    {
+      "file": "supabase/migrations/0049_venue_operations_control_surface.sql",
+      "sha256": "7e3cee4e633433acd18825589effe4ff99ef6e6fb1d7d1a6566116bb180db583"
+    },
+    {
+      "file": "supabase/migrations/0050_venue_terms_review_provenance.sql",
+      "sha256": "dd146a0d953f8737d38ae83071e1eb134089b0f60d8543403cbf3efc3b8fa1ff"
+    },
+    {
+      "file": "supabase/migrations/0051_pricing_review_workflow.sql",
+      "sha256": "f4e1004f5c3ddae5d68053c751803dbae08b892f3cc142936a509e81dbaa91a8"
+    },
+    {
+      "file": "supabase/migrations/0052_pricing_review_actor_indexes.sql",
+      "sha256": "d8f178f8ac83a28c01b0c8b6b425a221cdf17fa9e8df3f07fc4d3b66ac3a3996"
+    },
+    {
+      "file": "supabase/migrations/0053_pricing_economics_assumptions.sql",
+      "sha256": "a9aaae521779fa4e83dab87d7b27c501cba22abe52de18af230c9d31a4832ab5"
+    },
+    {
+      "file": "supabase/migrations/0054_verification_document_fingerprint_deduplication.sql",
+      "sha256": "a44288e9bed3744b76e151fbe1054fef2e307dcb97276d235f6aa7000f433ae8"
+    },
+    {
+      "file": "supabase/migrations/0055_admin_bootstrap_ambiguity_fix.sql",
+      "sha256": "0ca8c72023c50fa5bd8243c17f4acb92afe74ab74ae7b77c737e16bb1dd8bd1b"
+    },
+    {
+      "file": "supabase/migrations/0056_create_tip_pgcrypto_resolution.sql",
+      "sha256": "ac0e546996c278ea30c0ae2fd2f4c1db118e92abf5e48f915864ebcd49cf7f2a"
+    }
+  ]
+}
