@@ -3,6 +3,7 @@ import { AppMark } from "@/components/AppMark";
 import { WorkerBottomNav } from "@/components/WorkerBottomNav";
 import { requireWorkerSurface } from "@/lib/access";
 import { createSupabaseServerClient } from "@/infrastructure/supabase/server";
+import { LiveDataUnavailable } from "@/components/LiveDataUnavailable";
 import { formatZar } from "@/lib/money";
 
 type WorkerContext = {
@@ -57,31 +58,46 @@ function localTime(value: string | null) {
 
 export default async function WorkerPage() {
   const access = await requireWorkerSurface();
-  let context = demoContext;
-  let month = demoMonth;
-  let today = demoToday;
-  let tips = demoTips;
+  let context: WorkerContext;
+  let month: WorkerSummary;
+  let today: WorkerSummary;
+  let tips: WorkerTip[];
 
-  if (access.mode === "live") {
-    const supabase = await createSupabaseServerClient();
-    const now = new Date();
-    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(todayStart);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  if (access.mode === "demo") {
+    context = demoContext;
+    month = demoMonth;
+    today = demoToday;
+    tips = demoTips;
+  } else {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const now = new Date();
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(todayStart);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const contextResult = (await supabase.rpc("get_worker_context")) as unknown as { data: WorkerContext[] | null; error: unknown };
-    const [monthResult, todayResult, tipsResult] = await Promise.all([
-      supabase.rpc("get_worker_summary", { p_from: monthStart.toISOString(), p_to: now.toISOString() }),
-      supabase.rpc("get_worker_summary", { p_from: todayStart.toISOString(), p_to: tomorrow.toISOString() }),
-      supabase.rpc("get_worker_recent_tips", { p_limit: 5 })
-    ]);
+      const contextResult = (await supabase.rpc("get_worker_context")) as unknown as { data: WorkerContext[] | null; error: unknown };
+      const [monthResult, todayResult, tipsResult] = await Promise.all([
+        supabase.rpc("get_worker_summary", { p_from: monthStart.toISOString(), p_to: now.toISOString() }),
+        supabase.rpc("get_worker_summary", { p_from: todayStart.toISOString(), p_to: tomorrow.toISOString() }),
+        supabase.rpc("get_worker_recent_tips", { p_limit: 5 })
+      ]);
 
-    if (contextResult.data?.[0]) context = contextResult.data[0];
-    if (monthResult.data?.[0]) month = monthResult.data[0] as WorkerSummary;
-    if (todayResult.data?.[0]) today = todayResult.data[0] as WorkerSummary;
-    tips = (tipsResult.data ?? []) as WorkerTip[];
+      if (contextResult.error || !contextResult.data?.[0] ||
+          monthResult.error || !monthResult.data?.[0] ||
+          todayResult.error || !todayResult.data?.[0] ||
+          tipsResult.error || !tipsResult.data) {
+        return <LiveDataUnavailable surface="worker" />;
+      }
+      context = contextResult.data[0];
+      month = monthResult.data[0] as WorkerSummary;
+      today = todayResult.data[0] as WorkerSummary;
+      tips = tipsResult.data as WorkerTip[];
+    } catch {
+      return <LiveDataUnavailable surface="worker" />;
+    }
   }
 
   const active = context.worker_status === "active" && context.endpoint_status === "active";

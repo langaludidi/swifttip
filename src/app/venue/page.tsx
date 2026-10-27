@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LiveDataUnavailable } from "@/components/LiveDataUnavailable";
 import { AppMark } from "@/components/AppMark";
 import { signOutVenue } from "@/app/auth/actions";
 import { requireVenueSurface } from "@/lib/access";
@@ -35,20 +36,26 @@ function associationLabel(worker: VenueWorker) {
 
 export default async function VenuePage() {
   const access = await requireVenueSurface();
-  let venueId: string | null = null;
-  let venueName = "Riverside Service Station";
-  let venueRole = "venue_admin";
-  let workers = demoWorkers;
-  let summary: VenueSummary = { participating_workers: 13, active_workers: 12, successful_tip_count: 48, gross_gratuity_cents: 126000 };
+  let venueName: string;
+  let venueRole: string;
+  let workers: VenueWorker[];
+  let summary: VenueSummary;
 
-  if (access.mode === "live") {
-    const supabase = await createSupabaseServerClient();
-    const membershipResult = await supabase.from("venue_memberships").select("venue_id, venue_role").eq("membership_status", "active").limit(1).maybeSingle();
-    if (membershipResult.data) {
-      venueId = membershipResult.data.venue_id;
+  if (access.mode === "demo") {
+    venueName = "Riverside Service Station";
+    venueRole = "venue_admin";
+    workers = demoWorkers;
+    summary = { participating_workers: 13, active_workers: 12, successful_tip_count: 48, gross_gratuity_cents: 126000 };
+  } else {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const membershipResult = await supabase.from("venue_memberships").select("venue_id, venue_role").eq("membership_status", "active").limit(1).maybeSingle();
+      if (membershipResult.error || !membershipResult.data) return <LiveDataUnavailable surface="venue" />;
+      const venueId = membershipResult.data.venue_id;
       venueRole = membershipResult.data.venue_role;
       const venueResult = await supabase.from("venues").select("trading_name, branch_name").eq("id", venueId).maybeSingle();
-      if (venueResult.data) venueName = venueResult.data.branch_name ?? venueResult.data.trading_name;
+      if (venueResult.error || !venueResult.data) return <LiveDataUnavailable surface="venue" />;
+      venueName = venueResult.data.branch_name ?? venueResult.data.trading_name;
 
       const now = new Date();
       const weekStart = new Date(now);
@@ -60,8 +67,13 @@ export default async function VenuePage() {
         supabase.rpc("get_venue_workers", { p_venue_id: venueId }),
         supabase.rpc("get_venue_summary", { p_venue_id: venueId, p_from: weekStart.toISOString(), p_to: now.toISOString() })
       ]);
-      workers = (workersResult.data ?? []) as VenueWorker[];
-      if (summaryResult.data?.[0]) summary = summaryResult.data[0] as VenueSummary;
+      if (workersResult.error || !workersResult.data || summaryResult.error || !summaryResult.data?.[0]) {
+        return <LiveDataUnavailable surface="venue" />;
+      }
+      workers = workersResult.data as VenueWorker[];
+      summary = summaryResult.data[0] as VenueSummary;
+    } catch {
+      return <LiveDataUnavailable surface="venue" />;
     }
   }
 

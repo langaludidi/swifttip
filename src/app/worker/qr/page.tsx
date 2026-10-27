@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import QRCode from "qrcode";
+import { LiveDataUnavailable } from "@/components/LiveDataUnavailable";
 import { AppMark } from "@/components/AppMark";
 import { WorkerBottomNav } from "@/components/WorkerBottomNav";
 import { requireWorkerSurface } from "@/lib/access";
@@ -17,12 +18,20 @@ type WorkerContext = {
 
 export default async function WorkerQrPage() {
   const access = await requireWorkerSurface();
-  let context: WorkerContext = { display_name: "Thando", worker_role: "Fuel Attendant", venue_name: "Riverside Service Station", public_token: "T4K8P", short_code: "T4K8P", endpoint_status: "active" };
+  let context: WorkerContext;
 
-  if (access.mode === "live") {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase.rpc("get_worker_context");
-    if (data?.[0]) context = data[0] as WorkerContext;
+  if (access.mode === "demo") {
+    context = { display_name: "Thando", worker_role: "Fuel Attendant", venue_name: "Riverside Service Station", public_token: "T4K8P", short_code: "T4K8P", endpoint_status: "active" };
+
+  } else {
+    try {
+      const supabase = await createSupabaseServerClient();
+      const { data, error } = await supabase.rpc("get_worker_context");
+      if (error || !data?.[0]) return <LiveDataUnavailable surface="worker" qr />;
+      context = data[0] as WorkerContext;
+    } catch {
+      return <LiveDataUnavailable surface="worker" qr />;
+    }
   }
 
   const requestHeaders = await headers();
